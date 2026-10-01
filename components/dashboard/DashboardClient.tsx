@@ -11,16 +11,19 @@ import { ApplicationList } from '@/components/applications/ApplicationList'
 import { KanbanBoard } from '@/components/applications/KanbanBoard'
 import { AnalyticsView } from '@/components/analytics/AnalyticsView'
 import { ApplicationFormModal } from '@/components/applications/ApplicationFormModal'
+import { ResumeList } from '@/components/resumes/ResumeList'
+import { ResumeFormModal } from '@/components/resumes/ResumeFormModal'
 import { ViewToggle } from '@/components/dashboard/ViewToggle'
 import { SearchAndFilters } from '@/components/dashboard/SearchAndFilters'
 import { filterApplications, computeStats, getUpcomingInterviews, getThisWeekApps } from '@/lib/utils/applications'
-import type { Application } from '@/types'
+import type { Application, Resume } from '@/types'
 import { Loader2 } from 'lucide-react'
 
 export function DashboardClient() {
   const applications = useQuery(api.applications.list) as Application[] | undefined
+  const resumes = useQuery(api.resumes.list) as Resume[] | undefined
   const settings = useQuery(api.settings.get)
-  const { filter, search, channelFilter, view, modalOpen } = useUIStore()
+  const { filter, search, channelFilter, resumeFilter, view, modalOpen, resumeModalOpen } = useUIStore()
 
   if (applications === undefined) {
     return (
@@ -37,7 +40,7 @@ export function DashboardClient() {
   const stats = computeStats(applications, overdueDays)
   const upcomingInterviews = getUpcomingInterviews(applications)
   const thisWeekApps = getThisWeekApps(applications)
-  const filteredApps = filterApplications(applications, filter, search, channelFilter, overdueDays)
+  const filteredApps = filterApplications(applications, filter, search, channelFilter, overdueDays, resumeFilter)
 
   return (
     <>
@@ -80,16 +83,26 @@ export function DashboardClient() {
             search={search}
           />
         )}
+        {view === 'resumes' && (
+          <ResumeList
+            resumes={resumes ?? []}
+            applications={applications}
+          />
+        )}
         {view === 'analytics' && (
           <AnalyticsView
             applications={applications}
+            resumes={resumes ?? []}
             overdueDays={overdueDays}
           />
         )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Application Modal */}
       {modalOpen && <ApplicationFormModal applications={applications} />}
+
+      {/* Add/Edit Resume Modal */}
+      {resumeModalOpen && <ResumeFormModal resumes={resumes ?? []} />}
     </>
   )
 }

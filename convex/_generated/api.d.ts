@@ -11,6 +11,7 @@
 import type * as applications from "../applications.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as resumes from "../resumes.js";
 import type * as settings from "../settings.js";
 
 import type {
@@ -23,6 +24,7 @@ declare const fullApi: ApiFromModules<{
   applications: typeof applications;
   auth: typeof auth;
   http: typeof http;
+  resumes: typeof resumes;
   settings: typeof settings;
 }>;
 

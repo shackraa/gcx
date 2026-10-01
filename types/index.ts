@@ -15,6 +15,33 @@ export type ApplicationChannel =
   | 'form'
   | 'linkedin'
 
+// Resume (CV) definition
+export interface Resume {
+  _id: string
+  _creationTime: number
+  userId: string
+  name: string
+  category: string
+  targetRole?: string
+  fileUrl?: string
+  skills: string[]
+  summary?: string
+  rawText?: string
+  isDefault: boolean
+}
+
+// Form values for Resume create/edit modal
+export interface ResumeFormValues {
+  name: string
+  category: string
+  targetRole?: string
+  fileUrl?: string
+  skills: string[]
+  summary?: string
+  rawText?: string
+  isDefault: boolean
+}
+
 // Core application type matching Convex schema
 export interface Application {
   _id: string
@@ -27,6 +54,7 @@ export interface Application {
   interviewAt?: string     // ISO datetime string
   offerDeadline?: string   // ISO date string YYYY-MM-DD
   channel?: ApplicationChannel
+  resumeId?: string        // Linked Resume ID
   cvVersion?: string
   cvLink?: string
   jobLink?: string
@@ -46,6 +74,7 @@ export interface ApplicationFormValues {
   interviewAt?: string
   offerDeadline?: string
   channel?: ApplicationChannel
+  resumeId?: string
   cvVersion?: string
   cvLink?: string
   jobLink?: string
@@ -75,8 +104,8 @@ export type FilterKey =
   | 'offer'
   | 'rejected'
 
-// View mode
-export type ViewMode = 'list' | 'kanban' | 'analytics'
+// View mode - now includes 'resumes' for CV Hub!
+export type ViewMode = 'list' | 'kanban' | 'resumes' | 'analytics'
 
 // Stats summary
 export interface AppStats {
@@ -92,6 +121,7 @@ export interface AnalyticsData {
   byStatus: { status: ApplicationStatus; count: number }[]
   byChannel: { channel: string; count: number }[]
   byWeek: { week: string; count: number }[]
+  byResume: { name: string; count: number; respondedCount: number }[]
   responseRate: number
   avgResponseDays: number | null
 }
@@ -101,4 +131,5 @@ export interface BackupData {
   version: string
   exportedAt: string
   applications: Partial<Application>[]
+  resumes?: Partial<Resume>[]
 }

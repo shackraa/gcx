@@ -11,7 +11,7 @@ import {
   addDays,
 } from 'date-fns'
 import { tr } from 'date-fns/locale'
-import { Application, ApplicationStatus, AppStats, FilterKey } from '@/types'
+import { Application, ApplicationStatus, AppStats, FilterKey, Resume } from '@/types'
 
 export const OVERDUE_DAYS = 14
 
@@ -132,13 +132,14 @@ export function sortApplications(apps: Application[], overdueDays = OVERDUE_DAYS
   })
 }
 
-// Filter applications by active filter key
+// Filter applications by active filter key, search, channel, and resume
 export function filterApplications(
   apps: Application[],
   filter: FilterKey,
   search: string,
   channelFilter: string,
-  overdueDays = OVERDUE_DAYS
+  overdueDays = OVERDUE_DAYS,
+  resumeFilter = 'all'
 ): Application[] {
   let result = [...apps]
 
@@ -154,13 +155,19 @@ export function filterApplications(
     result = result.filter((a) => a.channel === channelFilter)
   }
 
+  // Resume filter
+  if (resumeFilter && resumeFilter !== 'all') {
+    result = result.filter((a) => a.resumeId === resumeFilter)
+  }
+
   // Text search
   if (search.trim()) {
     const q = search.toLowerCase().trim()
     result = result.filter(
       (a) =>
         a.company.toLowerCase().includes(q) ||
-        a.position.toLowerCase().includes(q)
+        a.position.toLowerCase().includes(q) ||
+        (a.cvVersion && a.cvVersion.toLowerCase().includes(q))
     )
   }
 
@@ -225,6 +232,29 @@ export function getWeeklyData(
     })
   }
   return result
+}
+
+// Get performance stats per resume
+export function getResumeStats(
+  apps: Application[],
+  resumes: Resume[]
+): { resume: Resume; count: number; respondedCount: number; responseRate: number }[] {
+  return resumes.map((resume) => {
+    const matchedApps = apps.filter((a) => a.resumeId === resume._id)
+    const respondedApps = matchedApps.filter((a) =>
+      ['responded', 'interview', 'offer'].includes(a.status)
+    )
+    const count = matchedApps.length
+    const respondedCount = respondedApps.length
+    const responseRate = count > 0 ? Math.round((respondedCount / count) * 100) : 0
+
+    return {
+      resume,
+      count,
+      respondedCount,
+      responseRate,
+    }
+  })
 }
 
 // Generate follow-up email template

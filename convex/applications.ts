@@ -44,6 +44,7 @@ export const create = mutation({
       v.literal('form'),
       v.literal('linkedin')
     )),
+    resumeId: v.optional(v.id('resumes')),
     cvVersion: v.optional(v.string()),
     cvLink: v.optional(v.string()),
     jobLink: v.optional(v.string()),
@@ -89,6 +90,7 @@ export const update = mutation({
       v.literal('form'),
       v.literal('linkedin')
     )),
+    resumeId: v.optional(v.id('resumes')),
     cvVersion: v.optional(v.string()),
     cvLink: v.optional(v.string()),
     jobLink: v.optional(v.string()),
@@ -178,7 +180,6 @@ export const importBulk = mutation({
     }
 
     for (const app of applications) {
-      // Destructure away old DB-specific fields
       const { _id, _creationTime, id, userId: _uid, user_id, ...rest } = app
       await ctx.db.insert('applications', {
         ...rest,

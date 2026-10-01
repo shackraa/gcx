@@ -5,6 +5,21 @@ import { authTables } from '@convex-dev/auth/server'
 export default defineSchema({
   ...authTables,
 
+  // CV Havuzu (Kullanıcının farklı CV versiyonları)
+  resumes: defineTable({
+    userId: v.string(),
+    name: v.string(),               // Örn: "AI & Python Developer CV"
+    category: v.string(),           // Örn: "AI / ML", "Frontend", "Full-stack", "Product"
+    targetRole: v.optional(v.string()), // Örn: "Senior AI Engineer"
+    fileUrl: v.optional(v.string()),    // Drive veya dosya linki
+    skills: v.array(v.string()),        // Örn: ["Python", "LangChain", "FastAPI", "Next.js"]
+    summary: v.optional(v.string()),    // CV özeti / öne çıkan noktalar
+    rawText: v.optional(v.string()),    // İlan eşleştirme için metin
+    isDefault: v.boolean(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_category', ['userId', 'category']),
+
   // Başvurular
   applications: defineTable({
     userId: v.string(),
@@ -28,7 +43,8 @@ export default defineSchema({
       v.literal('form'),
       v.literal('linkedin')
     )),
-    cvVersion: v.optional(v.string()),
+    resumeId: v.optional(v.id('resumes')),    // Bağlı CV'nin ID'si
+    cvVersion: v.optional(v.string()),        // Serbest CV metni veya versiyon adı
     cvLink: v.optional(v.string()),
     jobLink: v.optional(v.string()),
     contactName: v.optional(v.string()),
@@ -38,7 +54,8 @@ export default defineSchema({
     followUpSentAt: v.optional(v.string()),
   })
     .index('by_user', ['userId'])
-    .index('by_user_status', ['userId', 'status']),
+    .index('by_user_status', ['userId', 'status'])
+    .index('by_user_resume', ['userId', 'resumeId']),
 
   // Kullanıcı ayarları
   userSettings: defineTable({

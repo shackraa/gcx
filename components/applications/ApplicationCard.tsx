@@ -130,10 +130,11 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           </span>
         )}
 
-        {/* CV version */}
+        {/* CV version / Resume badge */}
         {app.cvVersion && (
-          <span className="text-[11px] text-blue-400 bg-blue-950/40 px-2 py-0.5 rounded-full">
-            CV: {app.cvVersion}
+          <span className="inline-flex items-center gap-1 text-[11px] text-blue-400 bg-blue-950/40 border border-blue-900/60 px-2 py-0.5 rounded-full font-medium">
+            <FileText className="h-3 w-3" />
+            {app.cvVersion}
           </span>
         )}
 
@@ -171,11 +172,11 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
               href={cvUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <FileText className="h-3 w-3" />
-              CV&apos;yi aç
+              CV&apos;yi Aç
             </a>
           )}
           {jobUrl && (
@@ -187,7 +188,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="h-3 w-3" />
-              İlanı aç
+              İlanı Aç
             </a>
           )}
           {overdue && (

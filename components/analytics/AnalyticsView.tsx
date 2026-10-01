@@ -10,12 +10,15 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from 'recharts'
-import type { Application } from '@/types'
-import { STATUS_LABELS, CHANNEL_LABELS, isOverdue, getWeeklyData } from '@/lib/utils/applications'
+import type { Application, Resume } from '@/types'
+import { STATUS_LABELS, CHANNEL_LABELS, isOverdue, getWeeklyData, getResumeStats } from '@/lib/utils/applications'
+import { FileText, TrendingUp, Award } from 'lucide-react'
 
 interface AnalyticsViewProps {
   applications: Application[]
+  resumes?: Resume[]
   overdueDays?: number
 }
 
@@ -28,7 +31,7 @@ const STATUS_CHART_COLORS: Record<string, string> = {
   rejected: '#ef4444',
 }
 
-export function AnalyticsView({ applications, overdueDays = 14 }: AnalyticsViewProps) {
+export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: AnalyticsViewProps) {
   const total = applications.length
   if (total === 0) {
     return (
@@ -64,6 +67,20 @@ export function AnalyticsView({ applications, overdueDays = 14 }: AnalyticsViewP
   // Weekly data
   const weeklyData = getWeeklyData(applications, 8)
 
+  // Resume performance data
+  const resumeStats = getResumeStats(applications, resumes)
+  const activeResumeStats = resumeStats.filter((s) => s.count > 0)
+  const bestResume = activeResumeStats.length > 0
+    ? [...activeResumeStats].sort((a, b) => b.responseRate - a.responseRate)[0]
+    : null
+
+  const resumeChartData = activeResumeStats.map((s) => ({
+    name: s.resume.name.length > 15 ? s.resume.name.slice(0, 15) + '…' : s.resume.name,
+    'Toplam Başvuru': s.count,
+    'Dönüş Sayısı': s.respondedCount,
+    'Dönüş Oranı (%)': s.responseRate,
+  }))
+
   return (
     <div className="space-y-6">
       {/* Metrics Row */}
@@ -80,6 +97,78 @@ export function AnalyticsView({ applications, overdueDays = 14 }: AnalyticsViewP
           </div>
         ))}
       </div>
+
+      {/* CV Performance Section (if resumes exist) */}
+      {resumes.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <FileText className="h-4 w-4 text-primary" />
+                CV Performans ve Başarı Oranları
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Hangi CV versiyonunun kaç başvuru aldığı ve ne oranda geri dönüş sağladığı
+              </p>
+            </div>
+
+            {bestResume && bestResume.count >= 2 && (
+              <div className="flex items-center gap-1.5 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold px-3 py-1 rounded-full self-start sm:self-auto">
+                <Award className="h-3.5 w-3.5" />
+                <span>En Yüksek Başarı: {bestResume.resume.name} (%{bestResume.responseRate})</span>
+              </div>
+            )}
+          </div>
+
+          {activeResumeStats.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* CV Chart */}
+              <div className="lg:col-span-2">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={resumeChartData} margin={{ left: -10, right: 10, top: 10, bottom: 0 }}>
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ background: '#1c1c1c', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
+                      cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+                    <Bar dataKey="Toplam Başvuru" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Dönüş Sayısı" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* CV Ranking List */}
+              <div className="space-y-2.5 flex flex-col justify-center">
+                {resumeStats.map(({ resume, count, respondedCount, responseRate }) => (
+                  <div
+                    key={resume._id}
+                    className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border/40 text-xs"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="font-semibold text-foreground truncate">{resume.name}</div>
+                      <div className="text-[11px] text-muted-foreground">{resume.category}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-bold text-primary">
+                        {count > 0 ? `%${responseRate}` : '0 başvuru'}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {count > 0 ? `${respondedCount}/${count} dönüş` : 'Henüz kullanılmadı'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-6">
+              Henüz başvurularınızda kayıtlı bir CV seçilmedi. Başvuru eklerken veya düzenlerken ilgili CV&apos;yi seçerek buradaki performans verilerini oluşturabilirsiniz.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
