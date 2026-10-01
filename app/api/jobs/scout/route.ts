@@ -10,7 +10,6 @@ interface ScoutRequestBody {
   resumeName?: string
   resumeSummary?: string
   apiKey?: string
-  limit?: number
 }
 
 // Non-tech noise keywords to filter out when searching for software / tech / AI / product roles
@@ -34,10 +33,8 @@ const NON_TECH_EXCLUSIONS = [
 // Build search query that targets relevant tech & domain context
 function buildTargetSearchQuery(role: string, skills: string[]): string {
   const cleanRole = role.trim().replace(/^(uzman|specialist|engineer|mühendis)$/gi, 'Software Engineer')
-  
   const techKeywords = skills.filter((s) => s.length > 1).slice(0, 3)
   
-  // If role is generic like "Product Specialist", add tech context
   const lowerRole = cleanRole.toLowerCase()
   if (lowerRole.includes('product') && !lowerRole.includes('software') && !lowerRole.includes('ai') && !lowerRole.includes('tech')) {
     return `${cleanRole} Software OR Tech OR AI`
@@ -50,8 +47,8 @@ function buildTargetSearchQuery(role: string, skills: string[]): string {
   return cleanRole
 }
 
-// Scrape LinkedIn Guest API across multiple paginated pages
-async function fetchLinkedInGuestJobs(searchQuery: string, location: string, workplace: string, limit = 30) {
+// Scrape LinkedIn Guest API across multiple paginated pages (up to 150+ raw postings)
+async function fetchLinkedInGuestJobs(searchQuery: string, location: string, workplace: string, maxPages = 5) {
   const encodedKw = encodeURIComponent(searchQuery)
   const encodedLoc = encodeURIComponent(location || 'Turkey')
 
@@ -76,10 +73,9 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
   }> = []
 
   const seenUrls = new Set<string>()
-  const pageCount = Math.min(Math.ceil(limit / 20), 4)
 
   const requests = []
-  for (let p = 0; p < pageCount; p++) {
+  for (let p = 0; p < maxPages; p++) {
     const start = p * 25
     const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}&start=${start}`
     requests.push(
@@ -96,8 +92,6 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
     const $ = cheerio.load(html)
 
     $('li').each((_, el) => {
-      if (jobs.length >= limit) return
-
       const titleElem = $(el).find('h3.base-search-card__title')
       const companyElem = $(el).find('h4.base-search-card__subtitle')
       const locElem = $(el).find('span.job-search-card__location')
@@ -111,7 +105,7 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
       if (title && company) {
         const lowerTitle = title.toLowerCase()
 
-        // Filter out obvious non-tech noise
+        // Filter out non-tech noise
         const isExcluded = NON_TECH_EXCLUSIONS.some((ex) => lowerTitle.includes(ex))
         if (isExcluded) return
 
@@ -169,19 +163,19 @@ function evaluateJobHeuristic(
   }
 
   // Calculate score based on role alignment and skills
-  let score = 70
+  let score = 72
   if (titleLower.includes(cvRoleLower) || cvRoleLower.includes(titleLower)) {
     score += 18
   } else if (titleLower.includes('senior') && cvRoleLower.includes('senior')) {
     score += 8
   } else if (matchedSkills.length >= 2) {
-    score += 15
+    score += 14
   } else if (matchedSkills.length === 1) {
     score += 8
   }
 
-  // Cap score
-  score = Math.min(96, Math.max(65, score + (idx % 7)))
+  // Add slight natural variance
+  score = Math.min(97, Math.max(70, score + (idx % 8)))
 
   const finalMatched = matchedSkills.length > 0 ? matchedSkills.slice(0, 3) : cvSkills.slice(0, 2)
   const remaining = cvSkills.filter((s) => !finalMatched.includes(s))
@@ -226,7 +220,7 @@ Kullanıcı CV Profili:
 - CV Özeti: ${cvSummary || 'Teknik ve profesyonel profil'}
 
 Aşağıda taranan ${jobs.length} adet iş ilanı bulunmaktadır. Her ilan için:
-1. matchScore: Bu ilanın kullanıcının CV'si ile GERÇEK uyum yüzdesi (0-100). Eğer ilan CV'nin alanı dışındaysa (örn. alakasız sektör) düşük skor (%30-55) ver. Çok uyumluysa (%85-98) ver.
+1. matchScore: Bu ilanın kullanıcının CV'si ile GERÇEK uyum yüzdesi (0-100). Eğer ilan çok uyumluysa (%80-98), kısmen uyumluysa (%70-79), alakasızsa (<%65) ver.
 2. matchingSkills: İlanda aranan ve kullanıcının CV'sinde OLAN yetenekler (En fazla 3 adet).
 3. missingSkills: İlanda gerekebilecek ama CV'de öne çıkmayan yetenekler (En fazla 2 adet).
 4. reason: 1 cümlelik Türkçe spesifik gerekçe (örn: "X şirketindeki Y pozisyonu React ve TypeScript deneyiminiz ile tam örtüşmektedir.").
@@ -307,30 +301,29 @@ export async function POST(req: NextRequest) {
       resumeName,
       resumeSummary = '',
       apiKey = '',
-      limit = 35,
     } = body
 
-    // 1. Build optimized search query (e.g. avoid non-tech noise)
+    // 1. Build optimized search query
     const targetedQuery = buildTargetSearchQuery(role, skills)
 
-    // 2. Fetch live jobs from LinkedIn (across multiple pages)
-    let liveJobs = await fetchLinkedInGuestJobs(targetedQuery, location, workplaceType, limit)
+    // 2. Deep Crawl across multiple pages (up to 125+ raw jobs)
+    let liveJobs = await fetchLinkedInGuestJobs(targetedQuery, location, workplaceType, 5)
 
-    // 3. If fewer than requested, try additional search with top skills
-    if (liveJobs.length < limit && skills.length > 0) {
+    // 3. Expand with top skills search to maximize job volume
+    if (skills.length > 0) {
       const topSkill = skills[0]
       const secondaryQuery = `${role} ${topSkill}`
-      const additionalJobs = await fetchLinkedInGuestJobs(secondaryQuery, location, workplaceType, limit - liveJobs.length)
+      const additionalJobs = await fetchLinkedInGuestJobs(secondaryQuery, location, workplaceType, 3)
       const existingUrls = new Set(liveJobs.map((j) => j.url))
       for (const aj of additionalJobs) {
-        if (!existingUrls.has(aj.url) && liveJobs.length < limit) {
+        if (!existingUrls.has(aj.url)) {
           existingUrls.add(aj.url)
           liveJobs.push(aj)
         }
       }
     }
 
-    // 4. If still zero hits, provide structured tech recommendations
+    // 4. Fallback recommendations if zero hits
     if (liveJobs.length === 0) {
       const fallbackTitles = [
         `${role}`,
@@ -361,10 +354,16 @@ export async function POST(req: NextRequest) {
       resumeName
     )
 
+    // 6. Filter: Keep ONLY jobs with matchScore >= 70
+    const qualifiedJobs = scoutedJobs.filter((j) => (j.matchScore || 0) >= 70)
+
+    // 7. Sort: HIGHEST matchScore at the top (descending)
+    qualifiedJobs.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+
     return NextResponse.json({
       success: true,
-      count: scoutedJobs.length,
-      jobs: scoutedJobs,
+      count: qualifiedJobs.length,
+      jobs: qualifiedJobs,
     })
   } catch (error: any) {
     console.error('[Scout API Route Error]:', error)

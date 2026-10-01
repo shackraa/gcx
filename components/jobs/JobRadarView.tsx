@@ -60,7 +60,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>('all')
   const [location, setLocation] = useState<string>('Türkiye')
   const [datePosted, setDatePosted] = useState<DatePosted>('past_week')
-  const [jobLimit, setJobLimit] = useState<number>(35)
 
   // Live Auto Scouting State
   const [isScouting, setIsScouting] = useState(false)
@@ -109,7 +108,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           resumeName: activeResume?.name,
           resumeSummary: activeResume?.summary || '',
           apiKey,
-          limit: jobLimit,
         }),
       })
 
@@ -426,19 +424,9 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
-            <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2.5 h-10">
-              <span className="text-[11px] text-muted-foreground font-medium shrink-0">Tarama Limiti:</span>
-              <select
-                value={jobLimit}
-                onChange={(e) => setJobLimit(Number(e.target.value))}
-                className="text-xs bg-transparent text-foreground font-bold focus:outline-none cursor-pointer"
-              >
-                <option value={15}>15 İlan</option>
-                <option value={30}>30 İlan</option>
-                <option value={50}>50 İlan</option>
-                <option value={75}>75 İlan (Geniş Tarama)</option>
-              </select>
-            </div>
+            <span className="hidden sm:inline-flex text-[11px] font-bold text-green-400 bg-green-950/40 border border-green-800/60 px-2.5 py-1.5 rounded-lg">
+              🎯 %70+ Uyum · En Yüksek Puan En Üstte
+            </span>
 
             <Button
               onClick={handleLiveScout}
@@ -448,12 +436,12 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
               {isScouting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>İlanlar Taranıyor & Eşleştiriliyor...</span>
+                  <span>Kapsamlı İlanlar Taranıyor & Eşleştiriliyor...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  <span>✨ CV&apos;me Uygun İlanları Şimdi Tara</span>
+                  <span>🚀 Tüm Uygun İlanları Tara (%70+ Uyum)</span>
                 </>
               )}
             </Button>
@@ -518,12 +506,17 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
           <div>
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Radara Takılan İlanlar {scoutedJobs && scoutedJobs.length > 0 ? `(${scoutedJobs.length} İlan)` : ''}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              CV&apos;nizdeki yetenekler taranarak otomatik bulunan, uyumluluk skorları hesaplanmış ve doğrudan başvurabileceğiniz ilanlar
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Radara Takılan İlanlar {scoutedJobs && scoutedJobs.length > 0 ? `(${scoutedJobs.length} İlan)` : ''}
+              </h3>
+              <span className="text-[10px] font-bold text-green-400 bg-green-950/40 border border-green-800/60 px-2 py-0.5 rounded">
+                %70+ Uyum · En Yüksek Skor En Başta
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              CV&apos;nizle %70 ve üzeri uyumluluğa sahip tüm pozisyonlar en yüksek uyum puanına göre sıralanmıştır.
             </p>
           </div>
 

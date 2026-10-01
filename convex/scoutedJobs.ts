@@ -2,18 +2,21 @@ import { mutation, query } from './_generated/server'
 import { v } from 'convex/values'
 import { getAuthUserId } from '@convex-dev/auth/server'
 
-// Get all scouted jobs for user
+// Get all scouted jobs for user (Sorted by highest match score, >= 70%)
 export const list = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx)
     if (!userId) return []
 
-    return await ctx.db
+    const jobs = await ctx.db
       .query('scoutedJobs')
       .withIndex('by_user', (q) => q.eq('userId', userId))
-      .order('desc')
       .collect()
+
+    return jobs
+      .filter((j) => (j.matchScore || 0) >= 70)
+      .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
   },
 })
 
