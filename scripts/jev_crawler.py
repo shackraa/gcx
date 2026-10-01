@@ -30,12 +30,12 @@ except ImportError:
 CONVEX_URL = os.getenv("NEXT_PUBLIC_CONVEX_URL", "https://merry-cormorant-77.convex.cloud")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-def fetch_linkedin_public_jobs(keyword: str, location: str = "Turkey", workplace: str = "all", limit: int = 10):
+def fetch_linkedin_public_jobs(keyword: str, location: str = "Turkey", workplace: str = "all", limit: int = 30):
     """
     LinkedIn açık iş ilanları API endpoint'ini sorgulayarak güncel ilanları çeker.
     Giriş yapma zorunluluğu olmadan en güncel ilanları listeler.
     """
-    print(f"\n[jev-bot] 🔍 LinkedIn taranıyor: '{keyword}' - Konum: '{location}' - Model: '{workplace}'")
+    print(f"\n[jev-bot] 🔍 LinkedIn taranıyor: '{keyword}' - Konum: '{location}' - Model: '{workplace}' - Hedef: {limit} İlan")
     
     encoded_kw = quote_plus(keyword)
     encoded_loc = quote_plus(location)
@@ -49,41 +49,60 @@ def fetch_linkedin_public_jobs(keyword: str, location: str = "Turkey", workplace
     elif workplace == "hybrid":
         f_wt = "&f_WT=3"
         
-    url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded_kw}&location={encoded_loc}{f_wt}&start=0"
-    
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     
     jobs = []
-    try:
-        resp = requests.get(url, headers=headers, timeout=15)
-        if resp.status_code == 200 and BeautifulSoup:
-            soup = BeautifulSoup(resp.text, "html.parser")
-            cards = soup.find_all("li")
-            
-            for card in cards[:limit]:
-                title_elem = card.find("h3", class_="base-search-card__title")
-                company_elem = card.find("h4", class_="base-search-card__subtitle")
-                loc_elem = card.find("span", class_="job-search-card__location")
-                link_elem = card.find("a", class_="base-card__full-link")
+    seen_urls = set()
+    pages = max(1, (limit + 24) // 25)
+
+    for p in range(pages):
+        if len(jobs) >= limit:
+            break
+        start = p * 25
+        url = f"https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords={encoded_kw}&location={encoded_loc}{f_wt}&start={start}"
+        
+        try:
+            resp = requests.get(url, headers=headers, timeout=15)
+            if resp.status_code == 200 and BeautifulSoup:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                cards = soup.find_all("li")
+                if not cards:
+                    break
                 
-                if title_elem and company_elem:
-                    title = title_elem.get_text(strip=True)
-                    company = company_elem.get_text(strip=True)
-                    loc = loc_elem.get_text(strip=True) if loc_elem else location
-                    link = link_elem["href"] if link_elem and "href" in link_elem.attrs else ""
+                for card in cards:
+                    if len(jobs) >= limit:
+                        break
+                    title_elem = card.find("h3", class_="base-search-card__title")
+                    company_elem = card.find("h4", class_="base-search-card__subtitle")
+                    loc_elem = card.find("span", class_="job-search-card__location")
+                    link_elem = card.find("a", class_="base-card__full-link")
                     
-                    jobs.append({
-                        "title": title,
-                        "company": company,
-                        "location": loc,
-                        "workplaceType": workplace if workplace != "all" else ("remote" if "remote" in title.lower() or "uzaktan" in title.lower() else "onsite"),
-                        "url": link.split("?")[0] if link else f"https://www.linkedin.com/jobs/search/?keywords={encoded_kw}",
-                        "source": "linkedin"
-                    })
-    except Exception as e:
-        print(f"[jev-bot] Hata oluştu: {e}")
+                    if title_elem and company_elem:
+                        title = title_elem.get_text(strip=True)
+                        company = company_elem.get_text(strip=True)
+                        loc = loc_elem.get_text(strip=True) if loc_elem else location
+                        link = link_elem["href"] if link_elem and "href" in link_elem.attrs else ""
+                        clean_url = link.split("?")[0] if link else f"https://www.linkedin.com/jobs/search/?keywords={encoded_kw}"
+                        
+                        if clean_url in seen_urls:
+                            continue
+                        seen_urls.add(clean_url)
+
+                        jobs.append({
+                            "title": title,
+                            "company": company,
+                            "location": loc,
+                            "workplaceType": workplace if workplace != "all" else ("remote" if "remote" in title.lower() or "uzaktan" in title.lower() else "onsite"),
+                            "url": clean_url,
+                            "source": "linkedin"
+                        })
+            else:
+                break
+        except Exception as e:
+            print(f"[jev-bot] Hata oluştu: {e}")
+            break
         
     print(f"[jev-bot]  {len(jobs)} adet LinkedIn ilanı bulundu!")
     return jobs

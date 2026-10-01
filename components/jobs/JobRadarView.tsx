@@ -60,6 +60,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>('all')
   const [location, setLocation] = useState<string>('Türkiye')
   const [datePosted, setDatePosted] = useState<DatePosted>('past_week')
+  const [jobLimit, setJobLimit] = useState<number>(35)
 
   // Live Auto Scouting State
   const [isScouting, setIsScouting] = useState(false)
@@ -108,7 +109,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           resumeName: activeResume?.name,
           resumeSummary: activeResume?.summary || '',
           apiKey,
-          limit: 8,
+          limit: jobLimit,
         }),
       })
 
@@ -424,23 +425,39 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             </span>
           </div>
 
-          <Button
-            onClick={handleLiveScout}
-            disabled={isScouting || resumes.length === 0}
-            className="h-10 px-5 text-xs font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all self-stretch sm:self-auto shrink-0"
-          >
-            {isScouting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>İlanlar Taranıyor & Eşleştiriliyor...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                <span>✨ CV&apos;me Uygun İlanları Şimdi Tara</span>
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
+            <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2.5 h-10">
+              <span className="text-[11px] text-muted-foreground font-medium shrink-0">Tarama Limiti:</span>
+              <select
+                value={jobLimit}
+                onChange={(e) => setJobLimit(Number(e.target.value))}
+                className="text-xs bg-transparent text-foreground font-bold focus:outline-none cursor-pointer"
+              >
+                <option value={15}>15 İlan</option>
+                <option value={30}>30 İlan</option>
+                <option value={50}>50 İlan</option>
+                <option value={75}>75 İlan (Geniş Tarama)</option>
+              </select>
+            </div>
+
+            <Button
+              onClick={handleLiveScout}
+              disabled={isScouting || resumes.length === 0}
+              className="h-10 px-5 text-xs font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all flex-1 sm:flex-initial"
+            >
+              {isScouting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>İlanlar Taranıyor & Eşleştiriliyor...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  <span>✨ CV&apos;me Uygun İlanları Şimdi Tara</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 

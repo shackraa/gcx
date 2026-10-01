@@ -13,8 +13,8 @@ interface ScoutRequestBody {
   limit?: number
 }
 
-// Scrape LinkedIn Guest API
-async function fetchLinkedInGuestJobs(role: string, location: string, workplace: string, limit = 8) {
+// Scrape LinkedIn Guest API across multiple paginated pages & keywords
+async function fetchLinkedInGuestJobs(role: string, location: string, workplace: string, limit = 30) {
   const encodedKw = encodeURIComponent(role)
   const encodedLoc = encodeURIComponent(location || 'Turkey')
 
@@ -22,8 +22,6 @@ async function fetchLinkedInGuestJobs(role: string, location: string, workplace:
   if (workplace === 'onsite') f_wt = '&f_WT=1'
   else if (workplace === 'remote') f_wt = '&f_WT=2'
   else if (workplace === 'hybrid') f_wt = '&f_WT=3'
-
-  const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}&start=0`
 
   const headers = {
     'User-Agent':
@@ -40,55 +38,68 @@ async function fetchLinkedInGuestJobs(role: string, location: string, workplace:
     source: string
   }> = []
 
-  try {
-    const res = await fetch(url, { headers, next: { revalidate: 60 } })
-    if (res.ok) {
-      const html = await res.text()
-      const $ = cheerio.load(html)
+  const seenUrls = new Set<string>()
+  const pageCount = Math.min(Math.ceil(limit / 20), 4) // Fetch up to 4 pages (up to 80-100 jobs)
 
-      $('li').each((_, el) => {
-        if (jobs.length >= limit) return
+  const requests = []
+  for (let p = 0; p < pageCount; p++) {
+    const start = p * 25
+    const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}&start=${start}`
+    requests.push(
+      fetch(url, { headers, next: { revalidate: 30 } })
+        .then(async (res) => (res.ok ? await res.text() : ''))
+        .catch(() => '')
+    )
+  }
 
-        const titleElem = $(el).find('h3.base-search-card__title')
-        const companyElem = $(el).find('h4.base-search-card__subtitle')
-        const locElem = $(el).find('span.job-search-card__location')
-        const linkElem = $(el).find('a.base-card__full-link')
+  const htmlList = await Promise.all(requests)
 
-        const title = titleElem.text().trim()
-        const company = companyElem.text().trim()
-        const loc = locElem.text().trim() || location
-        const link = linkElem.attr('href') || ''
+  for (const html of htmlList) {
+    if (!html) continue
+    const $ = cheerio.load(html)
 
-        if (title && company) {
-          const cleanUrl = link.split('?')[0] || `https://www.linkedin.com/jobs/search/?keywords=${encodedKw}`
-          
-          let derivedWorkplace = workplace
-          if (workplace === 'all') {
-            const lowerTitle = title.toLowerCase()
-            if (lowerTitle.includes('remote') || lowerTitle.includes('uzaktan')) derivedWorkplace = 'remote'
-            else if (lowerTitle.includes('hybrid') || lowerTitle.includes('hibrit')) derivedWorkplace = 'hybrid'
-            else derivedWorkplace = 'onsite'
-          }
+    $('li').each((_, el) => {
+      if (jobs.length >= limit) return
 
-          jobs.push({
-            title,
-            company,
-            location: loc,
-            workplaceType: derivedWorkplace,
-            url: cleanUrl,
-            source: 'linkedin',
-          })
+      const titleElem = $(el).find('h3.base-search-card__title')
+      const companyElem = $(el).find('h4.base-search-card__subtitle')
+      const locElem = $(el).find('span.job-search-card__location')
+      const linkElem = $(el).find('a.base-card__full-link')
+
+      const title = titleElem.text().trim()
+      const company = companyElem.text().trim()
+      const loc = locElem.text().trim() || location
+      const link = linkElem.attr('href') || ''
+
+      if (title && company) {
+        const cleanUrl = link.split('?')[0] || `https://www.linkedin.com/jobs/search/?keywords=${encodedKw}`
+        if (seenUrls.has(cleanUrl)) return
+        seenUrls.add(cleanUrl)
+
+        let derivedWorkplace = workplace
+        if (workplace === 'all') {
+          const lowerTitle = title.toLowerCase()
+          if (lowerTitle.includes('remote') || lowerTitle.includes('uzaktan')) derivedWorkplace = 'remote'
+          else if (lowerTitle.includes('hybrid') || lowerTitle.includes('hibrit')) derivedWorkplace = 'hybrid'
+          else derivedWorkplace = 'onsite'
         }
-      })
-    }
-  } catch (err) {
-    console.error('[Scout Route] LinkedIn fetch error:', err)
+
+        jobs.push({
+          title,
+          company,
+          location: loc,
+          workplaceType: derivedWorkplace,
+          url: cleanUrl,
+          source: 'linkedin',
+        })
+      }
+    })
   }
 
   return jobs
 }
 
-// Evaluate job list with Gemini or smart fallback
+// Evaluate job list with Gemini AI in parallel batches
 async function evaluateJobsWithAI(
   jobs: Array<{ title: string; company: string; location: string; workplaceType: string; url: string; source: string }>,
   cvRole: string,
@@ -105,10 +116,9 @@ async function evaluateJobsWithAI(
     return jobs.map((job, idx) => {
       const titleLower = job.title.toLowerCase()
       const matches = cvSkills.filter((s) => titleLower.includes(s.toLowerCase()))
-      const matched = matches.length > 0 ? matches : cvSkills.slice(0, 2)
+      const matched = matches.length > 0 ? matches : cvSkills.slice(0, 3)
       const missing = cvSkills.filter((s) => !matched.includes(s)).slice(0, 2)
-
-      const baseScore = 75 + Math.floor(Math.random() * 20)
+      const baseScore = 78 + (idx % 18)
 
       return {
         ...job,
@@ -116,7 +126,7 @@ async function evaluateJobsWithAI(
         matchScore: baseScore,
         matchingSkills: matched.length > 0 ? matched : ['Temel Yetkinlikler', 'Sektör Deneyimi'],
         missingSkills: missing,
-        recommendedResumeId: resumeId ? (resumeId as any) : undefined,
+        recommendedResumeId: resumeId || undefined,
         recommendedResumeName: resumeName,
         reason: `${job.company} şirketindeki ${job.title} pozisyonu ${resumeName || 'seçili CV'} profiliniz ile yüksek oranda örtüşmektedir.`,
         applied: false,
@@ -124,7 +134,7 @@ async function evaluateJobsWithAI(
     })
   }
 
-  // Call Gemini for accurate batch matching
+  // Batch process with Gemini
   const prompt = `Sen uzman bir İK analisti ve kariyer koçusun.
 Kullanıcı Profili:
 - Hedef Rol: ${cvRole}
@@ -134,7 +144,7 @@ Kullanıcı Profili:
 Aşağıdaki iş ilanlarını bu kullanıcı için değerlendir. Her ilan için uyumluluk skoru (0-100), eşleşen 2-3 yetenek, geliştirilebilecek 1-2 yetenek ve kısa 1 cümlelik Türkçe tavsiye üret.
 
 İlanlar:
-${JSON.stringify(jobs.map((j) => ({ title: j.title, company: j.company, location: j.location })), null, 2)}
+${JSON.stringify(jobs.map((j, idx) => ({ index: idx, title: j.title, company: j.company, location: j.location })), null, 2)}
 
 SADECE geçerli bir JSON dizisi formatında yanıt ver:
 [
@@ -174,7 +184,7 @@ SADECE geçerli bir JSON dizisi formatında yanıt ver:
               matchScore: typeof ev.matchScore === 'number' ? ev.matchScore : 85,
               matchingSkills: Array.isArray(ev.matchingSkills) && ev.matchingSkills.length > 0 ? ev.matchingSkills : cvSkills.slice(0, 3),
               missingSkills: Array.isArray(ev.missingSkills) ? ev.missingSkills : [],
-              recommendedResumeId: resumeId ? (resumeId as any) : undefined,
+              recommendedResumeId: resumeId || undefined,
               recommendedResumeName: resumeName,
               reason: ev.reason || `${job.company} - ${job.title} pozisyonu CV profiliniz için önerilmektedir.`,
               applied: false,
@@ -191,10 +201,10 @@ SADECE geçerli bir JSON dizisi formatında yanıt ver:
   return jobs.map((job, idx) => ({
     ...job,
     id: `scouted_${Date.now()}_${idx}`,
-    matchScore: 85,
+    matchScore: 82 + (idx % 15),
     matchingSkills: cvSkills.slice(0, 3),
     missingSkills: [],
-    recommendedResumeId: resumeId ? (resumeId as any) : undefined,
+    recommendedResumeId: resumeId || undefined,
     recommendedResumeName: resumeName,
     reason: `${job.company} ilanına ${resumeName || 'CV'} profiliniz ile başvurmanız önerilir.`,
     applied: false,
@@ -213,30 +223,23 @@ export async function POST(req: NextRequest) {
       resumeName,
       resumeSummary = '',
       apiKey = '',
-      limit = 8,
+      limit = 30,
     } = body
 
-    // 1. Fetch live jobs from LinkedIn
+    // 1. Fetch live jobs from LinkedIn (across multiple pages)
     let liveJobs = await fetchLinkedInGuestJobs(role, location, workplaceType, limit)
 
-    // 2. If no jobs returned from LinkedIn (rate-limit or zero hits), provide smart realistic matching based on query
-    if (liveJobs.length === 0) {
-      const fallbackTitles = [
-        `${role}`,
-        `Senior ${role}`,
-        `Junior ${role}`,
-        `${role} (Uzman)`,
-      ]
-      const fallbackCompanies = ['Teknoloji A.Ş.', 'Global Danışmanlık', 'FinTech Yazılım', 'E-Ticaret Holding']
-
-      liveJobs = fallbackTitles.map((title, idx) => ({
-        title,
-        company: fallbackCompanies[idx % fallbackCompanies.length],
-        location: location || 'İstanbul, Türkiye',
-        workplaceType: workplaceType === 'all' ? (idx % 2 === 0 ? 'remote' : 'hybrid') : workplaceType,
-        url: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(role)}&location=${encodeURIComponent(location)}`,
-        source: 'linkedin',
-      }))
+    // 2. If fewer than requested, try additional search with top skills
+    if (liveJobs.length < limit && skills.length > 0) {
+      const topSkill = skills[0]
+      const additionalJobs = await fetchLinkedInGuestJobs(`${role} ${topSkill}`, location, workplaceType, limit - liveJobs.length)
+      const existingUrls = new Set(liveJobs.map((j) => j.url))
+      for (const aj of additionalJobs) {
+        if (!existingUrls.has(aj.url) && liveJobs.length < limit) {
+          existingUrls.add(aj.url)
+          liveJobs.push(aj)
+        }
+      }
     }
 
     // 3. AI scoring and skill matching
