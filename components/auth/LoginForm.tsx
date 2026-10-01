@@ -20,7 +20,7 @@ export function LoginForm() {
     setLoading(true)
     try {
       if (authActions?.signIn) {
-        await authActions.signIn(provider)
+        await authActions.signIn(provider, { redirectTo: '/dashboard' })
       }
     } catch {
       toast({ title: 'Giriş başarısız', variant: 'destructive' })
