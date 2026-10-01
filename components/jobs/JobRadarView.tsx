@@ -54,6 +54,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const importBulkScoutedMutation = useMutation(api.scoutedJobs.importBulk)
   const convertScoutedMutation = useMutation(api.scoutedJobs.convertToApplication)
   const removeScoutedMutation = useMutation(api.scoutedJobs.remove)
+  const clearAllScoutedMutation = useMutation(api.scoutedJobs.clearAll)
 
   // Filter States
   const [selectedResumeId, setSelectedResumeId] = useState<string>('all')
@@ -521,16 +522,31 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           </div>
 
           {scoutedJobs && scoutedJobs.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleLiveScout}
-              disabled={isScouting}
-              className="h-8 text-xs gap-1.5 border-primary/30 text-primary self-start sm:self-auto"
-            >
-              {isScouting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              <span>Yeniden Tara</span>
-            </Button>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  await clearAllScoutedMutation()
+                  toast({ title: 'Radar Temizlendi', description: 'Tüm taranan ilanlar sıfırlandı.' })
+                }}
+                className="h-8 text-xs gap-1.5 border-border text-muted-foreground hover:text-red-400 hover:border-red-900/50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Radarı Temizle</span>
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleLiveScout}
+                disabled={isScouting}
+                className="h-8 text-xs gap-1.5 border-primary/30 text-primary"
+              >
+                {isScouting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                <span>Yeniden Tara</span>
+              </Button>
+            </div>
           )}
         </div>
 

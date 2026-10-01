@@ -161,3 +161,23 @@ export const remove = mutation({
     await ctx.db.delete(args.id)
   },
 })
+
+// Clear all scouted jobs for current user
+export const clearAll = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Unauthenticated')
+
+    const jobs = await ctx.db
+      .query('scoutedJobs')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .collect()
+
+    for (const job of jobs) {
+      await ctx.db.delete(job._id)
+    }
+
+    return { count: jobs.length }
+  },
+})

@@ -12,7 +12,7 @@ interface ScoutRequestBody {
   apiKey?: string
 }
 
-// Non-tech noise keywords to filter out when searching for software / tech / AI / product roles
+// Strict exclusions for non-tech domains
 const NON_TECH_EXCLUSIONS = [
   'dokuma',
   'tekstil',
@@ -28,26 +28,65 @@ const NON_TECH_EXCLUSIONS = [
   'sevkiyat',
   'kaynakçı',
   'torna',
+  'kredi kartları',
+  'kredi tahsis',
+  'bireysel bankacılık',
+  'şube',
+  'gişe',
+  'mevduat',
+  'kart operasyon',
+  'kart aktivasyon',
+  'iş birlikleri uzmanı',
+  'aerospace application',
+  'teknik servis uzmanı',
+  'teknik servis elemanı',
+  'saha servis',
+  'satış temsilcisi',
+  'satış danışmanı',
+  'mağaza müdürü',
+  'kategori yöneticisi - gıda',
+  'dokuma uzmanı',
+  'havacılık mekanik',
 ]
 
-// Build search query that targets relevant tech & domain context
+// Build high-precision domain search queries
 function buildTargetSearchQuery(role: string, skills: string[]): string {
   const cleanRole = role.trim().replace(/^(uzman|specialist|engineer|mühendis)$/gi, 'Software Engineer')
-  const techKeywords = skills.filter((s) => s.length > 1).slice(0, 3)
-  
-  const lowerRole = cleanRole.toLowerCase()
-  if (lowerRole.includes('product') && !lowerRole.includes('software') && !lowerRole.includes('ai') && !lowerRole.includes('tech')) {
-    return `${cleanRole} Software OR Tech OR AI`
+  const lower = cleanRole.toLowerCase()
+
+  if (lower.includes('product') && lower.includes('ai')) {
+    return '("AI Engineer" OR "Product Engineer" OR "AI Product" OR "Product Owner AI" OR "Machine Learning")'
   }
-  
-  if (lowerRole === 'specialist' || lowerRole === 'uzman' || lowerRole === 'analist') {
+
+  if (lower.includes('product') || lower.includes('ürün')) {
+    return '("Product Manager" OR "Product Engineer" OR "Technical Product" OR "Product Owner") AND (Software OR Tech OR Yazılım OR AI)'
+  }
+
+  if (lower.includes('ai') || lower.includes('yapay zeka') || lower.includes('ml')) {
+    return '("AI Engineer" OR "Machine Learning" OR "Yapay Zeka" OR "AI Developer" OR "LLM")'
+  }
+
+  if (lower.includes('data') || lower.includes('veri')) {
+    return '("Data Engineer" OR "Data Scientist" OR "Veri Analisti" OR "Data Analyst")'
+  }
+
+  if (lower.includes('frontend') || lower.includes('react')) {
+    return '("Frontend Developer" OR "React Developer" OR "Front-End Engineer")'
+  }
+
+  if (lower.includes('backend') || lower.includes('python') || lower.includes('node')) {
+    return '("Backend Developer" OR "Python Developer" OR "Software Engineer")'
+  }
+
+  const techKeywords = skills.filter((s) => s.length > 1).slice(0, 3)
+  if (lower === 'specialist' || lower === 'uzman' || lower === 'analist') {
     return `${techKeywords[0] || 'Software'} ${cleanRole}`
   }
 
   return cleanRole
 }
 
-// Scrape LinkedIn Guest API across multiple paginated pages (up to 150+ raw postings)
+// Scrape LinkedIn Guest API across multiple paginated pages
 async function fetchLinkedInGuestJobs(searchQuery: string, location: string, workplace: string, maxPages = 5) {
   const encodedKw = encodeURIComponent(searchQuery)
   const encodedLoc = encodeURIComponent(location || 'Turkey')
@@ -153,9 +192,13 @@ function evaluateJobHeuristic(
 
   for (const s of cvSkills) {
     const sLower = s.toLowerCase()
-    if (titleLower.includes(sLower) || (titleLower.includes('developer') && ['react', 'python', 'javascript', 'sql', 'typescript'].includes(sLower))) {
+    if (titleLower.includes(sLower)) {
+      matchedSkills.push(s)
+    } else if (titleLower.includes('developer') && ['react', 'python', 'javascript', 'sql', 'typescript'].includes(sLower)) {
       matchedSkills.push(s)
     } else if (titleLower.includes('product') && ['ürün yönetimi', 'product management', 'agile', 'scrum', 'ai', 'sql'].includes(sLower)) {
+      matchedSkills.push(s)
+    } else if (titleLower.includes('ai') && ['ai', 'python', 'machine learning', 'yapay zeka', 'llm', 'fastapi'].includes(sLower)) {
       matchedSkills.push(s)
     } else if (titleLower.includes('data') && ['sql', 'python', 'power bi', 'etl', 'veri'].includes(sLower)) {
       matchedSkills.push(s)
@@ -164,20 +207,28 @@ function evaluateJobHeuristic(
 
   // Calculate score based on role alignment and skills
   let score = 72
-  if (titleLower.includes(cvRoleLower) || cvRoleLower.includes(titleLower)) {
+  if (titleLower.includes('ai') && cvRoleLower.includes('ai')) {
     score += 18
-  } else if (titleLower.includes('senior') && cvRoleLower.includes('senior')) {
-    score += 8
-  } else if (matchedSkills.length >= 2) {
-    score += 14
+  } else if (titleLower.includes('product') && cvRoleLower.includes('product')) {
+    score += 15
+  } else if (titleLower.includes(cvRoleLower) || cvRoleLower.includes(titleLower)) {
+    score += 16
+  }
+
+  if (titleLower.includes('senior') && cvRoleLower.includes('senior')) {
+    score += 6
+  }
+
+  if (matchedSkills.length >= 2) {
+    score += 10
   } else if (matchedSkills.length === 1) {
-    score += 8
+    score += 5
   }
 
   // Add slight natural variance
-  score = Math.min(97, Math.max(70, score + (idx % 8)))
+  score = Math.min(97, Math.max(70, score + (idx % 6)))
 
-  const finalMatched = matchedSkills.length > 0 ? matchedSkills.slice(0, 3) : cvSkills.slice(0, 2)
+  const finalMatched = matchedSkills.length > 0 ? matchedSkills.slice(0, 3) : (cvSkills.slice(0, 2))
   const remaining = cvSkills.filter((s) => !finalMatched.includes(s))
   if (remaining.length > 0) {
     missingSkills.push(remaining[0])
@@ -191,7 +242,7 @@ function evaluateJobHeuristic(
     missingSkills,
     recommendedResumeId: resumeId || undefined,
     recommendedResumeName: resumeName,
-    reason: `${job.company} şirketindeki ${job.title} pozisyonu ${finalMatched.join(', ')} yetkinlikleriniz ile uyumludur.`,
+    reason: `${job.company} şirketindeki ${job.title} pozisyonu ${finalMatched.join(', ')} yetkinlikleriniz ile doğrudan örtüşmektedir.`,
     applied: false,
   }
 }
@@ -220,10 +271,13 @@ Kullanıcı CV Profili:
 - CV Özeti: ${cvSummary || 'Teknik ve profesyonel profil'}
 
 Aşağıda taranan ${jobs.length} adet iş ilanı bulunmaktadır. Her ilan için:
-1. matchScore: Bu ilanın kullanıcının CV'si ile GERÇEK uyum yüzdesi (0-100). Eğer ilan çok uyumluysa (%80-98), kısmen uyumluysa (%70-79), alakasızsa (<%65) ver.
+1. matchScore: Bu ilanın kullanıcının CV'si ile GERÇEK uyum yüzdesi (0-100).
+   - Eğer pozisyon doğrudan AI, Yazılım, Veri, Ürün Geliştirme (Tech/SaaS) ise: %80 - %98 ver.
+   - Eğer kısmen ilgiliyse: %70 - %79 ver.
+   - Eğer bankacılık kredi kartı kampanya, havacılık mekanik montaj, tekstil, saha satış gibi alakasız sektörse: <%50 ver.
 2. matchingSkills: İlanda aranan ve kullanıcının CV'sinde OLAN yetenekler (En fazla 3 adet).
 3. missingSkills: İlanda gerekebilecek ama CV'de öne çıkmayan yetenekler (En fazla 2 adet).
-4. reason: 1 cümlelik Türkçe spesifik gerekçe (örn: "X şirketindeki Y pozisyonu React ve TypeScript deneyiminiz ile tam örtüşmektedir.").
+4. reason: 1 cümlelik Türkçe spesifik gerekçe (örn: "X şirketindeki Y pozisyonu AI entegrasyonu ve Python tecrübeniz ile tam örtüşmektedir.").
 
 İlan Listesi:
 ${JSON.stringify(jobs.map((j, i) => ({ index: i, title: j.title, company: j.company, location: j.location })), null, 2)}
@@ -309,24 +363,10 @@ export async function POST(req: NextRequest) {
     // 2. Deep Crawl across multiple pages (up to 125+ raw jobs)
     let liveJobs = await fetchLinkedInGuestJobs(targetedQuery, location, workplaceType, 5)
 
-    // 3. Expand with top skills search to maximize job volume
-    if (skills.length > 0) {
-      const topSkill = skills[0]
-      const secondaryQuery = `${role} ${topSkill}`
-      const additionalJobs = await fetchLinkedInGuestJobs(secondaryQuery, location, workplaceType, 3)
-      const existingUrls = new Set(liveJobs.map((j) => j.url))
-      for (const aj of additionalJobs) {
-        if (!existingUrls.has(aj.url)) {
-          existingUrls.add(aj.url)
-          liveJobs.push(aj)
-        }
-      }
-    }
-
-    // 4. Fallback recommendations if zero hits
+    // 3. Fallback recommendations if zero hits
     if (liveJobs.length === 0) {
       const fallbackTitles = [
-        `${role}`,
+        `AI & ${role}`,
         `Senior ${role}`,
         `Lead ${role}`,
         `${role} (AI & Cloud)`,
@@ -343,7 +383,7 @@ export async function POST(req: NextRequest) {
       }))
     }
 
-    // 5. Individual job-by-job AI evaluation
+    // 4. Individual job-by-job AI evaluation
     const scoutedJobs = await evaluateJobsWithAI(
       liveJobs,
       role,
@@ -354,10 +394,10 @@ export async function POST(req: NextRequest) {
       resumeName
     )
 
-    // 6. Filter: Keep ONLY jobs with matchScore >= 70
+    // 5. Filter: Keep ONLY jobs with matchScore >= 70
     const qualifiedJobs = scoutedJobs.filter((j) => (j.matchScore || 0) >= 70)
 
-    // 7. Sort: HIGHEST matchScore at the top (descending)
+    // 6. Sort: HIGHEST matchScore at the top (descending)
     qualifiedJobs.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
 
     return NextResponse.json({
