@@ -91,37 +91,73 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
       text: systemPrompt,
     })
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${activeApiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: parts,
-            },
-          ],
-          generationConfig: {
-            response_mime_type: 'application/json',
-            temperature: 0.1,
-          },
-        }),
-      }
-    )
+    const candidateModels = [
+      'gemini-2.5-flash',
+      'gemini-1.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro',
+    ]
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const errMsg = errorData?.error?.message || response.statusText
+    let response: Response | null = null
+    let lastError = 'Model isteği başarısız oldu'
+
+    for (const model of candidateModels) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  role: 'user',
+                  parts: parts,
+                },
+              ],
+              generationConfig: {
+                response_mime_type: 'application/json',
+                temperature: 0.1,
+              },
+            }),
+          }
+        )
+
+        if (res.ok) {
+          response = res
+          break
+        } else {
+          const errData = await res.json().catch(() => ({}))
+          lastError = errData?.error?.message || res.statusText
+          // If 404 (model not found), continue loop to try next model
+          if (res.status === 404 || lastError.includes('not found') || lastError.includes('no longer available')) {
+            continue
+          }
+          // If permission / invalid key or quota, return immediately
+          if (res.status === 400 || res.status === 403) {
+            return NextResponse.json(
+              {
+                error: 'GEMINI_ERROR',
+                message: `Gemini API Hatası: ${lastError}`,
+              },
+              { status: res.status }
+            )
+          }
+        }
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : 'Ağ hatası'
+      }
+    }
+
+    if (!response || !response.ok) {
       return NextResponse.json(
         {
           error: 'GEMINI_ERROR',
-          message: `Gemini API Hatası: ${errMsg}`,
+          message: `Gemini API Hatası: ${lastError}`,
         },
-        { status: response.status }
+        { status: 500 }
       )
     }
 
