@@ -7,6 +7,17 @@ interface ParseRequest {
   apiKey?: string
 }
 
+function normalizeMimeType(mime?: string): string {
+  if (!mime) return 'application/pdf'
+  const m = mime.toLowerCase()
+  if (m.includes('pdf')) return 'application/pdf'
+  if (m.includes('png')) return 'image/png'
+  if (m.includes('jpeg') || m.includes('jpg')) return 'image/jpeg'
+  if (m.includes('webp')) return 'image/webp'
+  if (m.includes('text') || m.includes('plain')) return 'text/plain'
+  return 'application/pdf'
+}
+
 function extractJsonFromResponse(text: string): Record<string, unknown> {
   // 1. Direct parse
   try {
@@ -43,9 +54,9 @@ function extractJsonFromResponse(text: string): Record<string, unknown> {
   return {
     name: 'CV Profili',
     category: 'Yapay Zeka & Veri',
-    targetRole: 'Yazılım / Veri Uzmanı',
-    skills: ['Python', 'SQL', 'Git', 'Veri Analizi', 'Problem Çözme'],
-    summary: text.slice(0, 350).trim() || 'CV başarıyla işlendi.',
+    targetRole: 'Veri & Yazılım Uzmanı',
+    skills: ['Python', 'SQL', 'Veri Analizi', 'Git', 'Problem Çözme'],
+    summary: text.slice(0, 350).trim() || 'CV başarıyla analiz edildi.',
     extractedText: text,
     strengths: ['Güçlü teknik temel', 'Deneyim çeşitliliği'],
     suggestedLinkedInQueries: ['("Data Engineer" OR "Software Developer") AND "Remote"'],
@@ -55,7 +66,7 @@ function extractJsonFromResponse(text: string): Record<string, unknown> {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ParseRequest
-    const { fileBase64, mimeType = 'application/pdf', rawText, apiKey } = body
+    const { fileBase64, mimeType, rawText, apiKey } = body
 
     const activeApiKey = apiKey?.trim() || process.env.GEMINI_API_KEY?.trim()
 
@@ -106,29 +117,26 @@ Sana verilen CV'yi (PDF veya metin) detaylıca incele ve aşağıdaki JSON forma
 
 DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
 
-    // Construct parts payload
-    const parts: unknown[] = []
+    // Construct user content parts
+    const userParts: unknown[] = []
 
     if (fileBase64) {
-      parts.push({
+      userParts.push({
         inlineData: {
-          mimeType: mimeType || 'application/pdf',
+          mimeType: normalizeMimeType(mimeType),
           data: fileBase64,
         },
       })
-    }
-
-    if (rawText) {
-      parts.push({
-        text: `CV Metni:\n\n${rawText}`,
+      userParts.push({
+        text: 'Bu CV dosyasını incele ve belirtilen şemada Türkçe JSON olarak yapılandırılmış analizi çıkar.',
+      })
+    } else if (rawText) {
+      userParts.push({
+        text: `CV Metni:\n\n${rawText}\n\nBu CV metnini incele ve belirtilen şemada Türkçe JSON olarak yapılandırılmış analizi çıkar.`,
       })
     }
 
-    parts.push({
-      text: systemPrompt,
-    })
-
-    // Try fast models with strict timeout
+    // Try fast standard models
     const candidateModels = [
       'gemini-1.5-flash',
       'gemini-1.5-flash-latest',
@@ -142,7 +150,7 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
     for (const model of candidateModels) {
       try {
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s max per model
+        const timeoutId = setTimeout(() => controller.abort(), 20000)
 
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`,
@@ -153,13 +161,17 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
             },
             signal: controller.signal,
             body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: systemPrompt }],
+              },
               contents: [
                 {
                   role: 'user',
-                  parts: parts,
+                  parts: userParts,
                 },
               ],
               generationConfig: {
+                response_mime_type: 'application/json',
                 temperature: 0.1,
               },
             }),
@@ -172,12 +184,14 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
           const data = await res.json()
           const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text
           if (txt) {
+            console.log(`[Parse-CV] Success with model: ${model}`)
             rawResponseText = txt
             break
           }
         } else {
           const errData = await res.json().catch(() => ({}))
           lastError = errData?.error?.message || res.statusText
+          console.error(`[Parse-CV] Model ${model} failed:`, lastError)
 
           if (res.status === 400 && (lastError.includes('API_KEY_INVALID') || lastError.includes('API key not valid'))) {
             return NextResponse.json(
@@ -191,10 +205,12 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
         }
       } catch (err) {
         lastError = err instanceof Error ? err.message : 'Ağ zaman aşımı'
+        console.error(`[Parse-CV] Exception for model ${model}:`, lastError)
       }
     }
 
     if (!rawResponseText) {
+      console.error('[Parse-CV] All models failed. Last error:', lastError)
       return NextResponse.json(
         {
           error: 'GEMINI_ERROR',

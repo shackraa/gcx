@@ -176,11 +176,12 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       ? { fileBase64: selectedFile.base64, mimeType: selectedFile.mimeType }
       : {}
 
+    const activeKey = apiKey || (typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : '')
     const rawTextValue = watch('rawText')
     const reqPayload = {
       ...filePayload,
       rawText: overridePayload?.rawText || rawTextValue || undefined,
-      apiKey: apiKey || undefined,
+      apiKey: activeKey || undefined,
     }
 
     if (!reqPayload.fileBase64 && !reqPayload.rawText?.trim()) {
