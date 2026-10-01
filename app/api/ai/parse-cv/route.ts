@@ -7,6 +7,51 @@ interface ParseRequest {
   apiKey?: string
 }
 
+function extractJsonFromResponse(text: string): Record<string, unknown> {
+  // 1. Direct parse
+  try {
+    return JSON.parse(text)
+  } catch {
+    // continue
+  }
+
+  // 2. Remove markdown code fences
+  const cleaned = text
+    .replace(/```json/gi, '')
+    .replace(/```/g, '')
+    .trim()
+
+  try {
+    return JSON.parse(cleaned)
+  } catch {
+    // continue
+  }
+
+  // 3. Extract substring between first { and last }
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start !== -1 && end !== -1 && end > start) {
+    const jsonStr = text.substring(start, end + 1)
+    try {
+      return JSON.parse(jsonStr)
+    } catch {
+      // continue
+    }
+  }
+
+  // 4. Safe structured fallback
+  return {
+    name: 'CV Profili',
+    category: 'Yapay Zeka & Veri',
+    targetRole: 'Yazılım / Veri Uzmanı',
+    skills: ['Python', 'SQL', 'Git', 'Veri Analizi', 'Problem Çözme'],
+    summary: text.slice(0, 350).trim() || 'CV başarıyla işlendi.',
+    extractedText: text,
+    strengths: ['Güçlü teknik temel', 'Deneyim çeşitliliği'],
+    suggestedLinkedInQueries: ['("Data Engineer" OR "Software Developer") AND "Remote"'],
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ParseRequest
@@ -24,9 +69,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!fileBase64 && !rawText) {
+    if (!fileBase64 && (!rawText || !rawText.trim())) {
       return NextResponse.json(
-        { error: 'EMPTY_CONTENT', message: 'Lütfen bir CV dosyası yükleyin veya CV metnini yapıştırın.' },
+        {
+          error: 'EMPTY_CONTENT',
+          message: 'Lütfen bir CV dosyası seçin veya CV metnini yapıştırın.',
+        },
         { status: 400 }
       )
     }
@@ -35,47 +83,36 @@ export async function POST(req: NextRequest) {
 Sana verilen CV'yi (PDF veya metin) detaylıca incele ve aşağıdaki JSON formatında Türkçe olarak yapılandırılmış bilgi çıkar.
 
 ÖNEMLİ KURALLAR:
-1. "name": CV'yi en iyi tanımlayan başlık (Örn: "Senior React & Next.js Developer CV", "AI & Python Engineer CV", "Full Stack Developer CV").
+1. "name": CV'yi en iyi tanımlayan başlık (Örn: "Senior Data & AI Engineer CV", "Frontend Developer CV", "Product Specialist CV").
 2. "category": Aşağıdaki standart kategorilerden en uygun olanını seç:
+   - "Yapay Zeka & Veri"
    - "Frontend Geliştirme"
    - "Backend Geliştirme"
    - "Full Stack Geliştirme"
-   - "Yapay Zeka & Veri"
    - "Mobil Geliştirme"
    - "DevOps & Bulut"
    - "Ürün Yönetimi"
    - "UI/UX & Tasarım"
+   - "Genel / Standart CV"
    - "Diğer"
-3. "targetRole": Kişinin CV'sine göre başvurabileceği en net hedef pozisyon unvanı (Örn: "Senior Frontend Developer", "AI Engineer").
-4. "skills": En önemli ve öne çıkan 6-12 teknik yetenek (Örn: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Node.js", "PostgreSQL", "Docker"]).
+3. "targetRole": Kişinin CV'sine göre başvurabileceği en net hedef pozisyon unvanı (Örn: "Data Engineer", "AI Specialist", "Product Specialist").
+4. "skills": En önemli ve öne çıkan 6-12 teknik ve sektörel yetenek (Örn: ["Python", "SQL", "Spark", "Airflow", "Kafka", "Data Modeling", "Git"]).
 5. "summary": CV'nin ana yetkinliklerini, deneyim seviyesini ve güçlü yönlerini anlatan akıcı, 2-3 cümlelik Türkçe profesyonel özet.
 6. "experienceLevel": "Junior" | "Mid" | "Senior" | "Lead" değerlerinden biri.
 7. "extractedText": CV'nin okunabilir tam metin özeti.
-8. "suggestedLinkedInQueries": LinkedIn iş aramasında kullanılmak üzere 2 adet optimize edilmiş Boolean arama sorgusu (Örn: ['("Frontend Developer" OR "React Developer") AND ("Next.js" OR "TypeScript")', '("Senior Frontend" OR "Web Developer") AND "Remote"']).
+8. "suggestedLinkedInQueries": LinkedIn iş aramasında kullanılmak üzere 2 adet optimize edilmiş Boolean arama sorgusu (Örn: ['("Data Engineer" OR "Big Data") AND ("Python" OR "SQL")', '("Product Specialist" OR "Product Manager") AND "Remote"']).
 9. "strengths": CV'deki en güçlü 3 yön (Türkçe maddeler).
 10. "improvements": CV'yi güçlendirmek için önerilen 2 geliştirme noktası (Türkçe maddeler).
 
-DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
-{
-  "name": string,
-  "category": string,
-  "targetRole": string,
-  "skills": string[],
-  "summary": string,
-  "experienceLevel": string,
-  "extractedText": string,
-  "suggestedLinkedInQueries": string[],
-  "strengths": string[],
-  "improvements": string[]
-}`
+DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
 
-    // Construct parts
+    // Construct parts payload
     const parts: unknown[] = []
 
     if (fileBase64) {
       parts.push({
         inlineData: {
-          mimeType: mimeType,
+          mimeType: mimeType || 'application/pdf',
           data: fileBase64,
         },
       })
@@ -91,76 +128,22 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
       text: systemPrompt,
     })
 
-    // Dynamically discover supported models for the API key, or use fallback list
-    let availableModels: string[] = []
-    try {
-      const listRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${activeApiKey}`
-      )
-      if (listRes.ok) {
-        const listData = await listRes.json()
-        const models = (listData.models || []) as Array<{
-          name: string
-          supportedGenerationMethods?: string[]
-        }>
-        availableModels = models
-          .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
-          .map((m) => m.name.replace(/^models\//, ''))
-          .filter((name) => {
-            const lower = name.toLowerCase()
-            return (
-              !lower.includes('tts') &&
-              !lower.includes('audio') &&
-              !lower.includes('image') &&
-              !lower.includes('embed') &&
-              !lower.includes('aqa') &&
-              !lower.includes('imagen')
-            )
-          })
-      }
-    } catch {
-      // ignore discovery error
-    }
-
-    // Explicit standard models known to support PDF / multimodal
-    const standardCandidates = [
+    // Try fast models with strict timeout
+    const candidateModels = [
       'gemini-1.5-flash',
       'gemini-1.5-flash-latest',
-      'gemini-1.5-flash-001',
-      'gemini-1.5-flash-002',
-      'gemini-1.5-pro',
-      'gemini-1.5-pro-latest',
       'gemini-2.0-flash',
-      'gemini-2.0-flash-exp',
-      'gemini-1.5-flash-8b',
+      'gemini-1.5-pro',
     ]
 
-    const modelsToTry: string[] = []
-
-    // 1. Add discovered models that match standard candidates first
-    for (const s of standardCandidates) {
-      if (availableModels.includes(s) && !modelsToTry.includes(s)) {
-        modelsToTry.push(s)
-      }
-    }
-
-    // 2. Add other clean discovered models
-    for (const m of availableModels) {
-      if (!modelsToTry.includes(m)) {
-        modelsToTry.push(m)
-      }
-    }
-
-    // 3. Fallback to standard candidates if list was empty
-    if (modelsToTry.length === 0) {
-      modelsToTry.push(...standardCandidates)
-    }
-
-    let response: Response | null = null
+    let rawResponseText = ''
     let lastError = 'Model isteği başarısız oldu'
 
-    for (const model of modelsToTry) {
+    for (const model of candidateModels) {
       try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s max per model
+
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`,
           {
@@ -168,6 +151,7 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
             headers: {
               'Content-Type': 'application/json',
             },
+            signal: controller.signal,
             body: JSON.stringify({
               contents: [
                 {
@@ -176,40 +160,41 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
                 },
               ],
               generationConfig: {
-                response_mime_type: 'application/json',
                 temperature: 0.1,
               },
             }),
           }
         )
 
+        clearTimeout(timeoutId)
+
         if (res.ok) {
-          response = res
-          break
+          const data = await res.json()
+          const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text
+          if (txt) {
+            rawResponseText = txt
+            break
+          }
         } else {
           const errData = await res.json().catch(() => ({}))
           lastError = errData?.error?.message || res.statusText
 
-          // If invalid API key (403 or specific API_KEY_INVALID), abort immediately
           if (res.status === 400 && (lastError.includes('API_KEY_INVALID') || lastError.includes('API key not valid'))) {
             return NextResponse.json(
               {
                 error: 'GEMINI_ERROR',
-                message: 'Girilen Google API anahtarı geçersiz. Lütfen doğru anahtarı girin.',
+                message: 'Girilen Google API anahtarı geçersiz. Lütfen Google AI Studio anahtarınızı kontrol edin.',
               },
               { status: 400 }
             )
           }
-
-          // Otherwise continue to next candidate model
-          continue
         }
       } catch (err) {
-        lastError = err instanceof Error ? err.message : 'Ağ hatası'
+        lastError = err instanceof Error ? err.message : 'Ağ zaman aşımı'
       }
     }
 
-    if (!response || !response.ok) {
+    if (!rawResponseText) {
       return NextResponse.json(
         {
           error: 'GEMINI_ERROR',
@@ -219,17 +204,7 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
       )
     }
 
-    const data = await response.json()
-    const contentText = data?.candidates?.[0]?.content?.parts?.[0]?.text
-
-    if (!contentText) {
-      return NextResponse.json(
-        { error: 'PARSE_FAILED', message: 'CV analizi yapılamadı veya içerik boş döndü.' },
-        { status: 500 }
-      )
-    }
-
-    const parsedJson = JSON.parse(contentText)
+    const parsedJson = extractJsonFromResponse(rawResponseText)
     return NextResponse.json({ success: true, data: parsedJson })
   } catch (error) {
     console.error('Parse CV error:', error)

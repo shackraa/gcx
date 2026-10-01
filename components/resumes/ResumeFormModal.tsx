@@ -17,8 +17,6 @@ import {
   Upload,
   Loader2,
   Key,
-  Check,
-  Info,
   FileText,
   ExternalLink,
   ChevronDown,
@@ -57,11 +55,11 @@ interface ResumeFormModalProps {
 }
 
 interface AIAnalysisResult {
-  name: string
-  category: string
-  targetRole: string
-  skills: string[]
-  summary: string
+  name?: string
+  category?: string
+  targetRole?: string
+  skills?: string[]
+  summary?: string
   experienceLevel?: string
   extractedText?: string
   suggestedLinkedInQueries?: string[]
@@ -80,12 +78,12 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   const [skills, setSkills] = useState<string[]>(editingResume?.skills ?? [])
   const [skillInput, setSkillInput] = useState('')
 
-  // AI State
+  // AI & File State
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [tempApiKey, setTempApiKey] = useState('')
   const [showKeyInput, setShowKeyInput] = useState(false)
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<{ base64: string; mimeType: string; name: string } | null>(null)
   const [aiInsights, setAiInsights] = useState<AIAnalysisResult | null>(null)
   const [showInsights, setShowInsights] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -148,36 +146,51 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     setSkills(skills.filter((s) => s !== skillToRemove))
   }
 
-  // Handle File upload & AI parse
-  async function handleFileUpload(file: File) {
-    setUploadedFileName(file.name)
-    setIsAnalyzing(true)
-
-    try {
-      const reader = new FileReader()
-      reader.onload = async () => {
-        const base64Data = (reader.result as string).split(',')[1]
-        await parseCVWithAI({ fileBase64: base64Data, mimeType: file.type || 'application/pdf' })
+  // Handle File selection
+  function handleFileSelected(file: File) {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const base64Data = (reader.result as string).split(',')[1]
+      const fileData = {
+        base64: base64Data,
+        mimeType: file.type || 'application/pdf',
+        name: file.name,
       }
-      reader.onerror = () => {
-        setIsAnalyzing(false)
-        toast({ title: 'Dosya okunamadı', variant: 'destructive' })
-      }
-      reader.readAsDataURL(file)
-    } catch {
-      setIsAnalyzing(false)
-      toast({ title: 'Dosya yükleme hatası', variant: 'destructive' })
+      setSelectedFile(fileData)
+      // Automatically trigger analysis!
+      parseCVWithAI({ fileBase64: base64Data, mimeType: fileData.mimeType })
     }
+    reader.onerror = () => {
+      toast({ title: 'Dosya okunamadı', variant: 'destructive' })
+    }
+    reader.readAsDataURL(file)
   }
 
-  // Handle parse from pasted rawText or file
-  async function parseCVWithAI(payload: { fileBase64?: string; mimeType?: string; rawText?: string }) {
+  // Parse CV via AI
+  async function parseCVWithAI(overridePayload?: { fileBase64?: string; mimeType?: string; rawText?: string }) {
     setIsAnalyzing(true)
+
+    const filePayload = overridePayload?.fileBase64
+      ? { fileBase64: overridePayload.fileBase64, mimeType: overridePayload.mimeType }
+      : selectedFile
+      ? { fileBase64: selectedFile.base64, mimeType: selectedFile.mimeType }
+      : {}
+
     const rawTextValue = watch('rawText')
     const reqPayload = {
-      ...payload,
-      rawText: payload.rawText || rawTextValue || undefined,
+      ...filePayload,
+      rawText: overridePayload?.rawText || rawTextValue || undefined,
       apiKey: apiKey || undefined,
+    }
+
+    if (!reqPayload.fileBase64 && !reqPayload.rawText?.trim()) {
+      setIsAnalyzing(false)
+      toast({
+        title: 'CV Seçilmedi',
+        description: 'Lütfen bir PDF dosyası yükleyin veya CV metnini yapıştırın.',
+        variant: 'destructive',
+      })
+      return
     }
 
     try {
@@ -200,7 +213,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         } else {
           toast({
             title: 'Analiz Başarısız',
-            description: json.message || 'CV çözümlenemedi.',
+            description: json.message || 'CV analiz edilemedi.',
             variant: 'destructive',
           })
         }
@@ -212,24 +225,24 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       setAiInsights(data)
 
       // Auto-populate form fields!
-      if (data.name) setValue('name', data.name)
-      if (data.category) setValue('category', data.category)
-      if (data.targetRole) setValue('targetRole', data.targetRole)
-      if (data.summary) setValue('summary', data.summary)
-      if (data.extractedText) setValue('rawText', data.extractedText)
+      if (data.name) setValue('name', data.name, { shouldValidate: true, shouldDirty: true })
+      if (data.category) setValue('category', data.category, { shouldValidate: true, shouldDirty: true })
+      if (data.targetRole) setValue('targetRole', data.targetRole, { shouldValidate: true, shouldDirty: true })
+      if (data.summary) setValue('summary', data.summary, { shouldValidate: true, shouldDirty: true })
+      if (data.extractedText) setValue('rawText', data.extractedText, { shouldValidate: true, shouldDirty: true })
       if (data.skills && Array.isArray(data.skills)) {
         setSkills(data.skills)
       }
 
       toast({
         title: '✨ CV Başarıyla Analiz Edildi!',
-        description: 'Tüm alanlar Gemini 2.0 Flash ile otomatik dolduruldu.',
+        description: 'Tüm alanlar yapay zeka ile dolduruldu.',
       })
     } catch (err) {
       console.error(err)
       toast({
         title: 'Bağlantı Hatası',
-        description: 'AI sunucusuna ulaşılamadı.',
+        description: 'AI servisine bağlanılamadı.',
         variant: 'destructive',
       })
     } finally {
@@ -304,7 +317,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 {editingResume ? 'CV Profilini Düzenle' : 'Yeni CV Ekle & AI Analiz'}
               </h2>
               <p className="text-[11px] text-muted-foreground">
-                Google Gemini 2.0 Flash ile otomatik analiz et veya manuel doldur.
+                Google Gemini AI ile otomatik analiz et veya manuel doldur.
               </p>
             </div>
           </div>
@@ -324,7 +337,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary animate-pulse" />
                 <span className="text-xs font-bold text-foreground">
-                  Google Gemini 2.0 Flash ile Otomatik Doldur ($0 Cost)
+                  Google Gemini AI ile Otomatik Doldur ($0 Cost)
                 </span>
               </div>
 
@@ -341,7 +354,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
 
             {/* API Key Drawer */}
             {showKeyInput && (
-              <div className="bg-background/80 border border-border/80 rounded-lg p-2.5 space-y-2 text-xs">
+              <div className="bg-background/90 border border-border/80 rounded-lg p-2.5 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-foreground">Google AI Studio API Anahtarı (Tamamen Ücretsiz)</span>
                   <a
@@ -377,7 +390,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0]
-                  if (file) handleFileUpload(file)
+                  if (file) handleFileSelected(file)
                 }}
               />
 
@@ -387,25 +400,25 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isAnalyzing}
-                className="h-9 text-xs gap-2 border-dashed border-primary/40 hover:border-primary bg-background/50 justify-center shrink-0 max-w-full sm:max-w-[200px]"
+                className="h-9 text-xs gap-2 border-dashed border-primary/40 hover:border-primary bg-background/50 justify-center shrink-0 max-w-full sm:max-w-[210px]"
               >
                 <Upload className="h-3.5 w-3.5 text-primary shrink-0" />
                 <span className="truncate">
-                  {uploadedFileName ? uploadedFileName : 'PDF / CV Yükle'}
+                  {selectedFile ? selectedFile.name : 'PDF / CV Dosyası Seç'}
                 </span>
               </Button>
 
               <Button
                 type="button"
                 size="sm"
-                onClick={() => parseCVWithAI({})}
+                onClick={() => parseCVWithAI()}
                 disabled={isAnalyzing}
                 className="flex-1 h-9 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground shadow-sm justify-center"
               >
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>CV İnceleniyor…</span>
+                    <span>Gemini CV&apos;yi İnceliyor…</span>
                   </>
                 ) : (
                   <>
@@ -475,7 +488,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 <input
                   {...register('name')}
                   className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                  placeholder="Örn: Senior React & Next.js Developer CV"
+                  placeholder="Örn: Senior Data Engineer CV"
                 />
                 {errors.name && (
                   <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
@@ -489,7 +502,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 <input
                   {...register('targetRole')}
                   className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                  placeholder="Örn: AI Engineer / LLM Specialist"
+                  placeholder="Örn: Data Engineer / Product Specialist"
                 />
               </div>
             </div>
@@ -543,7 +556,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     }
                   }}
                   className="flex-1 h-8 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                  placeholder="Örn: Python, LangChain, Next.js (Enter'a bas)"
+                  placeholder="Örn: Python, SQL, Spark (Enter'a bas)"
                 />
                 <Button type="button" size="sm" variant="secondary" onClick={handleAddSkill} className="h-8 text-xs">
                   <Plus className="h-3.5 w-3.5 mr-1" /> Ekle
@@ -580,7 +593,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 {...register('summary')}
                 rows={2}
                 className="mt-1 w-full px-3 py-2 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none leading-relaxed"
-                placeholder="Örn: Yapay zeka ve LLM projeleri öne çıkarıldı. 3 yıllık deneyim vurgulandı."
+                placeholder="Örn: Veri mühendisliği ve büyük veri projeleri öne çıkarıldı. 3 yıllık deneyim vurgulandı."
               />
             </div>
 
