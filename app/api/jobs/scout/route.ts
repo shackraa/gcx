@@ -49,41 +49,34 @@ const NON_TECH_EXCLUSIONS = [
   'havacılık mekanik',
 ]
 
-// Build high-precision domain search queries
+// Universal Dynamic Search Query Builder - Adapts to ANY profession & CV
 function buildTargetSearchQuery(role: string, skills: string[]): string {
-  const cleanRole = role.trim().replace(/^(uzman|specialist|engineer|mühendis)$/gi, 'Software Engineer')
+  const cleanRole = role.trim()
+  const topSkills = skills.filter((s) => s && s.trim().length > 1).slice(0, 3)
+
+  if (!cleanRole || cleanRole.toLowerCase() === 'all' || cleanRole.toLowerCase() === 'tüm cv') {
+    if (topSkills.length > 0) {
+      return topSkills.map((s) => `"${s}"`).join(' OR ')
+    }
+    return 'Software Developer'
+  }
+
+  // If role is generic like "Uzman" or "Specialist", pair it with primary skill
   const lower = cleanRole.toLowerCase()
-
-  if (lower.includes('product') && lower.includes('ai')) {
-    return '("AI Engineer" OR "Product Engineer" OR "AI Product" OR "Product Owner AI" OR "Machine Learning")'
+  if (['uzman', 'specialist', 'analist', 'analyst', 'mühendis', 'engineer', 'yönetici', 'manager'].includes(lower)) {
+    if (topSkills.length > 0) {
+      return `"${topSkills[0]} ${cleanRole}" OR "${topSkills[0]}"`
+    }
   }
 
-  if (lower.includes('product') || lower.includes('ürün')) {
-    return '("Product Manager" OR "Product Engineer" OR "Technical Product" OR "Product Owner") AND (Software OR Tech OR Yazılım OR AI)'
+  // Combine user's specific target role with their top 2 skills for pinpoint accuracy
+  if (topSkills.length >= 2) {
+    return `"${cleanRole}" AND ("${topSkills[0]}" OR "${topSkills[1]}")`
+  } else if (topSkills.length === 1) {
+    return `"${cleanRole}" AND "${topSkills[0]}"`
   }
 
-  if (lower.includes('ai') || lower.includes('yapay zeka') || lower.includes('ml')) {
-    return '("AI Engineer" OR "Machine Learning" OR "Yapay Zeka" OR "AI Developer" OR "LLM")'
-  }
-
-  if (lower.includes('data') || lower.includes('veri')) {
-    return '("Data Engineer" OR "Data Scientist" OR "Veri Analisti" OR "Data Analyst")'
-  }
-
-  if (lower.includes('frontend') || lower.includes('react')) {
-    return '("Frontend Developer" OR "React Developer" OR "Front-End Engineer")'
-  }
-
-  if (lower.includes('backend') || lower.includes('python') || lower.includes('node')) {
-    return '("Backend Developer" OR "Python Developer" OR "Software Engineer")'
-  }
-
-  const techKeywords = skills.filter((s) => s.length > 1).slice(0, 3)
-  if (lower === 'specialist' || lower === 'uzman' || lower === 'analist') {
-    return `${techKeywords[0] || 'Software'} ${cleanRole}`
-  }
-
-  return cleanRole
+  return `"${cleanRole}"`
 }
 
 // Scrape LinkedIn Guest API across multiple paginated pages
