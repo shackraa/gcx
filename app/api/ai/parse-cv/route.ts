@@ -106,36 +106,60 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
         availableModels = models
           .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
           .map((m) => m.name.replace(/^models\//, ''))
+          .filter((name) => {
+            const lower = name.toLowerCase()
+            return (
+              !lower.includes('tts') &&
+              !lower.includes('audio') &&
+              !lower.includes('image') &&
+              !lower.includes('embed') &&
+              !lower.includes('aqa') &&
+              !lower.includes('imagen')
+            )
+          })
       }
     } catch {
       // ignore discovery error
     }
 
-    // Sort models prioritizing flash models, then pro
-    const priority = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash-001', 'gemini-1.5-flash-002', 'gemini-pro', 'gemini-1.5-pro']
-    const sortedModels: string[] = []
+    // Explicit standard models known to support PDF / multimodal
+    const standardCandidates = [
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash-001',
+      'gemini-1.5-flash-002',
+      'gemini-1.5-pro',
+      'gemini-1.5-pro-latest',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash-8b',
+    ]
 
-    // Add discovered models in priority order
-    for (const p of priority) {
-      if (availableModels.includes(p) && !sortedModels.includes(p)) {
-        sortedModels.push(p)
+    const modelsToTry: string[] = []
+
+    // 1. Add discovered models that match standard candidates first
+    for (const s of standardCandidates) {
+      if (availableModels.includes(s) && !modelsToTry.includes(s)) {
+        modelsToTry.push(s)
       }
     }
-    // Add remaining discovered models
+
+    // 2. Add other clean discovered models
     for (const m of availableModels) {
-      if (!sortedModels.includes(m)) {
-        sortedModels.push(m)
+      if (!modelsToTry.includes(m)) {
+        modelsToTry.push(m)
       }
     }
-    // If discovery returned nothing, use default candidate list
-    if (sortedModels.length === 0) {
-      sortedModels.push('gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-pro')
+
+    // 3. Fallback to standard candidates if list was empty
+    if (modelsToTry.length === 0) {
+      modelsToTry.push(...standardCandidates)
     }
 
     let response: Response | null = null
     let lastError = 'Model isteği başarısız oldu'
 
-    for (const model of sortedModels) {
+    for (const model of modelsToTry) {
       try {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`,
@@ -165,18 +189,20 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
         } else {
           const errData = await res.json().catch(() => ({}))
           lastError = errData?.error?.message || res.statusText
-          if (res.status === 404 || lastError.includes('not found') || lastError.includes('no longer available')) {
-            continue
-          }
-          if (res.status === 400 || res.status === 403) {
+
+          // If invalid API key (403 or specific API_KEY_INVALID), abort immediately
+          if (res.status === 400 && (lastError.includes('API_KEY_INVALID') || lastError.includes('API key not valid'))) {
             return NextResponse.json(
               {
                 error: 'GEMINI_ERROR',
-                message: `Gemini API Hatası: ${lastError}`,
+                message: 'Girilen Google API anahtarı geçersiz. Lütfen doğru anahtarı girin.',
               },
-              { status: res.status }
+              { status: 400 }
             )
           }
+
+          // Otherwise continue to next candidate model
+          continue
         }
       } catch (err) {
         lastError = err instanceof Error ? err.message : 'Ağ hatası'
