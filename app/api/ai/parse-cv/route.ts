@@ -136,19 +136,55 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
       })
     }
 
-    // Try fast standard models
-    const candidateModels = [
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-latest',
-      'gemini-2.0-flash',
-      'gemini-1.5-pro',
-    ]
+    // 1. Dynamically fetch the available models for this specific API key
+    let candidateModels: string[] = []
+    try {
+      const listRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${activeApiKey}`
+      )
+      if (listRes.ok) {
+        const listData = await listRes.json()
+        const models = (listData.models || []) as Array<{
+          name: string
+          supportedGenerationMethods?: string[]
+        }>
+
+        const available = models
+          .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+          .map((m) => m.name.replace(/^models\//, ''))
+          .filter((name) => {
+            const lower = name.toLowerCase()
+            return (
+              !lower.includes('tts') &&
+              !lower.includes('audio') &&
+              !lower.includes('image') &&
+              !lower.includes('embed') &&
+              !lower.includes('aqa') &&
+              !lower.includes('imagen')
+            )
+          })
+
+        console.log('[Parse-CV] Discovered available generateContent models from Google API:', available)
+        candidateModels = available
+      } else {
+        const listErr = await listRes.json().catch(() => ({}))
+        console.warn('[Parse-CV] Model listing failed:', listErr)
+      }
+    } catch (e) {
+      console.warn('[Parse-CV] Error listing models:', e)
+    }
+
+    // If listing returned nothing, use default list
+    if (candidateModels.length === 0) {
+      candidateModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro']
+    }
 
     let rawResponseText = ''
     let lastError = 'Model isteği başarısız oldu'
 
     for (const model of candidateModels) {
       try {
+        console.log(`[Parse-CV] Attempting generateContent with model: ${model}...`)
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 20000)
 
@@ -184,14 +220,14 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
           const data = await res.json()
           const txt = data?.candidates?.[0]?.content?.parts?.[0]?.text
           if (txt) {
-            console.log(`[Parse-CV] Success with model: ${model}`)
+            console.log(`[Parse-CV] SUCCESS with model: ${model}!`)
             rawResponseText = txt
             break
           }
         } else {
           const errData = await res.json().catch(() => ({}))
           lastError = errData?.error?.message || res.statusText
-          console.error(`[Parse-CV] Model ${model} failed:`, lastError)
+          console.warn(`[Parse-CV] Model ${model} failed:`, lastError)
 
           if (res.status === 400 && (lastError.includes('API_KEY_INVALID') || lastError.includes('API key not valid'))) {
             return NextResponse.json(
@@ -205,7 +241,7 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
         }
       } catch (err) {
         lastError = err instanceof Error ? err.message : 'Ağ zaman aşımı'
-        console.error(`[Parse-CV] Exception for model ${model}:`, lastError)
+        console.warn(`[Parse-CV] Exception for model ${model}:`, lastError)
       }
     }
 
