@@ -61,6 +61,9 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const [location, setLocation] = useState<string>('Türkiye')
   const [datePosted, setDatePosted] = useState<DatePosted>('past_week')
 
+  // Live Auto Scouting State
+  const [isScouting, setIsScouting] = useState(false)
+
   // Custom Job Match State
   const [jobInput, setJobInput] = useState('')
   const [jobUrlInput, setJobUrlInput] = useState('')
@@ -77,6 +80,70 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const targetKeywords = activeResume?.skills?.slice(0, 4) || ['Yazılım', 'Developer']
   const roleTerm = activeResume?.targetRole || activeResume?.name?.replace(/\s*cv\s*/gi, '') || 'Developer'
   const booleanQuery = `"${roleTerm}" AND (${targetKeywords.map((s) => `"${s}"`).join(' OR ')})`
+
+  // Live 1-Click Autonomous Job Discovery
+  async function handleLiveScout() {
+    if (resumes.length === 0) {
+      toast({
+        title: 'Önce CV Ekleyin',
+        description: 'İlanları tarayabilmek için CV Havuzunuzda en az bir CV olmalıdır.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsScouting(true)
+    const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : ''
+
+    try {
+      const res = await fetch('/api/jobs/scout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: roleTerm,
+          skills: activeResume?.skills || [],
+          workplaceType,
+          location,
+          resumeId: activeResume?._id,
+          resumeName: activeResume?.name,
+          resumeSummary: activeResume?.summary || '',
+          apiKey,
+          limit: 8,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        toast({
+          title: 'Tarama Hatası',
+          description: data.message || 'İlanlar taranırken bir sorun oluştu.',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      if (data.jobs && data.jobs.length > 0) {
+        await importBulkScoutedMutation({ jobs: data.jobs })
+        toast({
+          title: '🚀 İlanlar Başarıyla Bulundu & Eşleştirildi!',
+          description: `${data.jobs.length} adet güncel ilan radara eklendi.`,
+        })
+      } else {
+        toast({
+          title: 'İlan Bulunamadı',
+          description: 'Bu kriterlerde yeni ilan bulunamadı. Filtreleri genişletmeyi deneyin.',
+        })
+      }
+    } catch {
+      toast({
+        title: 'Bağlantı Hatası',
+        description: 'Sunucuya bağlanılamadı.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsScouting(false)
+    }
+  }
 
   // Construct URLs
   const encodedQuery = encodeURIComponent(booleanQuery)
@@ -316,6 +383,34 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             </select>
           </div>
         </div>
+
+        {/* Action Button: Live Auto Scan */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/50">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <span>
+              Seçili CV: <strong>{activeResume?.name || 'Seçilmedi'}</strong> ({roleTerm}) · Hedef: <strong>{location}</strong> ({workplaceType === 'onsite' ? 'Fiziksel' : workplaceType === 'remote' ? 'Uzaktan' : workplaceType === 'hybrid' ? 'Hibrit' : 'Tüm Modeller'})
+            </span>
+          </div>
+
+          <Button
+            onClick={handleLiveScout}
+            disabled={isScouting || resumes.length === 0}
+            className="h-10 px-5 text-xs font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all self-stretch sm:self-auto shrink-0"
+          >
+            {isScouting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>İlanlar Taranıyor & Eşleştiriliyor...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                <span>✨ CV&apos;me Uygun İlanları Şimdi Tara</span>
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* 🤖 jev-ultrafast Otonom Bot Entegrasyon Paneli */}
@@ -371,21 +466,59 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
         </div>
       </div>
 
-      {/* Scouted Jobs List (Found by jev Bot or Radar) */}
-      {scoutedJobs && scoutedJobs.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-border/50 pb-3">
-            <div>
-              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Radara Takılan İlanlar ({scoutedJobs.length} İlan)
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                jev-ultrafast ve AI İlan Radarı tarafından CV&apos;nizle eşleşen bulunan pozisyonlar
-              </p>
-            </div>
+      {/* Scouted Jobs List (Found by Live Scout or jev Bot) */}
+      <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Radara Takılan İlanlar {scoutedJobs && scoutedJobs.length > 0 ? `(${scoutedJobs.length} İlan)` : ''}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              CV&apos;nizdeki yetenekler taranarak otomatik bulunan, uyumluluk skorları hesaplanmış ve doğrudan başvurabileceğiniz ilanlar
+            </p>
           </div>
 
+          {scoutedJobs && scoutedJobs.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleLiveScout}
+              disabled={isScouting}
+              className="h-8 text-xs gap-1.5 border-primary/30 text-primary self-start sm:self-auto"
+            >
+              {isScouting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span>Yeniden Tara</span>
+            </Button>
+          )}
+        </div>
+
+        {/* Empty State */}
+        {(!scoutedJobs || scoutedJobs.length === 0) && (
+          <div className="border border-dashed border-border/80 rounded-xl p-8 text-center space-y-3 bg-muted/20">
+            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-foreground">Henüz İlan Taranmadı</h4>
+              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                Yukarıdaki filtreleri seçip <strong>&quot;✨ CV&apos;me Uygun İlanları Şimdi Tara&quot;</strong> butonuna basarak LinkedIn ve web&apos;deki tüm güncel pozisyonları tek tıkla listeleyebilirsiniz.
+              </p>
+            </div>
+            <Button
+              onClick={handleLiveScout}
+              disabled={isScouting || resumes.length === 0}
+              size="sm"
+              className="gap-2 text-xs font-semibold shadow-sm"
+            >
+              {isScouting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span>Hemen İlanları Tara</span>
+            </Button>
+          </div>
+        )}
+
+        {/* Jobs Grid */}
+        {scoutedJobs && scoutedJobs.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {scoutedJobs.map((job) => (
               <div
@@ -471,8 +604,8 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* 1-Click Platform Search Launchpads */}
       <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
