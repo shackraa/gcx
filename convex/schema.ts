@@ -43,7 +43,7 @@ export default defineSchema({
       v.literal('form'),
       v.literal('linkedin')
     )),
-    resumeId: v.optional(v.id('resumes')),    // Bağlı CV'nin ID'si
+    resumeId: v.optional(v.union(v.id('resumes'), v.string())),    // Bağlı CV'nin ID'si
     cvVersion: v.optional(v.string()),        // Serbest CV metni veya versiyon adı
     cvLink: v.optional(v.string()),
     jobLink: v.optional(v.string()),
@@ -77,7 +77,7 @@ export default defineSchema({
     matchScore: v.number(),    // 0 - 100
     matchingSkills: v.array(v.string()),
     missingSkills: v.array(v.string()),
-    recommendedResumeId: v.optional(v.id('resumes')),
+    recommendedResumeId: v.optional(v.union(v.id('resumes'), v.string())),
     recommendedResumeName: v.optional(v.string()),
     reason: v.string(),
     applied: v.boolean(),

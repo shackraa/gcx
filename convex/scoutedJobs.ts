@@ -29,7 +29,7 @@ export const create = mutation({
     matchScore: v.number(),
     matchingSkills: v.array(v.string()),
     missingSkills: v.array(v.string()),
-    recommendedResumeId: v.optional(v.id('resumes')),
+    recommendedResumeId: v.optional(v.union(v.id('resumes'), v.string())),
     recommendedResumeName: v.optional(v.string()),
     reason: v.string(),
   },
@@ -50,6 +50,8 @@ export const importBulk = mutation({
   args: {
     jobs: v.array(
       v.object({
+        id: v.optional(v.string()),
+        applied: v.optional(v.boolean()),
         title: v.string(),
         company: v.string(),
         location: v.string(),
@@ -59,7 +61,7 @@ export const importBulk = mutation({
         matchScore: v.number(),
         matchingSkills: v.array(v.string()),
         missingSkills: v.array(v.string()),
-        recommendedResumeId: v.optional(v.id('resumes')),
+        recommendedResumeId: v.optional(v.union(v.id('resumes'), v.string())),
         recommendedResumeName: v.optional(v.string()),
         reason: v.string(),
       })
@@ -69,17 +71,28 @@ export const importBulk = mutation({
     const userId = await getAuthUserId(ctx)
     if (!userId) throw new Error('Unauthenticated')
 
-    for (const job of args.jobs) {
+    for (const rawJob of args.jobs) {
       // Check if URL already exists to avoid duplicate
       const existing = await ctx.db
         .query('scoutedJobs')
         .withIndex('by_user', (q) => q.eq('userId', userId))
-        .filter((q) => q.eq(q.field('url'), job.url))
+        .filter((q) => q.eq(q.field('url'), rawJob.url))
         .first()
 
       if (!existing) {
         await ctx.db.insert('scoutedJobs', {
-          ...job,
+          title: rawJob.title,
+          company: rawJob.company,
+          location: rawJob.location,
+          workplaceType: rawJob.workplaceType,
+          url: rawJob.url,
+          source: rawJob.source,
+          matchScore: rawJob.matchScore,
+          matchingSkills: rawJob.matchingSkills,
+          missingSkills: rawJob.missingSkills,
+          recommendedResumeId: rawJob.recommendedResumeId,
+          recommendedResumeName: rawJob.recommendedResumeName,
+          reason: rawJob.reason,
           userId,
           applied: false,
         })

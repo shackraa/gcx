@@ -123,10 +123,25 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       }
 
       if (data.jobs && data.jobs.length > 0) {
-        await importBulkScoutedMutation({ jobs: data.jobs })
+        const cleanJobs = data.jobs.map((j: any) => ({
+          title: String(j.title || 'Pozisyon'),
+          company: String(j.company || 'Şirket'),
+          location: String(j.location || location || 'Türkiye'),
+          workplaceType: String(j.workplaceType || 'onsite'),
+          url: String(j.url || ''),
+          source: String(j.source || 'linkedin'),
+          matchScore: typeof j.matchScore === 'number' ? j.matchScore : 80,
+          matchingSkills: Array.isArray(j.matchingSkills) ? j.matchingSkills.map(String) : [],
+          missingSkills: Array.isArray(j.missingSkills) ? j.missingSkills.map(String) : [],
+          recommendedResumeId: activeResume?._id || undefined,
+          recommendedResumeName: activeResume?.name || undefined,
+          reason: String(j.reason || ''),
+        }))
+
+        await importBulkScoutedMutation({ jobs: cleanJobs })
         toast({
           title: '🚀 İlanlar Başarıyla Bulundu & Eşleştirildi!',
-          description: `${data.jobs.length} adet güncel ilan radara eklendi.`,
+          description: `${cleanJobs.length} adet güncel ilan radara eklendi.`,
         })
       } else {
         toast({
@@ -134,10 +149,11 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           description: 'Bu kriterlerde yeni ilan bulunamadı. Filtreleri genişletmeyi deneyin.',
         })
       }
-    } catch {
+    } catch (err: any) {
+      console.error('[Live Scout Error]:', err)
       toast({
-        title: 'Bağlantı Hatası',
-        description: 'Sunucuya bağlanılamadı.',
+        title: 'Tarama veya Kayıt Hatası',
+        description: err?.message || 'İlanlar kaydedilirken bir hata oluştu.',
         variant: 'destructive',
       })
     } finally {
@@ -263,10 +279,25 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       const text = await file.text()
       const data = JSON.parse(text)
       if (Array.isArray(data) && data.length > 0) {
-        await importBulkScoutedMutation({ jobs: data })
+        const cleanJobs = data.map((j: any) => ({
+          title: String(j.title || 'Pozisyon'),
+          company: String(j.company || 'Şirket'),
+          location: String(j.location || 'Türkiye'),
+          workplaceType: String(j.workplaceType || 'onsite'),
+          url: String(j.url || ''),
+          source: String(j.source || 'linkedin'),
+          matchScore: typeof j.matchScore === 'number' ? j.matchScore : 80,
+          matchingSkills: Array.isArray(j.matchingSkills) ? j.matchingSkills.map(String) : [],
+          missingSkills: Array.isArray(j.missingSkills) ? j.missingSkills.map(String) : [],
+          recommendedResumeId: activeResume?._id || undefined,
+          recommendedResumeName: activeResume?.name || undefined,
+          reason: String(j.reason || ''),
+        }))
+
+        await importBulkScoutedMutation({ jobs: cleanJobs })
         toast({
           title: 'jev Bot İlanları Yüklendi ✓',
-          description: `${data.length} adet ilan radara eklendi.`,
+          description: `${cleanJobs.length} adet ilan radara eklendi.`,
         })
       } else {
         toast({ title: 'Geçersiz JSON formatı', variant: 'destructive' })
