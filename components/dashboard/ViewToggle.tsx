@@ -1,15 +1,16 @@
 'use client'
 
 import { useUIStore } from '@/lib/store/ui'
-import { LayoutList, Columns3, FileText, BarChart2 } from 'lucide-react'
+import { LayoutList, Columns3, FileText, BarChart2, Briefcase } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ViewMode } from '@/types'
 
 const VIEWS: { mode: ViewMode; icon: React.ElementType; label: string }[] = [
-  { mode: 'list', icon: LayoutList, label: 'Liste Görünümü' },
-  { mode: 'kanban', icon: Columns3, label: 'Kanban Panosu' },
+  { mode: 'list', icon: LayoutList, label: 'Liste' },
+  { mode: 'kanban', icon: Columns3, label: 'Kanban' },
   { mode: 'resumes', icon: FileText, label: 'CV Havuzu' },
-  { mode: 'analytics', icon: BarChart2, label: 'Analiz & Raporlar' },
+  { mode: 'jobs', icon: Briefcase, label: 'İlan Radarı' },
+  { mode: 'analytics', icon: BarChart2, label: 'Analiz' },
 ]
 
 export function ViewToggle() {

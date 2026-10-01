@@ -104,8 +104,32 @@ export type FilterKey =
   | 'offer'
   | 'rejected'
 
-// View mode - now includes 'resumes' for CV Hub!
-export type ViewMode = 'list' | 'kanban' | 'resumes' | 'analytics'
+// View mode - list, kanban, resumes, analytics, jobs (Radar)
+export type ViewMode = 'list' | 'kanban' | 'resumes' | 'analytics' | 'jobs'
+
+// Workplace type for job filtering (Onsite / Fiziksel, Hybrid, Remote, All)
+export type WorkplaceType = 'all' | 'onsite' | 'hybrid' | 'remote'
+
+// Date posted filter for job radar
+export type DatePosted = 'all' | 'past_24h' | 'past_week' | 'past_month'
+
+// Matched Job Definition
+export interface MatchedJob {
+  id: string
+  title: string
+  company: string
+  location: string
+  workplaceType: 'onsite' | 'hybrid' | 'remote'
+  postedDate?: string
+  url: string
+  source: 'linkedin' | 'indeed' | 'kariyer' | 'other'
+  matchScore: number // 0 - 100
+  matchingSkills: string[]
+  missingSkills: string[]
+  recommendedResumeId?: string
+  recommendedResumeName?: string
+  reason: string
+}
 
 // Stats summary
 export interface AppStats {
@@ -133,3 +157,4 @@ export interface BackupData {
   applications: Partial<Application>[]
   resumes?: Partial<Resume>[]
 }
+

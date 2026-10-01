@@ -10,6 +10,7 @@ import { FilterTabs } from '@/components/dashboard/FilterTabs'
 import { ApplicationList } from '@/components/applications/ApplicationList'
 import { KanbanBoard } from '@/components/applications/KanbanBoard'
 import { AnalyticsView } from '@/components/analytics/AnalyticsView'
+import { JobRadarView } from '@/components/jobs/JobRadarView'
 import { ApplicationFormModal } from '@/components/applications/ApplicationFormModal'
 import { ResumeList } from '@/components/resumes/ResumeList'
 import { ResumeFormModal } from '@/components/resumes/ResumeFormModal'
@@ -85,6 +86,12 @@ export function DashboardClient() {
         )}
         {view === 'resumes' && (
           <ResumeList
+            resumes={resumes ?? []}
+            applications={applications}
+          />
+        )}
+        {view === 'jobs' && (
+          <JobRadarView
             resumes={resumes ?? []}
             applications={applications}
           />

@@ -7,7 +7,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/lib/store/ui'
-import { Plus, Download, Upload, Moon, Sun, LogOut, FileText, LayoutList, BarChart2 } from 'lucide-react'
+import { Plus, Download, Upload, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { exportBackup, importBackup } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
@@ -97,6 +97,19 @@ export function AppHeader() {
             >
               <FileText className="h-3.5 w-3.5 text-primary" />
               CV Havuzum
+            </button>
+
+            <button
+              onClick={() => setView('jobs')}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+                view === 'jobs'
+                  ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Briefcase className="h-3.5 w-3.5 text-primary" />
+              İlan Radarı
             </button>
 
             <button
