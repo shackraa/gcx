@@ -91,17 +91,51 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
       text: systemPrompt,
     })
 
-    const candidateModels = [
-      'gemini-2.5-flash',
-      'gemini-1.5-flash',
-      'gemini-2.0-flash',
-      'gemini-1.5-pro',
-    ]
+    // Dynamically discover supported models for the API key, or use fallback list
+    let availableModels: string[] = []
+    try {
+      const listRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${activeApiKey}`
+      )
+      if (listRes.ok) {
+        const listData = await listRes.json()
+        const models = (listData.models || []) as Array<{
+          name: string
+          supportedGenerationMethods?: string[]
+        }>
+        availableModels = models
+          .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+          .map((m) => m.name.replace(/^models\//, ''))
+      }
+    } catch {
+      // ignore discovery error
+    }
+
+    // Sort models prioritizing flash models, then pro
+    const priority = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash-001', 'gemini-1.5-flash-002', 'gemini-pro', 'gemini-1.5-pro']
+    const sortedModels: string[] = []
+
+    // Add discovered models in priority order
+    for (const p of priority) {
+      if (availableModels.includes(p) && !sortedModels.includes(p)) {
+        sortedModels.push(p)
+      }
+    }
+    // Add remaining discovered models
+    for (const m of availableModels) {
+      if (!sortedModels.includes(m)) {
+        sortedModels.push(m)
+      }
+    }
+    // If discovery returned nothing, use default candidate list
+    if (sortedModels.length === 0) {
+      sortedModels.push('gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-pro')
+    }
 
     let response: Response | null = null
     let lastError = 'Model isteği başarısız oldu'
 
-    for (const model of candidateModels) {
+    for (const model of sortedModels) {
       try {
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeApiKey}`,
@@ -131,11 +165,9 @@ DÖNÜŞ FORMATI (Sadece geçerli JSON dön):
         } else {
           const errData = await res.json().catch(() => ({}))
           lastError = errData?.error?.message || res.statusText
-          // If 404 (model not found), continue loop to try next model
           if (res.status === 404 || lastError.includes('not found') || lastError.includes('no longer available')) {
             continue
           }
-          // If permission / invalid key or quota, return immediately
           if (res.status === 400 || res.status === 403) {
             return NextResponse.json(
               {

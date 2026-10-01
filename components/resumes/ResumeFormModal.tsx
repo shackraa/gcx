@@ -369,7 +369,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             )}
 
             {/* Upload / Action Row */}
-            <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -387,30 +387,30 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isAnalyzing}
-                className="w-full sm:w-auto h-9 text-xs gap-2 border-dashed border-primary/40 hover:border-primary bg-background/50"
+                className="h-9 text-xs gap-2 border-dashed border-primary/40 hover:border-primary bg-background/50 justify-center shrink-0 max-w-full sm:max-w-[200px]"
               >
-                <Upload className="h-3.5 w-3.5 text-primary" />
-                <span>{uploadedFileName ? `📄 ${uploadedFileName}` : 'PDF / CV Dosyası Yükle'}</span>
+                <Upload className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="truncate">
+                  {uploadedFileName ? uploadedFileName : 'PDF / CV Yükle'}
+                </span>
               </Button>
-
-              <span className="text-[11px] text-muted-foreground hidden sm:inline">veya</span>
 
               <Button
                 type="button"
                 size="sm"
                 onClick={() => parseCVWithAI({})}
                 disabled={isAnalyzing}
-                className="w-full sm:flex-1 h-9 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground shadow-sm"
+                className="flex-1 h-9 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground shadow-sm justify-center"
               >
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Gemini CV&apos;yi İnceliyor…</span>
+                    <span>CV İnceleniyor…</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-3.5 w-3.5" />
-                    <span>CV Metnini Analiz Et & Doldur</span>
+                    <span>CV Analiz Et & Doldur</span>
                   </>
                 )}
               </Button>
