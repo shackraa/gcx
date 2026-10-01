@@ -1,15 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUIStore } from '@/lib/store/ui'
-import { useMutation, useQuery } from 'convex/react'
+import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import type { Resume } from '@/types'
 import { Button } from '@/components/ui/button'
-import { X, Trash2, Plus } from 'lucide-react'
+import {
+  X,
+  Trash2,
+  Plus,
+  Sparkles,
+  Upload,
+  Loader2,
+  Key,
+  Check,
+  Info,
+  FileText,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import type { Id } from '@/convex/_generated/dataModel'
 
@@ -26,20 +40,33 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 const COMMON_CATEGORIES = [
-  'Yapay Zeka / AI & ML',
+  'Yapay Zeka & Veri',
   'Frontend Geliştirme',
   'Backend Geliştirme',
-  'Full-stack Geliştirme',
-  'Mobil (iOS / Android / Flutter)',
-  'Ürün Yönetimi (Product Manager)',
-  'Veri Analitiği / Data Science',
-  'DevOps / Cloud',
-  'UI / UX Tasarım',
+  'Full Stack Geliştirme',
+  'Mobil Geliştirme',
+  'DevOps & Bulut',
+  'Ürün Yönetimi',
+  'UI/UX & Tasarım',
   'Genel / Standart CV',
+  'Diğer',
 ]
 
 interface ResumeFormModalProps {
   resumes: Resume[]
+}
+
+interface AIAnalysisResult {
+  name: string
+  category: string
+  targetRole: string
+  skills: string[]
+  summary: string
+  experienceLevel?: string
+  extractedText?: string
+  suggestedLinkedInQueries?: string[]
+  strengths?: string[]
+  improvements?: string[]
 }
 
 export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
@@ -53,16 +80,28 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   const [skills, setSkills] = useState<string[]>(editingResume?.skills ?? [])
   const [skillInput, setSkillInput] = useState('')
 
+  // AI State
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [apiKey, setApiKey] = useState('')
+  const [tempApiKey, setTempApiKey] = useState('')
+  const [showKeyInput, setShowKeyInput] = useState(false)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const [aiInsights, setAiInsights] = useState<AIAnalysisResult | null>(null)
+  const [showInsights, setShowInsights] = useState(true)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: {
       name: editingResume?.name ?? '',
-      category: editingResume?.category ?? 'Yapay Zeka / AI & ML',
+      category: editingResume?.category ?? 'Yapay Zeka & Veri',
       targetRole: editingResume?.targetRole ?? '',
       fileUrl: editingResume?.fileUrl ?? '',
       summary: editingResume?.summary ?? '',
@@ -70,6 +109,15 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       isDefault: editingResume?.isDefault ?? false,
     },
   })
+
+  // Load stored Gemini API key if present
+  useEffect(() => {
+    const saved = localStorage.getItem('gcx_gemini_api_key')
+    if (saved) {
+      setApiKey(saved)
+      setTempApiKey(saved)
+    }
+  }, [])
 
   // Close on Escape
   useEffect(() => {
@@ -79,6 +127,14 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [closeResumeModal])
+
+  function handleSaveApiKey() {
+    const trimmed = tempApiKey.trim()
+    setApiKey(trimmed)
+    localStorage.setItem('gcx_gemini_api_key', trimmed)
+    setShowKeyInput(false)
+    toast({ title: 'Gemini API Anahtarı Kaydedildi ✓' })
+  }
 
   function handleAddSkill() {
     const trimmed = skillInput.trim()
@@ -90,6 +146,95 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
 
   function handleRemoveSkill(skillToRemove: string) {
     setSkills(skills.filter((s) => s !== skillToRemove))
+  }
+
+  // Handle File upload & AI parse
+  async function handleFileUpload(file: File) {
+    setUploadedFileName(file.name)
+    setIsAnalyzing(true)
+
+    try {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64Data = (reader.result as string).split(',')[1]
+        await parseCVWithAI({ fileBase64: base64Data, mimeType: file.type || 'application/pdf' })
+      }
+      reader.onerror = () => {
+        setIsAnalyzing(false)
+        toast({ title: 'Dosya okunamadı', variant: 'destructive' })
+      }
+      reader.readAsDataURL(file)
+    } catch {
+      setIsAnalyzing(false)
+      toast({ title: 'Dosya yükleme hatası', variant: 'destructive' })
+    }
+  }
+
+  // Handle parse from pasted rawText or file
+  async function parseCVWithAI(payload: { fileBase64?: string; mimeType?: string; rawText?: string }) {
+    setIsAnalyzing(true)
+    const rawTextValue = watch('rawText')
+    const reqPayload = {
+      ...payload,
+      rawText: payload.rawText || rawTextValue || undefined,
+      apiKey: apiKey || undefined,
+    }
+
+    try {
+      const res = await fetch('/api/ai/parse-cv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqPayload),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        if (json.error === 'NO_API_KEY') {
+          setShowKeyInput(true)
+          toast({
+            title: 'Gemini API Anahtarı Gerekli',
+            description: 'Google AI Studio üzerinden aldığınız ücretsiz anahtarı girin.',
+            variant: 'destructive',
+          })
+        } else {
+          toast({
+            title: 'Analiz Başarısız',
+            description: json.message || 'CV çözümlenemedi.',
+            variant: 'destructive',
+          })
+        }
+        setIsAnalyzing(false)
+        return
+      }
+
+      const data: AIAnalysisResult = json.data
+      setAiInsights(data)
+
+      // Auto-populate form fields!
+      if (data.name) setValue('name', data.name)
+      if (data.category) setValue('category', data.category)
+      if (data.targetRole) setValue('targetRole', data.targetRole)
+      if (data.summary) setValue('summary', data.summary)
+      if (data.extractedText) setValue('rawText', data.extractedText)
+      if (data.skills && Array.isArray(data.skills)) {
+        setSkills(data.skills)
+      }
+
+      toast({
+        title: '✨ CV Başarıyla Analiz Edildi!',
+        description: 'Tüm alanlar Gemini 2.0 Flash ile otomatik dolduruldu.',
+      })
+    } catch (err) {
+      console.error(err)
+      toast({
+        title: 'Bağlantı Hatası',
+        description: 'AI sunucusuna ulaşılamadı.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,196 +292,349 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       />
 
       {/* Modal Card */}
-      <div className="relative z-10 w-full sm:max-w-lg bg-card border border-border rounded-t-2xl sm:rounded-xl shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="relative z-10 w-full sm:max-w-xl bg-card border border-border rounded-t-2xl sm:rounded-xl shadow-2xl max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-          <div>
-            <h2 className="text-base font-bold text-foreground">
-              {editingResume ? 'CV Profilini Düzenle' : 'Yeni CV Ekle'}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              İlanlara özel hazırladığın CV versiyonunu tanımla.
-            </p>
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-border shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <FileText className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-foreground">
+                {editingResume ? 'CV Profilini Düzenle' : 'Yeni CV Ekle & AI Analiz'}
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                Google Gemini 2.0 Flash ile otomatik analiz et veya manuel doldur.
+              </p>
+            </div>
           </div>
           <button
             onClick={closeResumeModal}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors p-1"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form Content */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="overflow-y-auto px-6 py-4 space-y-4 flex-1"
-        >
-          {/* Name & Target Role */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="overflow-y-auto px-6 py-4 space-y-4 flex-1">
+          {/* AI Auto-Fill Hero Box */}
+          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/25 rounded-xl p-3.5 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                <span className="text-xs font-bold text-foreground">
+                  Google Gemini 2.0 Flash ile Otomatik Doldur ($0 Cost)
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowKeyInput(!showKeyInput)}
+                className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+                title="Gemini API Anahtarı Ayarları"
+              >
+                <Key className="h-3 w-3" />
+                <span>{apiKey ? 'API Anahtarı Kayıtlı ✓' : 'API Key Gir'}</span>
+              </button>
+            </div>
+
+            {/* API Key Drawer */}
+            {showKeyInput && (
+              <div className="bg-background/80 border border-border/80 rounded-lg p-2.5 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-foreground">Google AI Studio API Anahtarı (Tamamen Ücretsiz)</span>
+                  <a
+                    href="https://aistudio.google.com/apikey"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline inline-flex items-center gap-0.5 text-[11px]"
+                  >
+                    Ücretsiz Key Al <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                </div>
+                <div className="flex gap-1.5">
+                  <input
+                    type="password"
+                    value={tempApiKey}
+                    onChange={(e) => setTempApiKey(e.target.value)}
+                    placeholder="AIzaSy..."
+                    className="flex-1 h-8 px-2.5 rounded-md bg-muted border-0 text-xs font-mono"
+                  />
+                  <Button size="sm" onClick={handleSaveApiKey} className="h-8 text-xs">
+                    Kaydet
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Upload / Action Row */}
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt,.docx,application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleFileUpload(file)
+                }}
+              />
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isAnalyzing}
+                className="w-full sm:w-auto h-9 text-xs gap-2 border-dashed border-primary/40 hover:border-primary bg-background/50"
+              >
+                <Upload className="h-3.5 w-3.5 text-primary" />
+                <span>{uploadedFileName ? `📄 ${uploadedFileName}` : 'PDF / CV Dosyası Yükle'}</span>
+              </Button>
+
+              <span className="text-[11px] text-muted-foreground hidden sm:inline">veya</span>
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => parseCVWithAI({})}
+                disabled={isAnalyzing}
+                className="w-full sm:flex-1 h-9 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground shadow-sm"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Gemini CV&apos;yi İnceliyor…</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>CV Metnini Analiz Et & Doldur</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* AI Insights (Strengths & LinkedIn queries if analyzed) */}
+          {aiInsights && (
+            <div className="bg-muted/40 border border-border/80 rounded-xl p-3 space-y-2 text-xs">
+              <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setShowInsights(!showInsights)}
+              >
+                <span className="font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  AI Profil Analizi & LinkedIn Önerileri
+                </span>
+                {showInsights ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </div>
+
+              {showInsights && (
+                <div className="space-y-2 pt-1 border-t border-border/40 text-[11px]">
+                  {aiInsights.strengths && aiInsights.strengths.length > 0 && (
+                    <div>
+                      <span className="font-semibold text-green-400">💪 Güçlü Yönlerin:</span>
+                      <ul className="list-disc list-inside text-muted-foreground mt-0.5 space-y-0.5">
+                        {aiInsights.strengths.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {aiInsights.suggestedLinkedInQueries && aiInsights.suggestedLinkedInQueries.length > 0 && (
+                    <div>
+                      <span className="font-semibold text-primary">🔍 Önerilen LinkedIn Arama Sorguları:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {aiInsights.suggestedLinkedInQueries.map((q, i) => (
+                          <span
+                            key={i}
+                            className="bg-primary/10 text-primary px-2 py-0.5 rounded font-mono text-[10px]"
+                          >
+                            {q}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Main Form Fields */}
+          <form id="resume-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Name & Target Role */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  CV İsmi <span className="text-red-400">*</span>
+                </label>
+                <input
+                  {...register('name')}
+                  className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                  placeholder="Örn: Senior React & Next.js Developer CV"
+                />
+                {errors.name && (
+                  <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">
+                  Hedef Pozisyon
+                </label>
+                <input
+                  {...register('targetRole')}
+                  className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                  placeholder="Örn: AI Engineer / LLM Specialist"
+                />
+              </div>
+            </div>
+
+            {/* Category */}
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                CV İsmi <span className="text-red-400">*</span>
+                Uzmanlık / Kategori <span className="text-red-400">*</span>
+              </label>
+              <select
+                {...register('category')}
+                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                {COMMON_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* File / Drive URL */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                CV Linki (Google Drive / PDF / Notion vb.)
               </label>
               <input
-                {...register('name')}
-                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                placeholder="Örn: AI & LLM Developer CV v2"
+                {...register('fileUrl')}
+                type="url"
+                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                placeholder="https://drive.google.com/file/d/..."
               />
-              {errors.name && (
-                <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
+              {errors.fileUrl && (
+                <p className="text-xs text-red-400 mt-1">{errors.fileUrl.message}</p>
               )}
             </div>
 
+            {/* Skills Tag Input */}
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                Hedef Pozisyon
+                Öne Çıkan Yetenekler / Anahtar Kelimeler (İlan Eşleşmesi İçin)
               </label>
-              <input
-                {...register('targetRole')}
-                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                placeholder="Örn: AI Engineer / LLM Specialist"
-              />
-            </div>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">
-              Uzmanlık / Kategori <span className="text-red-400">*</span>
-            </label>
-            <select
-              {...register('category')}
-              className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              {COMMON_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* File / Drive URL */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">
-              CV Linki (Google Drive / PDF / Notion)
-            </label>
-            <input
-              {...register('fileUrl')}
-              type="url"
-              className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder="https://drive.google.com/file/d/..."
-            />
-            {errors.fileUrl && (
-              <p className="text-xs text-red-400 mt-1">{errors.fileUrl.message}</p>
-            )}
-          </div>
-
-          {/* Skills Tag Input */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">
-              Öne Çıkan Yetenekler / Anahtar Kelimeler (İlan Eşleşmesi İçin)
-            </label>
-            <div className="flex gap-2 mt-1">
-              <input
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddSkill()
-                  }
-                }}
-                className="flex-1 h-8 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                placeholder="Örn: Python, LangChain, PyTorch, Next.js (Enter'a bas)"
-              />
-              <Button type="button" size="sm" variant="secondary" onClick={handleAddSkill} className="h-8 text-xs">
-                <Plus className="h-3.5 w-3.5 mr-1" /> Ekle
-              </Button>
-            </div>
-
-            {skills.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {skills.map((skill) => (
-                  <span
-                    key={skill}
-                    className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                  >
-                    {skill}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(skill)}
-                      className="text-primary hover:text-red-400 ml-0.5"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+              <div className="flex gap-2 mt-1">
+                <input
+                  value={skillInput}
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAddSkill()
+                    }
+                  }}
+                  className="flex-1 h-8 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                  placeholder="Örn: Python, LangChain, Next.js (Enter'a bas)"
+                />
+                <Button type="button" size="sm" variant="secondary" onClick={handleAddSkill} className="h-8 text-xs">
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Ekle
+                </Button>
               </div>
-            )}
-          </div>
 
-          {/* Summary / Notes */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">
-              Kısa Özet / Versiyon Notu
+              {skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {skills.map((skill) => (
+                    <span
+                      key={skill}
+                      className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    >
+                      {skill}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSkill(skill)}
+                        className="text-primary hover:text-red-400 ml-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Summary */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">
+                Profesyonel Özet
+              </label>
+              <textarea
+                {...register('summary')}
+                rows={2}
+                className="mt-1 w-full px-3 py-2 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none leading-relaxed"
+                placeholder="Örn: Yapay zeka ve LLM projeleri öne çıkarıldı. 3 yıllık deneyim vurgulandı."
+              />
+            </div>
+
+            {/* Raw Text for AI Analysis & Matching */}
+            <div>
+              <label className="text-xs font-medium text-muted-foreground flex items-center justify-between">
+                <span>CV Metni (LinkedIn İlan Eşleştirme İçin)</span>
+                <span className="text-[10px] text-muted-foreground">PDF yüklendiğinde otomatik dolar</span>
+              </label>
+              <textarea
+                {...register('rawText')}
+                rows={3}
+                className="mt-1 w-full px-3 py-2 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none font-mono"
+                placeholder="CV içeriğini buraya yapıştırabilir veya üstteki butondan PDF yükleyebilirsiniz..."
+              />
+            </div>
+
+            {/* Default Toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none pt-1">
+              <input
+                type="checkbox"
+                {...register('isDefault')}
+                className="rounded"
+              />
+              <span className="text-xs text-muted-foreground">
+                Varsayılan CV olarak ayarla (Yeni başvurularda otomatik seçilir)
+              </span>
             </label>
-            <textarea
-              {...register('summary')}
-              rows={2}
-              className="mt-1 w-full px-3 py-2 rounded-lg bg-muted border-0 text-sm focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-              placeholder="Örn: Yapay zeka ve LLM projeleri öne çıkarıldı. 3 yıllık deneyim vurgulandı."
-            />
-          </div>
-
-          {/* Raw Text for AI Analysis */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">
-              CV Metni (LinkedIn İlan Analizi ve Eşleştirme İçin)
-            </label>
-            <textarea
-              {...register('rawText')}
-              rows={3}
-              className="mt-1 w-full px-3 py-2 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none font-mono"
-              placeholder="CV'ndeki metni buraya yapıştırabilirsin. Bu metin, LinkedIn'de sana en uygun ilan filtrelerini sıfır maliyetle çıkarmak için kullanılacak..."
-            />
-          </div>
-
-          {/* Default Toggle */}
-          <label className="flex items-center gap-2 cursor-pointer select-none pt-1">
-            <input
-              type="checkbox"
-              {...register('isDefault')}
-              className="rounded"
-            />
-            <span className="text-xs text-muted-foreground">
-              Varsayılan CV olarak ayarla (Yeni başvurularda otomatik seçilir)
-            </span>
-          </label>
-        </form>
+          </form>
+        </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-border shrink-0">
+        <div className="flex items-center justify-between px-6 py-3.5 border-t border-border shrink-0">
           {editingResume ? (
             <button
               type="button"
               onClick={handleDelete}
-              className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-300 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
               Sil
             </button>
           ) : (
             <div />
           )}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={closeResumeModal}>
+            <Button variant="ghost" size="sm" onClick={closeResumeModal} className="text-xs">
               İptal
             </Button>
             <Button
               size="sm"
               onClick={handleSubmit(onSubmit)}
               disabled={isSubmitting}
+              className="text-xs font-semibold"
             >
               {isSubmitting ? 'Kaydediliyor…' : 'Kaydet'}
             </Button>
