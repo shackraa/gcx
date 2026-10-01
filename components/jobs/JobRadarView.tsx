@@ -1,29 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import type { Resume, Application, WorkplaceType, DatePosted, MatchedJob } from '@/types'
 import { Button } from '@/components/ui/button'
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useUIStore } from '@/lib/store/ui'
 import { useToast } from '@/hooks/use-toast'
+import type { Id } from '@/convex/_generated/dataModel'
 import {
   Briefcase,
   Search,
   Sparkles,
   ExternalLink,
   Plus,
-  CheckCircle,
   Building2,
   MapPin,
   Clock,
   Zap,
-  Filter,
   Check,
-  AlertCircle,
   Loader2,
   Copy,
-  ChevronRight,
+  Bot,
+  Upload,
+  Trash2,
+  Terminal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -46,12 +47,13 @@ const DATE_OPTIONS: { value: DatePosted; label: string }[] = [
   { value: 'all', label: 'Tüm Zamanlar' },
 ]
 
-const POPULAR_LOCATIONS = ['Türkiye', 'İstanbul', 'Ankara', 'İzmir', 'Global / Yurt Dışı']
-
-export function JobRadarView({ resumes, applications }: JobRadarViewProps) {
-  const { setView } = useUIStore()
+export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
   const createApplicationMutation = useMutation(api.applications.create)
+  const scoutedJobs = useQuery(api.scoutedJobs.list)
+  const importBulkScoutedMutation = useMutation(api.scoutedJobs.importBulk)
+  const convertScoutedMutation = useMutation(api.scoutedJobs.convertToApplication)
+  const removeScoutedMutation = useMutation(api.scoutedJobs.remove)
 
   // Filter States
   const [selectedResumeId, setSelectedResumeId] = useState<string>('all')
@@ -65,6 +67,7 @@ export function JobRadarView({ resumes, applications }: JobRadarViewProps) {
   const [isMatching, setIsMatching] = useState(false)
   const [matchedResult, setMatchedResult] = useState<MatchedJob | null>(null)
   const [addedJobs, setAddedJobs] = useState<string[]>([])
+  const jsonUploadRef = useRef<HTMLInputElement>(null)
 
   const activeResume = selectedResumeId === 'all'
     ? resumes[0]
@@ -184,9 +187,37 @@ export function JobRadarView({ resumes, applications }: JobRadarViewProps) {
     }
   }
 
+  // Import scouted jobs JSON file produced by jev_crawler.py
+  async function handleImportJevJson(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      if (Array.isArray(data) && data.length > 0) {
+        await importBulkScoutedMutation({ jobs: data })
+        toast({
+          title: 'jev Bot İlanları Yüklendi ✓',
+          description: `${data.length} adet ilan radara eklendi.`,
+        })
+      } else {
+        toast({ title: 'Geçersiz JSON formatı', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'JSON yükleme hatası', variant: 'destructive' })
+    }
+  }
+
   function handleCopyQuery() {
     navigator.clipboard.writeText(booleanQuery)
     toast({ title: 'Arama Sorgusu Kopyalandı ✓', description: booleanQuery })
+  }
+
+  function handleCopyBotCommand() {
+    const cmd = `python scripts/jev_crawler.py --role "${roleTerm}" --location "${location}" --workplace "${workplaceType}"`
+    navigator.clipboard.writeText(cmd)
+    toast({ title: 'jev Bot Komutu Kopyalandı ✓', description: cmd })
   }
 
   return (
@@ -286,6 +317,162 @@ export function JobRadarView({ resumes, applications }: JobRadarViewProps) {
           </div>
         </div>
       </div>
+
+      {/* 🤖 jev-ultrafast Otonom Bot Entegrasyon Paneli */}
+      <div className="bg-card border border-primary/20 rounded-xl p-5 space-y-3 shadow-sm bg-gradient-to-r from-card via-primary/5 to-card">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <Bot className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                jev-ultrafast Otonom İlan Tarama Robotu
+              </h3>
+              <p className="text-[11px] text-muted-foreground">
+                Bilgisayarınızda arka planda çalışan jev botu LinkedIn&apos;i otomatik tarayıp uygun ilanları GCX hesabınıza aktarır.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <input
+              ref={jsonUploadRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImportJevJson}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => jsonUploadRef.current?.click()}
+              className="h-8 gap-1.5 text-xs border-primary/30 text-primary"
+            >
+              <Upload className="h-3.5 w-3.5" />
+              <span>Bot Çıktısını Yükle (JSON)</span>
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleCopyBotCommand}
+              className="h-8 gap-1.5 text-xs font-semibold"
+            >
+              <Terminal className="h-3.5 w-3.5" />
+              <span>Bot Komutunu Kopyala</span>
+            </Button>
+          </div>
+        </div>
+
+        <div className="bg-muted/50 p-2.5 rounded-lg border border-border/40 font-mono text-[11px] text-muted-foreground flex items-center justify-between overflow-x-auto">
+          <span>python scripts/jev_crawler.py --role &quot;{roleTerm}&quot; --location &quot;{location}&quot; --workplace &quot;{workplaceType}&quot;</span>
+          <button onClick={handleCopyBotCommand} className="hover:text-primary pl-2" title="Kopyala">
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Scouted Jobs List (Found by jev Bot or Radar) */}
+      {scoutedJobs && scoutedJobs.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-border/50 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Radara Takılan İlanlar ({scoutedJobs.length} İlan)
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                jev-ultrafast ve AI İlan Radarı tarafından CV&apos;nizle eşleşen bulunan pozisyonlar
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {scoutedJobs.map((job) => (
+              <div
+                key={job._id}
+                className="bg-muted/30 border border-border/70 hover:border-border rounded-xl p-4 space-y-3 flex flex-col justify-between transition-all"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground">{job.title}</h4>
+                      <p className="text-xs text-muted-foreground font-medium mt-0.5">{job.company}</p>
+                    </div>
+                    <div className={cn(
+                      'text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0',
+                      job.matchScore >= 80 ? 'bg-green-950/40 text-green-400 border-green-800' : 'bg-primary/10 text-primary border-primary/20'
+                    )}>
+                      %{job.matchScore} Uyum
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3" />
+                    {job.location} · {job.workplaceType === 'onsite' ? '📍 Fiziksel' : job.workplaceType === 'remote' ? '🌐 Uzaktan' : '🔄 Hibrit'}
+                  </p>
+
+                  {job.reason && (
+                    <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
+                      💡 {job.reason}
+                    </p>
+                  )}
+
+                  {job.matchingSkills && job.matchingSkills.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {job.matchingSkills.map((s) => (
+                        <span key={s} className="bg-green-950/40 text-green-400 border border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                          ✓ {s}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <div className="flex items-center gap-2">
+                    {job.url && (
+                      <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground bg-muted px-2 py-1 rounded"
+                      >
+                        <ExternalLink className="h-3 w-3" /> İlana Git
+                      </a>
+                    )}
+                    <button
+                      onClick={() => removeScoutedMutation({ id: job._id })}
+                      className="text-muted-foreground hover:text-red-400 p-1"
+                      title="Sil"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={() => convertScoutedMutation({ id: job._id })}
+                    disabled={job.applied}
+                    className="h-8 text-xs gap-1 font-semibold"
+                  >
+                    {job.applied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-green-400" />
+                        <span>Başvuruldu ✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>Başvurularıma Ekle</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 1-Click Platform Search Launchpads */}
       <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">

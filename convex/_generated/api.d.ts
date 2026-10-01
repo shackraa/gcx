@@ -12,6 +12,7 @@ import type * as applications from "../applications.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
 import type * as resumes from "../resumes.js";
+import type * as scoutedJobs from "../scoutedJobs.js";
 import type * as settings from "../settings.js";
 
 import type {
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
   resumes: typeof resumes;
+  scoutedJobs: typeof scoutedJobs;
   settings: typeof settings;
 }>;
 

@@ -64,4 +64,24 @@ export default defineSchema({
     overdueDays: v.number(),
     emailReminders: v.boolean(),
   }).index('by_user', ['userId']),
+
+  // jev-ultrafast & İlan Radarı tarafından otomatik bulunan ilanlar
+  scoutedJobs: defineTable({
+    userId: v.string(),
+    title: v.string(),
+    company: v.string(),
+    location: v.string(),
+    workplaceType: v.string(), // 'onsite' | 'hybrid' | 'remote'
+    url: v.string(),
+    source: v.string(),        // 'linkedin' | 'indeed' | 'kariyer' | 'jev' | 'other'
+    matchScore: v.number(),    // 0 - 100
+    matchingSkills: v.array(v.string()),
+    missingSkills: v.array(v.string()),
+    recommendedResumeId: v.optional(v.id('resumes')),
+    recommendedResumeName: v.optional(v.string()),
+    reason: v.string(),
+    applied: v.boolean(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_applied', ['userId', 'applied']),
 })
