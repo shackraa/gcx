@@ -49,38 +49,73 @@ const NON_TECH_EXCLUSIONS = [
   'havacılık mekanik',
 ]
 
-// Universal Dynamic Search Query Builder - Adapts to ANY profession & CV
-function buildTargetSearchQuery(role: string, skills: string[]): string {
-  const cleanRole = role.trim()
-  const topSkills = skills.filter((s) => s && s.trim().length > 1).slice(0, 3)
+// Extract clean, multi-angle search queries from CV target role and skills
+function extractSearchPhrases(role: string, skills: string[]): string[] {
+  // Clean raw string (e.g. "Product & AI Engineer CV (Product Specialist)" -> ["Product & AI Engineer", "Product Specialist"])
+  let cleaned = role
+    .replace(/\s*cv\s*/gi, ' ')
+    .replace(/[()[\]{}]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 
-  if (!cleanRole || cleanRole.toLowerCase() === 'all' || cleanRole.toLowerCase() === 'tüm cv') {
-    if (topSkills.length > 0) {
-      return topSkills.map((s) => `"${s}"`).join(' OR ')
+  const phrases = new Set<string>()
+
+  if (cleaned && cleaned.toLowerCase() !== 'all') {
+    phrases.add(cleaned)
+
+    // If role contains & or / or comma, split parts
+    if (cleaned.includes('&') || cleaned.includes('/') || cleaned.includes(',')) {
+      const parts = cleaned.split(/[&/,]/).map((p) => p.trim()).filter((p) => p.length > 2)
+      for (const p of parts) {
+        phrases.add(p)
+      }
     }
-    return 'Software Developer'
-  }
 
-  // If role is generic like "Uzman" or "Specialist", pair it with primary skill
-  const lower = cleanRole.toLowerCase()
-  if (['uzman', 'specialist', 'analist', 'analyst', 'mühendis', 'engineer', 'yönetici', 'manager'].includes(lower)) {
-    if (topSkills.length > 0) {
-      return `"${topSkills[0]} ${cleanRole}" OR "${topSkills[0]}"`
+    // Common role expansions
+    const lower = cleaned.toLowerCase()
+    if (lower.includes('product') && lower.includes('ai')) {
+      phrases.add('AI Engineer')
+      phrases.add('Product Manager')
+      phrases.add('Product Specialist')
+      phrases.add('AI Product')
+    } else if (lower.includes('product')) {
+      phrases.add('Product Manager')
+      phrases.add('Product Specialist')
+    } else if (lower.includes('ai') || lower.includes('yapay zeka')) {
+      phrases.add('AI Engineer')
+      phrases.add('Machine Learning Engineer')
+    } else if (lower.includes('frontend')) {
+      phrases.add('Frontend Developer')
+      phrases.add('React Developer')
+    } else if (lower.includes('backend')) {
+      phrases.add('Backend Developer')
+      phrases.add('Python Developer')
+    } else if (lower.includes('data')) {
+      phrases.add('Data Engineer')
+      phrases.add('Data Scientist')
     }
   }
 
-  // Combine user's specific target role with their top 2 skills for pinpoint accuracy
-  if (topSkills.length >= 2) {
-    return `"${cleanRole}" AND ("${topSkills[0]}" OR "${topSkills[1]}")`
-  } else if (topSkills.length === 1) {
-    return `"${cleanRole}" AND "${topSkills[0]}"`
+  // Add top skill combinations
+  const validSkills = skills.filter((s) => s && s.trim().length > 1)
+  if (validSkills.length > 0 && phrases.size < 4) {
+    if (cleaned && cleaned.length > 2) {
+      phrases.add(`${validSkills[0]} ${cleaned}`)
+    } else {
+      phrases.add(validSkills[0])
+      if (validSkills[1]) phrases.add(validSkills[1])
+    }
   }
 
-  return `"${cleanRole}"`
+  if (phrases.size === 0) {
+    phrases.add('Software Engineer')
+  }
+
+  return Array.from(phrases).slice(0, 4)
 }
 
-// Scrape LinkedIn Guest API across multiple paginated pages
-async function fetchLinkedInGuestJobs(searchQuery: string, location: string, workplace: string, maxPages = 5) {
+// Scrape LinkedIn Guest API for a single query across multiple pages
+async function fetchLinkedInGuestJobs(searchQuery: string, location: string, workplace: string, maxPages = 3) {
   const encodedKw = encodeURIComponent(searchQuery)
   const encodedLoc = encodeURIComponent(location || 'Turkey')
 
@@ -103,8 +138,6 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
     url: string
     source: string
   }> = []
-
-  const seenUrls = new Set<string>()
 
   const requests = []
   for (let p = 0; p < maxPages; p++) {
@@ -142,8 +175,6 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
         if (isExcluded) return
 
         const cleanUrl = link.split('?')[0] || `https://www.linkedin.com/jobs/search/?keywords=${encodedKw}`
-        if (seenUrls.has(cleanUrl)) return
-        seenUrls.add(cleanUrl)
 
         let derivedWorkplace = workplace
         if (workplace === 'all') {
@@ -189,7 +220,7 @@ function evaluateJobHeuristic(
       matchedSkills.push(s)
     } else if (titleLower.includes('developer') && ['react', 'python', 'javascript', 'sql', 'typescript'].includes(sLower)) {
       matchedSkills.push(s)
-    } else if (titleLower.includes('product') && ['ürün yönetimi', 'product management', 'agile', 'scrum', 'ai', 'sql'].includes(sLower)) {
+    } else if (titleLower.includes('product') && ['ürün yönetimi', 'product management', 'agile', 'scrum', 'ai', 'sql', 'python'].includes(sLower)) {
       matchedSkills.push(s)
     } else if (titleLower.includes('ai') && ['ai', 'python', 'machine learning', 'yapay zeka', 'llm', 'fastapi'].includes(sLower)) {
       matchedSkills.push(s)
@@ -199,29 +230,29 @@ function evaluateJobHeuristic(
   }
 
   // Calculate score based on role alignment and skills
-  let score = 72
+  let score = 75
   if (titleLower.includes('ai') && cvRoleLower.includes('ai')) {
     score += 18
-  } else if (titleLower.includes('product') && cvRoleLower.includes('product')) {
-    score += 15
-  } else if (titleLower.includes(cvRoleLower) || cvRoleLower.includes(titleLower)) {
+  } else if (titleLower.includes('product') && (cvRoleLower.includes('product') || cvRoleLower.includes('ürün'))) {
     score += 16
+  } else if (titleLower.includes('software') || titleLower.includes('engineer') || titleLower.includes('developer')) {
+    score += 12
   }
 
   if (titleLower.includes('senior') && cvRoleLower.includes('senior')) {
-    score += 6
+    score += 4
   }
 
   if (matchedSkills.length >= 2) {
-    score += 10
+    score += 8
   } else if (matchedSkills.length === 1) {
-    score += 5
+    score += 4
   }
 
-  // Add slight natural variance
-  score = Math.min(97, Math.max(70, score + (idx % 6)))
+  // Variance & bounds
+  score = Math.min(98, Math.max(72, score + (idx % 5)))
 
-  const finalMatched = matchedSkills.length > 0 ? matchedSkills.slice(0, 3) : (cvSkills.slice(0, 2))
+  const finalMatched = matchedSkills.length > 0 ? matchedSkills.slice(0, 3) : cvSkills.slice(0, 2)
   const remaining = cvSkills.filter((s) => !finalMatched.includes(s))
   if (remaining.length > 0) {
     missingSkills.push(remaining[0])
@@ -265,12 +296,12 @@ Kullanıcı CV Profili:
 
 Aşağıda taranan ${jobs.length} adet iş ilanı bulunmaktadır. Her ilan için:
 1. matchScore: Bu ilanın kullanıcının CV'si ile GERÇEK uyum yüzdesi (0-100).
-   - Eğer pozisyon doğrudan AI, Yazılım, Veri, Ürün Geliştirme (Tech/SaaS) ise: %80 - %98 ver.
-   - Eğer kısmen ilgiliyse: %70 - %79 ver.
-   - Eğer bankacılık kredi kartı kampanya, havacılık mekanik montaj, tekstil, saha satış gibi alakasız sektörse: <%50 ver.
+   - Eğer pozisyon doğrudan CV'nin uzmanlık alanındaysa (Oyun/Tech/SaaS/AI/Yazılım/Ürün): %82 - %98 ver.
+   - Eğer kısmen ilgiliyse: %70 - %81 ver.
+   - Eğer tamamen alakasız sektörse: <%50 ver.
 2. matchingSkills: İlanda aranan ve kullanıcının CV'sinde OLAN yetenekler (En fazla 3 adet).
 3. missingSkills: İlanda gerekebilecek ama CV'de öne çıkmayan yetenekler (En fazla 2 adet).
-4. reason: 1 cümlelik Türkçe spesifik gerekçe (örn: "X şirketindeki Y pozisyonu AI entegrasyonu ve Python tecrübeniz ile tam örtüşmektedir.").
+4. reason: 1 cümlelik Türkçe spesifik gerekçe (örn: "${cvRole} profiliniz ve ${cvSkills.slice(0, 2).join(', ')} yetkinlikleriniz bu rol için uygundur.").
 
 İlan Listesi:
 ${JSON.stringify(jobs.map((j, i) => ({ index: i, title: j.title, company: j.company, location: j.location })), null, 2)}
@@ -350,35 +381,61 @@ export async function POST(req: NextRequest) {
       apiKey = '',
     } = body
 
-    // 1. Build optimized search query
-    const targetedQuery = buildTargetSearchQuery(role, skills)
+    // 1. Extract multiple smart search phrases from role and skills
+    const searchPhrases = extractSearchPhrases(role, skills)
 
-    // 2. Deep Crawl across multiple pages (up to 125+ raw jobs)
-    let liveJobs = await fetchLinkedInGuestJobs(targetedQuery, location, workplaceType, 5)
+    // 2. Fetch jobs across all search phrases in parallel
+    const crawlPromises = searchPhrases.map((phrase) =>
+      fetchLinkedInGuestJobs(phrase, location, workplaceType, 3)
+    )
 
-    // 3. Fallback recommendations if zero hits
-    if (liveJobs.length === 0) {
+    const results = await Promise.all(crawlPromises)
+
+    // 3. Deduplicate by clean URL
+    const seenUrls = new Set<string>()
+    const allDiscoveredJobs: Array<{
+      title: string
+      company: string
+      location: string
+      workplaceType: string
+      url: string
+      source: string
+    }> = []
+
+    for (const jobBatch of results) {
+      for (const job of jobBatch) {
+        if (!seenUrls.has(job.url)) {
+          seenUrls.add(job.url)
+          allDiscoveredJobs.push(job)
+        }
+      }
+    }
+
+    // 4. Fallback recommendations if zero hits
+    if (allDiscoveredJobs.length === 0) {
       const fallbackTitles = [
         `AI & ${role}`,
         `Senior ${role}`,
         `Lead ${role}`,
         `${role} (AI & Cloud)`,
       ]
-      const fallbackCompanies = ['Teknoloji A.Ş.', 'Global FinTech', 'Yazılım Çözümleri', 'E-Ticaret Holding']
+      const fallbackCompanies = ['Dream Games', 'Good Job Games', 'Teknoloji A.Ş.', 'Yazılım Çözümleri']
 
-      liveJobs = fallbackTitles.map((title, idx) => ({
-        title,
-        company: fallbackCompanies[idx % fallbackCompanies.length],
-        location: location || 'İstanbul, Türkiye',
-        workplaceType: workplaceType === 'all' ? (idx % 2 === 0 ? 'remote' : 'hybrid') : workplaceType,
-        url: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(targetedQuery)}&location=${encodeURIComponent(location)}`,
-        source: 'linkedin',
-      }))
+      allDiscoveredJobs.push(
+        ...fallbackTitles.map((title, idx) => ({
+          title,
+          company: fallbackCompanies[idx % fallbackCompanies.length],
+          location: location || 'İstanbul, Türkiye',
+          workplaceType: workplaceType === 'all' ? (idx % 2 === 0 ? 'remote' : 'hybrid') : workplaceType,
+          url: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(role)}&location=${encodeURIComponent(location)}`,
+          source: 'linkedin',
+        }))
+      )
     }
 
-    // 4. Individual job-by-job AI evaluation
+    // 5. Individual job-by-job AI evaluation
     const scoutedJobs = await evaluateJobsWithAI(
-      liveJobs,
+      allDiscoveredJobs,
       role,
       skills,
       resumeSummary,
@@ -387,10 +444,10 @@ export async function POST(req: NextRequest) {
       resumeName
     )
 
-    // 5. Filter: Keep ONLY jobs with matchScore >= 70
+    // 6. Filter: Keep ONLY jobs with matchScore >= 70
     const qualifiedJobs = scoutedJobs.filter((j) => (j.matchScore || 0) >= 70)
 
-    // 6. Sort: HIGHEST matchScore at the top (descending)
+    // 7. Sort: HIGHEST matchScore at the top (descending)
     qualifiedJobs.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
 
     return NextResponse.json({
