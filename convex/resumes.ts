@@ -116,6 +116,7 @@ export const create = mutation({
     return await ctx.db.insert('resumes', {
       ...args,
       userId,
+      updatedAt: Date.now(),
     })
   },
 })
@@ -173,7 +174,10 @@ export const update = mutation({
       Object.entries(fields).filter(([, v]) => v !== undefined)
     )
 
-    await ctx.db.patch(id, patch)
+    await ctx.db.patch(id, {
+      ...patch,
+      updatedAt: Date.now(),
+    })
   },
 })
 

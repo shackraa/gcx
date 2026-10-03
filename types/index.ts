@@ -32,6 +32,7 @@ export interface Resume {
   summary?: string
   rawText?: string
   isDefault: boolean
+  updatedAt?: number
 }
 
 // Form values for Resume create/edit modal
@@ -47,6 +48,7 @@ export interface ResumeFormValues {
   summary?: string
   rawText?: string
   isDefault: boolean
+  updatedAt?: number
 }
 
 // Core application type matching Convex schema

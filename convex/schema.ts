@@ -19,6 +19,7 @@ export default defineSchema({
     summary: v.optional(v.string()),    // CV özeti / öne çıkan noktalar
     rawText: v.optional(v.string()),    // İlan eşleştirme için metin
     isDefault: v.boolean(),
+    updatedAt: v.optional(v.number()),  // Son güncelleme zamanı (timestamp)
   })
     .index('by_user', ['userId'])
     .index('by_user_category', ['userId', 'category']),

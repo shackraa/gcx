@@ -16,7 +16,11 @@ import {
   Briefcase,
   TrendingUp,
   Download,
+  Calendar,
+  Clock,
 } from 'lucide-react'
+import { format } from 'date-fns'
+import { tr } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
 interface ResumeListProps {
@@ -26,15 +30,7 @@ interface ResumeListProps {
 
 export function ResumeList({ resumes, applications }: ResumeListProps) {
   const { openResumeModal, openModal, setResumeFilter, setView } = useUIStore()
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-
   const resumeStats = getResumeStats(applications, resumes)
-
-  const categories = ['all', ...Array.from(new Set(resumes.map((r) => r.category)))]
-
-  const filteredStats = selectedCategory === 'all'
-    ? resumeStats
-    : resumeStats.filter((s) => s.resume.category === selectedCategory)
 
   if (resumes.length === 0) {
     return (
@@ -66,7 +62,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
             CV Havuzum ({resumes.length} Versiyon)
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Başvurularında kullandığın farklı CV versiyonları, yüklenen dosyalar ve performansları
+            Yüklediğin CV versiyonları, güncellenme tarihleri ve başvuru başarı oranları
           </p>
         </div>
 
@@ -76,30 +72,11 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
         </Button>
       </div>
 
-      {/* Category Tabs */}
-      {categories.length > 2 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap',
-                selectedCategory === cat
-                  ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-                  : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              {cat === 'all' ? 'Tüm Kategoriler' : cat}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Resume Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredStats.map(({ resume, count, respondedCount, responseRate }) => {
+        {resumeStats.map(({ resume, count, respondedCount, responseRate }) => {
           const cvUrl = safeUrl(resume.downloadUrl || resume.fileUrl)
+          const dateTimestamp = resume.updatedAt || resume._creationTime
 
           return (
             <div
@@ -107,28 +84,37 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
               className="bg-card border border-border rounded-xl p-5 space-y-4 hover:border-border/80 transition-all shadow-sm flex flex-col justify-between"
             >
               <div className="space-y-3">
-                {/* Title & Badge */}
+                {/* Title & Date */}
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-foreground">{resume.name}</h3>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold text-foreground break-all">{resume.name}</h3>
                       {resume.isDefault && (
-                        <span className="bg-green-950/60 text-green-400 border border-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        <span className="bg-green-950/60 text-green-400 border border-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
                           Varsayılan
                         </span>
                       )}
                     </div>
                     {resume.targetRole && (
                       <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                        <Briefcase className="h-3 w-3" />
-                        {resume.targetRole}
+                        <Briefcase className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{resume.targetRole}</span>
                       </p>
                     )}
                   </div>
 
-                  <span className="bg-muted text-muted-foreground text-[11px] font-medium px-2.5 py-1 rounded-md shrink-0">
-                    {resume.category}
-                  </span>
+                  {/* Upload / Updated Date Badge */}
+                  {dateTimestamp && (
+                    <div
+                      className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 border border-border/50 px-2 py-1 rounded-md shrink-0"
+                      title="Yüklenme / Son Güncelleme Tarihi"
+                    >
+                      <Calendar className="h-3 w-3 text-primary shrink-0" />
+                      <span>
+                        {format(new Date(dateTimestamp), 'd MMM yyyy, HH:mm', { locale: tr })}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Attached File Indicator */}
@@ -142,9 +128,15 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                         <p className="font-semibold text-foreground truncate text-xs">
                           {resume.fileName || (resume.fileUrl ? 'Harici CV Bağlantısı' : 'CV Dosyası')}
                         </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {resume.fileSize ? formatFileSize(resume.fileSize) : 'Yüklü Belge'}
-                        </p>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                          {resume.fileSize && <span>{formatFileSize(resume.fileSize)}</span>}
+                          {resume.fileSize && dateTimestamp && <span>•</span>}
+                          {dateTimestamp && (
+                            <span>
+                              Yüklendi: {format(new Date(dateTimestamp), 'd MMMM yyyy', { locale: tr })}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
