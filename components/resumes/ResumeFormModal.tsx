@@ -159,6 +159,11 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   function handleFileSelected(file: File) {
     setPendingFile(file)
     setFileRemoved(false)
+
+    // Dosya adını (uzantısız veya tam) otomatik CV İsmi olarak ayarla
+    const cleanFileName = file.name.replace(/\.[^/.]+$/, '') || file.name
+    setValue('name', cleanFileName, { shouldValidate: true, shouldDirty: true })
+
     const reader = new FileReader()
     reader.onload = () => {
       const base64Data = (reader.result as string).split(',')[1]
@@ -170,7 +175,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       }
       setSelectedFilePreview(fileData)
       // Automatically trigger analysis!
-      parseCVWithAI({ fileBase64: base64Data, mimeType: fileData.mimeType })
+      parseCVWithAI({ fileBase64: base64Data, mimeType: fileData.mimeType, preferredName: cleanFileName })
     }
     reader.onerror = () => {
       toast({ title: 'Dosya okunamadı', variant: 'destructive' })
@@ -186,7 +191,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   }
 
   // Parse CV via AI
-  async function parseCVWithAI(overridePayload?: { fileBase64?: string; mimeType?: string; rawText?: string }) {
+  async function parseCVWithAI(overridePayload?: { fileBase64?: string; mimeType?: string; rawText?: string; preferredName?: string }) {
     setIsAnalyzing(true)
 
     const filePayload = overridePayload?.fileBase64
@@ -245,7 +250,9 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       setAiInsights(data)
 
       // Auto-populate form fields!
-      if (data.name) setValue('name', data.name, { shouldValidate: true, shouldDirty: true })
+      // Keep file name as the CV name if a file was selected, otherwise use AI extracted name
+      const targetName = overridePayload?.preferredName || (pendingFile ? pendingFile.name.replace(/\.[^/.]+$/, '') : data.name)
+      if (targetName) setValue('name', targetName, { shouldValidate: true, shouldDirty: true })
       if (data.category) setValue('category', data.category, { shouldValidate: true, shouldDirty: true })
       if (data.targetRole) setValue('targetRole', data.targetRole, { shouldValidate: true, shouldDirty: true })
       if (data.summary) setValue('summary', data.summary, { shouldValidate: true, shouldDirty: true })
@@ -256,7 +263,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
 
       toast({
         title: '✨ CV Başarıyla Analiz Edildi!',
-        description: 'Tüm alanlar yapay zeka ile dolduruldu.',
+        description: 'Dosya adı ve CV bilgileri otomatik dolduruldu.',
       })
     } catch (err) {
       console.error(err)
