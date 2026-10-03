@@ -31,6 +31,7 @@ export interface Resume {
   skills?: string[]
   summary?: string
   coverLetter?: string
+  coverLetterEn?: string
   rawText?: string
   isDefault: boolean
   updatedAt?: number
@@ -46,6 +47,7 @@ export interface ResumeFormValues {
   fileName?: string
   fileSize?: number
   coverLetter?: string
+  coverLetterEn?: string
   skills?: string[]
   summary?: string
   rawText?: string

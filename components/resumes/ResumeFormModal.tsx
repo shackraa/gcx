@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { formatFileSize, safeUrl } from '@/lib/utils/applications'
 import type { Id } from '@/convex/_generated/dataModel'
+import { cn } from '@/lib/utils'
 
 const schema = z.object({
   name: z.string().min(1, 'CV adı gerekli'),
@@ -35,6 +36,7 @@ const schema = z.object({
   targetRole: z.string().optional(),
   fileUrl: z.string().url('Geçerli bir URL girin').or(z.literal('')).optional(),
   coverLetter: z.string().optional(),
+  coverLetterEn: z.string().optional(),
   rawText: z.string().optional(),
   isDefault: z.boolean().default(false),
 })
@@ -63,6 +65,7 @@ interface AIAnalysisResult {
   category?: string
   targetRole?: string
   coverLetter?: string
+  coverLetterEn?: string
   skills?: string[]
   summary?: string
   experienceLevel?: string
@@ -85,6 +88,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
+  const [coverLetterLang, setCoverLetterLang] = useState<'tr' | 'en'>('tr')
   const [apiKey, setApiKey] = useState('')
   const [tempApiKey, setTempApiKey] = useState('')
   const [showKeyInput, setShowKeyInput] = useState(false)
@@ -112,6 +116,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       targetRole: editingResume?.targetRole ?? '',
       fileUrl: editingResume?.fileUrl ?? '',
       coverLetter: editingResume?.coverLetter ?? '',
+      coverLetterEn: editingResume?.coverLetterEn ?? '',
       rawText: editingResume?.rawText ?? '',
       isDefault: editingResume?.isDefault ?? false,
     },
@@ -143,8 +148,9 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     toast({ title: 'Gemini API Anahtarı Kaydedildi ✓' })
   }
 
-  // Generate Cover Letter via AI
-  async function handleGenerateCoverLetter() {
+  // Generate Cover Letter via AI (TR or EN)
+  async function handleGenerateCoverLetter(lang?: 'tr' | 'en') {
+    const targetLang = lang || coverLetterLang
     const rawTextValue = watch('rawText')
     const targetRoleValue = watch('targetRole')
     const activeKey = apiKey || (typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : '')
@@ -166,14 +172,20 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         body: JSON.stringify({
           rawText: rawTextValue || selectedFilePreview?.base64 || 'Aday CV Bilgileri',
           targetRole: targetRoleValue || 'İlgili Pozisyon',
+          language: targetLang,
           apiKey: activeKey || undefined,
         }),
       })
 
       const json = await res.json()
       if (res.ok && json.coverLetter) {
-        setValue('coverLetter', json.coverLetter, { shouldValidate: true, shouldDirty: true })
-        toast({ title: '✨ Cover Letter Oluşturuldu!' })
+        if (targetLang === 'en') {
+          setValue('coverLetterEn', json.coverLetter, { shouldValidate: true, shouldDirty: true })
+          toast({ title: '✨ İngilizce Cover Letter Oluşturuldu!' })
+        } else {
+          setValue('coverLetter', json.coverLetter, { shouldValidate: true, shouldDirty: true })
+          toast({ title: '✨ Türkçe Cover Letter Oluşturuldu!' })
+        }
       } else {
         toast({
           title: 'Hata',
@@ -190,10 +202,10 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   }
 
   async function handleCopyCoverLetter() {
-    const text = watch('coverLetter')
-    if (text) {
-      await navigator.clipboard.writeText(text)
-      toast({ title: 'Cover Letter Panoya Kopyalandı ✓' })
+    const activeText = coverLetterLang === 'en' ? watch('coverLetterEn') : watch('coverLetter')
+    if (activeText) {
+      await navigator.clipboard.writeText(activeText)
+      toast({ title: `${coverLetterLang === 'en' ? 'İngilizce' : 'Türkçe'} Cover Letter Panoya Kopyalandı ✓` })
     }
   }
 
@@ -358,6 +370,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         fileName: fileNameToSave,
         fileSize: fileSizeToSave,
         coverLetter: values.coverLetter || undefined,
+        coverLetterEn: values.coverLetterEn || undefined,
         rawText: values.rawText || undefined,
         isDefault: Boolean(values.isDefault),
       }
@@ -732,21 +745,56 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
               )}
             </div>
 
-            {/* Cover Letter (Ön Yazı) */}
-            <div className="space-y-2 bg-muted/20 border border-border/70 rounded-xl p-3.5">
+            {/* Cover Letter (Ön Yazı - Türkçe & İngilizce) */}
+            <div className="space-y-2.5 bg-muted/20 border border-border/70 rounded-xl p-3.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  Ön Yazı (Cover Letter)
-                </label>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    Ön Yazı (Cover Letter)
+                  </label>
+
+                  {/* Language Toggle Pills */}
+                  <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg border border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => setCoverLetterLang('tr')}
+                      className={cn(
+                        'flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                        coverLetterLang === 'tr'
+                          ? 'bg-background text-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <span>🇹🇷 TR</span>
+                      <span>Türkçe</span>
+                      {Boolean(watch('coverLetter')) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCoverLetterLang('en')}
+                      className={cn(
+                        'flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                        coverLetterLang === 'en'
+                          ? 'bg-background text-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      <span>🇬🇧 EN</span>
+                      <span>English</span>
+                      {Boolean(watch('coverLetterEn')) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                    </button>
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-1.5 self-end sm:self-auto">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={handleCopyCoverLetter}
-                    disabled={!watch('coverLetter')}
-                    className="h-7 text-[11px] px-2 gap-1 text-muted-foreground hover:text-foreground"
+                    disabled={coverLetterLang === 'en' ? !watch('coverLetterEn') : !watch('coverLetter')}
+                    className="h-7 text-[11px] px-2 gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <Copy className="h-3 w-3" />
                     Kopyala
@@ -755,9 +803,9 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleGenerateCoverLetter}
+                    onClick={() => handleGenerateCoverLetter(coverLetterLang)}
                     disabled={isGeneratingCoverLetter}
-                    className="h-7 text-[11px] px-2.5 gap-1.5 text-primary hover:text-primary border-primary/30 bg-primary/5 font-semibold"
+                    className="h-7 text-[11px] px-2.5 gap-1.5 text-primary hover:text-primary border-primary/30 bg-primary/5 font-semibold cursor-pointer"
                   >
                     {isGeneratingCoverLetter ? (
                       <>
@@ -767,19 +815,36 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     ) : (
                       <>
                         <Sparkles className="h-3 w-3" />
-                        <span>{watch('coverLetter') ? 'Cover Letter Yenile' : 'Cover Letter Oluştur'}</span>
+                        <span>
+                          {coverLetterLang === 'en'
+                            ? watch('coverLetterEn')
+                              ? '🇬🇧 İngilizce Yenile'
+                              : '🇬🇧 İngilizce Oluştur'
+                            : watch('coverLetter')
+                            ? '🇹🇷 Türkçe Yenile'
+                            : '🇹🇷 Türkçe Oluştur'}
+                        </span>
                       </>
                     )}
                   </Button>
                 </div>
               </div>
 
-              <textarea
-                {...register('coverLetter')}
-                rows={5}
-                className="w-full px-3 py-2.5 rounded-lg bg-background border border-border/80 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-y leading-relaxed text-foreground placeholder:text-muted-foreground/60"
-                placeholder="Bu alana CV'nize ve hedef pozisyonunuza uygun etkileyici bir Cover Letter (Ön Yazı) yazabilir veya 'Cover Letter Oluştur' butonuna basarak yapay zekaya ürettirebilirsiniz..."
-              />
+              {coverLetterLang === 'tr' ? (
+                <textarea
+                  {...register('coverLetter')}
+                  rows={5}
+                  className="w-full px-3 py-2.5 rounded-lg bg-background border border-border/80 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-y leading-relaxed text-foreground placeholder:text-muted-foreground/60"
+                  placeholder="Bu alana CV'nize ve hedef pozisyonunuza uygun etkileyici bir Türkçe Cover Letter (Ön Yazı) yazabilir veya 'Türkçe Oluştur' butonuna basarak yapay zekaya ürettirebilirsiniz..."
+                />
+              ) : (
+                <textarea
+                  {...register('coverLetterEn')}
+                  rows={5}
+                  className="w-full px-3 py-2.5 rounded-lg bg-background border border-border/80 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-y leading-relaxed text-foreground placeholder:text-muted-foreground/60"
+                  placeholder="Type your professional English Cover Letter here or click 'İngilizce Oluştur' to let AI write a high-impact cover letter tailored for international / remote roles..."
+                />
+              )}
             </div>
 
             {/* Raw Text for AI Analysis & Matching */}

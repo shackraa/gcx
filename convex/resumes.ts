@@ -91,6 +91,7 @@ export const create = mutation({
     fileName: v.optional(v.string()),
     fileSize: v.optional(v.number()),
     coverLetter: v.optional(v.string()),
+    coverLetterEn: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
     summary: v.optional(v.string()),
     rawText: v.optional(v.string()),
@@ -136,6 +137,7 @@ export const update = mutation({
     fileName: v.optional(v.string()),
     fileSize: v.optional(v.number()),
     coverLetter: v.optional(v.string()),
+    coverLetterEn: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
     summary: v.optional(v.string()),
     rawText: v.optional(v.string()),
@@ -237,6 +239,15 @@ Veri modelleme, pazar araştırması ve kullanıcı deneyimi analizleri konusund
 Saygılarımla,
 Atakan Turpcu`
 
+    const defaultCoverLetterEn = `Dear Hiring Team / Hiring Manager,
+
+As a senior Mathematical Engineering student passionate about data analytics, AI systems, and product development, I am writing to express my strong enthusiasm for joining your team. Having founded ventures that scaled to 2.5M+ TL in revenue and 45K+ audience reach, alongside hands-on internships in AI Engineering and Business Intelligence, I have consistently proven my ability to solve complex problems through data-driven and user-centric approaches.
+
+I look forward to leveraging my expertise in SQL, Python, data modeling, market research, and user experience analytics to drive measurable impact for your products and growth metrics. I would welcome the opportunity to discuss how my background and skills align with your goals.
+
+Sincerely,
+Atakan Turpcu`
+
     for (const resume of resumes) {
       const patch: Record<string, unknown> = {}
       if (resume.name === 'Product & AI Engineer CV' || !resume.fileName) {
@@ -245,6 +256,9 @@ Atakan Turpcu`
       }
       if (!resume.coverLetter) {
         patch.coverLetter = defaultCoverLetter
+      }
+      if (!resume.coverLetterEn) {
+        patch.coverLetterEn = defaultCoverLetterEn
       }
       if (Object.keys(patch).length > 0) {
         patch.updatedAt = Date.now()

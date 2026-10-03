@@ -5,13 +5,14 @@ interface GenerateCoverLetterRequest {
   targetRole?: string
   companyName?: string
   jobDescription?: string
+  language?: 'tr' | 'en'
   apiKey?: string
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as GenerateCoverLetterRequest
-    const { rawText, targetRole, companyName, jobDescription, apiKey } = body
+    const { rawText, targetRole, companyName, jobDescription, language = 'tr', apiKey } = body
 
     const activeApiKey = apiKey?.trim() || process.env.GEMINI_API_KEY?.trim()
 
@@ -35,7 +36,19 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const systemPrompt = `Sen dünyanın en iyi kariyer koçu ve kıdemli işe alım uzmanısın (Executive Career Coach & Tech Recruiter).
+    const isEnglish = language === 'en'
+
+    const systemPrompt = isEnglish
+      ? `You are a world-class Executive Career Coach and Senior Tech Recruiter.
+Based on the candidate's CV and target application details, write a compelling, concise, impactful, and authentic 3-paragraph English Cover Letter.
+
+RULES:
+1. Introduction: Passion for the target role (${targetRole || 'the open position'}) and high-level value proposition.
+2. Body Paragraph: Highlight concrete achievements from the CV (projects, revenue/impact, tech stack, internships, problems solved) demonstrating tangible business impact rather than a plain list of skills.
+3. Conclusion: Value added to the company (${companyName || 'your organization'}), polite call-to-action for an interview.
+4. Salutation & Sign-off: Start with "Dear Hiring Team / Hiring Manager," and conclude with "Sincerely," followed by the candidate's name.
+5. Provide clean plain text only (no markdown code fences, headers or asterisks).`
+      : `Sen dünyanın en iyi kariyer koçu ve kıdemli işe alım uzmanısın (Executive Career Coach & Tech Recruiter).
 Sana verilen adayın CV metnini ve hedef bilgilerini inceleyerek doğrudan iş başvurularında kullanabileceği, son derece etkileyici, samimi, profesyonel ve ikna edici 3 paragraflık bir Türkçe Ön Yazı (Cover Letter) oluştur.
 
 KURALLAR:

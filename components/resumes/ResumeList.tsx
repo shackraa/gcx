@@ -34,6 +34,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
   const { openResumeModal, openModal, setResumeFilter, setView } = useUIStore()
   const { toast } = useToast()
   const resumeStats = getResumeStats(applications, resumes)
+  const [selectedLangMap, setSelectedLangMap] = useState<Record<string, 'tr' | 'en'>>({})
 
   async function handleCopyCoverLetter(text: string) {
     if (!text) return
@@ -178,41 +179,84 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                   </div>
                 )}
 
-                {/* Cover Letter (Ön Yazı) */}
-                {resume.coverLetter ? (
-                  <div className="space-y-1.5 bg-muted/20 border border-border/60 rounded-xl p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
-                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        Ön Yazı (Cover Letter)
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyCoverLetter(resume.coverLetter!)}
-                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium"
-                      >
-                        <Copy className="h-3 w-3" />
-                        Kopyala
-                      </button>
+                {/* Cover Letter (Ön Yazı - Türkçe & İngilizce) */}
+                {(() => {
+                  const activeLang = selectedLangMap[resume._id] || 'tr'
+                  const currentLetterText = activeLang === 'en' ? resume.coverLetterEn : resume.coverLetter
+
+                  return (
+                    <div className="space-y-2 bg-muted/20 border border-border/60 rounded-xl p-3">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                            <Sparkles className="h-3.5 w-3.5 text-primary" />
+                            Ön Yazı
+                          </span>
+
+                          {/* Language Switcher Pills */}
+                          <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg border border-border/60">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedLangMap((prev) => ({ ...prev, [resume._id]: 'tr' }))}
+                              className={cn(
+                                'flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer',
+                                activeLang === 'tr'
+                                  ? 'bg-background text-foreground shadow-xs'
+                                  : 'text-muted-foreground hover:text-foreground'
+                              )}
+                            >
+                              <span>🇹🇷 TR</span>
+                              {Boolean(resume.coverLetter) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedLangMap((prev) => ({ ...prev, [resume._id]: 'en' }))}
+                              className={cn(
+                                'flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer',
+                                activeLang === 'en'
+                                  ? 'bg-background text-foreground shadow-xs'
+                                  : 'text-muted-foreground hover:text-foreground'
+                              )}
+                            >
+                              <span>🇬🇧 EN</span>
+                              {Boolean(resume.coverLetterEn) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {currentLetterText && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCoverLetter(currentLetterText)}
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium cursor-pointer"
+                          >
+                            <Copy className="h-3 w-3" />
+                            Kopyala
+                          </button>
+                        )}
+                      </div>
+
+                      {currentLetterText ? (
+                        <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap line-clamp-3 hover:line-clamp-none transition-all">
+                          {currentLetterText}
+                        </p>
+                      ) : (
+                        <div className="flex items-center justify-between p-2 rounded-lg bg-muted/15 border border-dashed border-border/60 text-xs text-muted-foreground">
+                          <span className="text-[11px] flex items-center gap-1 italic">
+                            {activeLang === 'tr' ? 'Türkçe ön yazı henüz oluşturulmamış' : 'İngilizce ön yazı henüz oluşturulmamış'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => openResumeModal(resume._id)}
+                            className="text-[11px] text-primary hover:underline font-medium cursor-pointer"
+                          >
+                            + {activeLang === 'tr' ? 'Türkçe Oluştur' : 'İngilizce Oluştur'}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap line-clamp-3 hover:line-clamp-none transition-all">
-                      {resume.coverLetter}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/15 border border-dashed border-border/60 text-xs text-muted-foreground">
-                    <span className="text-[11px] flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-primary/70" />
-                      Ön yazı henüz oluşturulmamış
-                    </span>
-                    <button
-                      onClick={() => openResumeModal(resume._id)}
-                      className="text-[11px] text-primary hover:underline font-medium"
-                    >
-                      + Cover Letter Oluştur
-                    </button>
-                  </div>
-                )}
+                  )
+                })()}
               </div>
 
               {/* Stats & Actions */}

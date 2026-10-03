@@ -17,7 +17,8 @@ export default defineSchema({
     fileSize: v.optional(v.number()),   // Dosya boyutu (bytes)
     skills: v.optional(v.array(v.string())), // Geriye dönük uyumluluk
     summary: v.optional(v.string()),    // Geriye dönük uyumluluk
-    coverLetter: v.optional(v.string()), // Özel Ön Yazı (Cover Letter)
+    coverLetter: v.optional(v.string()), // Özel Ön Yazı (Türkçe Cover Letter)
+    coverLetterEn: v.optional(v.string()), // Özel Ön Yazı (İngilizce Cover Letter)
     rawText: v.optional(v.string()),    // İlan eşleştirme için metin
     isDefault: v.boolean(),
     updatedAt: v.optional(v.number()),  // Son güncelleme zamanı (timestamp)
