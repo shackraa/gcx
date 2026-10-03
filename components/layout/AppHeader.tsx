@@ -192,6 +192,61 @@ export function AppHeader() {
           </Button>
         </div>
       </div>
+
+      {/* Mobile Sub-Navigation Bar */}
+      <div className="sm:hidden border-t border-border/40 bg-card/60 backdrop-blur-sm px-2 py-1.5 flex items-center justify-around gap-1">
+        <button
+          onClick={() => setView('list')}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            isApplicationsView
+              ? 'bg-primary/10 text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <LayoutList className="h-3.5 w-3.5" />
+          Başvurularım
+        </button>
+
+        <button
+          onClick={() => setView('resumes')}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            view === 'resumes'
+              ? 'bg-primary/10 text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <FileText className="h-3.5 w-3.5" />
+          CV Havuzu
+        </button>
+
+        <button
+          onClick={() => setView('jobs')}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            view === 'jobs'
+              ? 'bg-primary/10 text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Briefcase className="h-3.5 w-3.5" />
+          İlan Radarı
+        </button>
+
+        <button
+          onClick={() => setView('analytics')}
+          className={cn(
+            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            view === 'analytics'
+              ? 'bg-primary/10 text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <BarChart2 className="h-3.5 w-3.5" />
+          Analiz
+        </button>
+      </div>
     </header>
   )
 }

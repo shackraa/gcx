@@ -3,7 +3,7 @@ import { v } from 'convex/values'
 import { getAuthUserId } from '@convex-dev/auth/server'
 
 // ─────────────────────────────────────────────
-// Tüm başvuruları getir (real-time)
+// Tüm başvuruları getir (real-time & CV senkronize)
 // ─────────────────────────────────────────────
 export const list = query({
   args: {},
@@ -11,11 +11,38 @@ export const list = query({
     const userId = await getAuthUserId(ctx)
     if (!userId) return []
 
-    return await ctx.db
+    const apps = await ctx.db
       .query('applications')
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .order('desc')
       .collect()
+
+    return await Promise.all(
+      apps.map(async (app) => {
+        let cvVersion = app.cvVersion
+        let cvLink = app.cvLink
+
+        if (app.resumeId) {
+          try {
+            const resume = await ctx.db.get(app.resumeId as any)
+            if (resume) {
+              cvVersion = (resume as any).name || cvVersion
+              if ((resume as any).storageId) {
+                cvLink = (await ctx.storage.getUrl((resume as any).storageId)) || (resume as any).fileUrl || cvLink
+              } else if ((resume as any).fileUrl) {
+                cvLink = (resume as any).fileUrl
+              }
+            }
+          } catch {}
+        }
+
+        return {
+          ...app,
+          cvVersion,
+          cvLink,
+        }
+      })
+    )
   },
 })
 

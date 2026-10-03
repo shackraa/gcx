@@ -14,7 +14,25 @@ export const list = query({
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .collect()
 
-    return jobs
+    const enrichedJobs = await Promise.all(
+      jobs.map(async (job) => {
+        let recommendedResumeName = job.recommendedResumeName
+        if (job.recommendedResumeId) {
+          try {
+            const resume = await ctx.db.get(job.recommendedResumeId as any)
+            if (resume && (resume as any).name) {
+              recommendedResumeName = (resume as any).name
+            }
+          } catch {}
+        }
+        return {
+          ...job,
+          recommendedResumeName,
+        }
+      })
+    )
+
+    return enrichedJobs
       .filter((j) => (j.matchScore || 0) >= 70)
       .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
   },
@@ -169,21 +187,48 @@ export const convertToApplication = mutation({
 })
 
 // Migration to ensure Leap Games application has waiting status and correct CV
-export const fixLeapGamesApplication = mutation({
+// Migration to sync all scouted jobs and applications with current resume names
+export const syncAllResumesAndJobs = mutation({
   args: {},
   handler: async (ctx) => {
+    const resumes = await ctx.db.query('resumes').collect()
+    const resumeMap = new Map<string, string>()
+    for (const r of resumes) {
+      resumeMap.set(r._id, r.name)
+    }
+
     const apps = await ctx.db.query('applications').collect()
-    let updatedCount = 0
+    let updatedApps = 0
     for (const app of apps) {
-      if (app.company.toLowerCase().includes('leap games')) {
+      const currentResumeName = app.resumeId ? resumeMap.get(app.resumeId) : undefined
+      const isLeap = app.company.toLowerCase().includes('leap games')
+      if (currentResumeName && app.cvVersion !== currentResumeName) {
+        await ctx.db.patch(app._id, {
+          cvVersion: currentResumeName,
+          status: isLeap ? 'waiting' : app.status,
+        })
+        updatedApps++
+      } else if (isLeap && app.status !== 'waiting') {
         await ctx.db.patch(app._id, {
           status: 'waiting',
-          cvVersion: 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV',
         })
-        updatedCount++
+        updatedApps++
       }
     }
-    return { updatedCount }
+
+    const scouted = await ctx.db.query('scoutedJobs').collect()
+    let updatedScouted = 0
+    for (const s of scouted) {
+      const currentResumeName = s.recommendedResumeId ? resumeMap.get(s.recommendedResumeId) : undefined
+      if (currentResumeName && s.recommendedResumeName !== currentResumeName) {
+        await ctx.db.patch(s._id, {
+          recommendedResumeName: currentResumeName,
+        })
+        updatedScouted++
+      }
+    }
+
+    return { updatedApps, updatedScouted }
   },
 })
 
