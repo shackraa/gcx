@@ -760,29 +760,27 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                       type="button"
                       onClick={() => setCoverLetterLang('tr')}
                       className={cn(
-                        'flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                        'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer',
                         coverLetterLang === 'tr'
-                          ? 'bg-background text-foreground shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
                       )}
                     >
-                      <span>🇹🇷 TR</span>
-                      <span>Türkçe</span>
-                      {Boolean(watch('coverLetter')) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      <span>TR</span>
+                      {Boolean(watch('coverLetter')) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
                     </button>
                     <button
                       type="button"
                       onClick={() => setCoverLetterLang('en')}
                       className={cn(
-                        'flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer',
+                        'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer',
                         coverLetterLang === 'en'
-                          ? 'bg-background text-foreground shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
                       )}
                     >
-                      <span>🇬🇧 EN</span>
-                      <span>English</span>
-                      {Boolean(watch('coverLetterEn')) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                      <span>EN</span>
+                      {Boolean(watch('coverLetterEn')) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
                     </button>
                   </div>
                 </div>
@@ -818,11 +816,11 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                         <span>
                           {coverLetterLang === 'en'
                             ? watch('coverLetterEn')
-                              ? '🇬🇧 İngilizce Yenile'
-                              : '🇬🇧 İngilizce Oluştur'
+                              ? 'EN Yenile'
+                              : 'EN Oluştur'
                             : watch('coverLetter')
-                            ? '🇹🇷 Türkçe Yenile'
-                            : '🇹🇷 Türkçe Oluştur'}
+                            ? 'TR Yenile'
+                            : 'TR Oluştur'}
                         </span>
                       </>
                     )}

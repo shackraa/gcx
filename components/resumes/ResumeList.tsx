@@ -194,32 +194,32 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                           </span>
 
                           {/* Language Switcher Pills */}
-                          <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg border border-border/60">
+                          <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-md border border-border/60">
                             <button
                               type="button"
                               onClick={() => setSelectedLangMap((prev) => ({ ...prev, [resume._id]: 'tr' }))}
                               className={cn(
-                                'flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer',
+                                'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
                                 activeLang === 'tr'
-                                  ? 'bg-background text-foreground shadow-xs'
-                                  : 'text-muted-foreground hover:text-foreground'
+                                  ? 'bg-primary text-primary-foreground shadow-xs'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
                               )}
                             >
-                              <span>🇹🇷 TR</span>
-                              {Boolean(resume.coverLetter) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                              <span>TR</span>
+                              {Boolean(resume.coverLetter) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
                             </button>
                             <button
                               type="button"
                               onClick={() => setSelectedLangMap((prev) => ({ ...prev, [resume._id]: 'en' }))}
                               className={cn(
-                                'flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer',
+                                'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
                                 activeLang === 'en'
-                                  ? 'bg-background text-foreground shadow-xs'
-                                  : 'text-muted-foreground hover:text-foreground'
+                                  ? 'bg-primary text-primary-foreground shadow-xs'
+                                  : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
                               )}
                             >
-                              <span>🇬🇧 EN</span>
-                              {Boolean(resume.coverLetterEn) && <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+                              <span>EN</span>
+                              {Boolean(resume.coverLetterEn) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
                             </button>
                           </div>
                         </div>
