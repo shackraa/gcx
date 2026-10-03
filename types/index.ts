@@ -28,8 +28,9 @@ export interface Resume {
   fileName?: string
   fileSize?: number
   downloadUrl?: string | null
-  skills: string[]
+  skills?: string[]
   summary?: string
+  coverLetter?: string
   rawText?: string
   isDefault: boolean
   updatedAt?: number
@@ -44,7 +45,8 @@ export interface ResumeFormValues {
   storageId?: string
   fileName?: string
   fileSize?: number
-  skills: string[]
+  coverLetter?: string
+  skills?: string[]
   summary?: string
   rawText?: string
   isDefault: boolean

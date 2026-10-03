@@ -18,9 +18,11 @@ import {
   Download,
   Calendar,
   Clock,
+  Copy,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 interface ResumeListProps {
@@ -30,7 +32,14 @@ interface ResumeListProps {
 
 export function ResumeList({ resumes, applications }: ResumeListProps) {
   const { openResumeModal, openModal, setResumeFilter, setView } = useUIStore()
+  const { toast } = useToast()
   const resumeStats = getResumeStats(applications, resumes)
+
+  async function handleCopyCoverLetter(text: string) {
+    if (!text) return
+    await navigator.clipboard.writeText(text)
+    toast({ title: 'Cover Letter Panoya Kopyalandı ✓' })
+  }
 
   if (resumes.length === 0) {
     return (
@@ -169,24 +178,39 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                   </div>
                 )}
 
-                {/* Summary / Notes */}
-                {resume.summary && (
-                  <p className="text-xs text-muted-foreground/90 bg-muted/20 p-2.5 rounded-lg border border-border/40 leading-relaxed">
-                    {resume.summary}
-                  </p>
-                )}
-
-                {/* Skills Tags */}
-                {resume.skills && resume.skills.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {resume.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="text-[11px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md font-medium"
-                      >
-                        {skill}
+                {/* Cover Letter (Ön Yazı) */}
+                {resume.coverLetter ? (
+                  <div className="space-y-1.5 bg-muted/20 border border-border/60 rounded-xl p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        Ön Yazı (Cover Letter)
                       </span>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCoverLetter(resume.coverLetter!)}
+                        className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Kopyala
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap line-clamp-3 hover:line-clamp-none transition-all">
+                      {resume.coverLetter}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/15 border border-dashed border-border/60 text-xs text-muted-foreground">
+                    <span className="text-[11px] flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-primary/70" />
+                      Ön yazı henüz oluşturulmamış
+                    </span>
+                    <button
+                      onClick={() => openResumeModal(resume._id)}
+                      className="text-[11px] text-primary hover:underline font-medium"
+                    >
+                      + Cover Letter Oluştur
+                    </button>
                   </div>
                 )}
               </div>

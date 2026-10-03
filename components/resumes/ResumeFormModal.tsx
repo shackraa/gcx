@@ -23,6 +23,7 @@ import {
   ChevronUp,
   Download,
   CheckCircle2,
+  Copy,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { formatFileSize, safeUrl } from '@/lib/utils/applications'
@@ -33,7 +34,7 @@ const schema = z.object({
   category: z.string().min(1, 'Kategori seçimi gerekli'),
   targetRole: z.string().optional(),
   fileUrl: z.string().url('Geçerli bir URL girin').or(z.literal('')).optional(),
-  summary: z.string().optional(),
+  coverLetter: z.string().optional(),
   rawText: z.string().optional(),
   isDefault: z.boolean().default(false),
 })
@@ -61,6 +62,7 @@ interface AIAnalysisResult {
   name?: string
   category?: string
   targetRole?: string
+  coverLetter?: string
   skills?: string[]
   summary?: string
   experienceLevel?: string
@@ -79,12 +81,10 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   const removeMutation = useMutation(api.resumes.remove)
   const { toast } = useToast()
 
-  const [skills, setSkills] = useState<string[]>(editingResume?.skills ?? [])
-  const [skillInput, setSkillInput] = useState('')
-
   // AI & File State
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [tempApiKey, setTempApiKey] = useState('')
   const [showKeyInput, setShowKeyInput] = useState(false)
@@ -111,7 +111,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       category: editingResume?.category ?? 'Yapay Zeka & Veri',
       targetRole: editingResume?.targetRole ?? '',
       fileUrl: editingResume?.fileUrl ?? '',
-      summary: editingResume?.summary ?? '',
+      coverLetter: editingResume?.coverLetter ?? '',
       rawText: editingResume?.rawText ?? '',
       isDefault: editingResume?.isDefault ?? false,
     },
@@ -143,16 +143,58 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     toast({ title: 'Gemini API Anahtarı Kaydedildi ✓' })
   }
 
-  function handleAddSkill() {
-    const trimmed = skillInput.trim()
-    if (trimmed && !skills.includes(trimmed)) {
-      setSkills([...skills, trimmed])
-      setSkillInput('')
+  // Generate Cover Letter via AI
+  async function handleGenerateCoverLetter() {
+    const rawTextValue = watch('rawText')
+    const targetRoleValue = watch('targetRole')
+    const activeKey = apiKey || (typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : '')
+
+    if (!rawTextValue && !selectedFilePreview?.base64) {
+      toast({
+        title: 'CV Bilgisi Gerekli',
+        description: 'Ön yazı oluşturmak için lütfen bir CV dosyası seçin veya CV metnini girin.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsGeneratingCoverLetter(true)
+    try {
+      const res = await fetch('/api/ai/generate-cover-letter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rawText: rawTextValue || selectedFilePreview?.base64 || 'Aday CV Bilgileri',
+          targetRole: targetRoleValue || 'İlgili Pozisyon',
+          apiKey: activeKey || undefined,
+        }),
+      })
+
+      const json = await res.json()
+      if (res.ok && json.coverLetter) {
+        setValue('coverLetter', json.coverLetter, { shouldValidate: true, shouldDirty: true })
+        toast({ title: '✨ Cover Letter Oluşturuldu!' })
+      } else {
+        toast({
+          title: 'Hata',
+          description: json.message || 'Ön yazı oluşturulamadı.',
+          variant: 'destructive',
+        })
+      }
+    } catch (err) {
+      console.error(err)
+      toast({ title: 'Bağlantı Hatası', variant: 'destructive' })
+    } finally {
+      setIsGeneratingCoverLetter(false)
     }
   }
 
-  function handleRemoveSkill(skillToRemove: string) {
-    setSkills(skills.filter((s) => s !== skillToRemove))
+  async function handleCopyCoverLetter() {
+    const text = watch('coverLetter')
+    if (text) {
+      await navigator.clipboard.writeText(text)
+      toast({ title: 'Cover Letter Panoya Kopyalandı ✓' })
+    }
   }
 
   // Handle File selection
@@ -255,15 +297,12 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       if (targetName) setValue('name', targetName, { shouldValidate: true, shouldDirty: true })
       if (data.category) setValue('category', data.category, { shouldValidate: true, shouldDirty: true })
       if (data.targetRole) setValue('targetRole', data.targetRole, { shouldValidate: true, shouldDirty: true })
-      if (data.summary) setValue('summary', data.summary, { shouldValidate: true, shouldDirty: true })
+      if (data.coverLetter) setValue('coverLetter', data.coverLetter, { shouldValidate: true, shouldDirty: true })
       if (data.extractedText) setValue('rawText', data.extractedText, { shouldValidate: true, shouldDirty: true })
-      if (data.skills && Array.isArray(data.skills)) {
-        setSkills(data.skills)
-      }
 
       toast({
         title: '✨ CV Başarıyla Analiz Edildi!',
-        description: 'Dosya adı ve CV bilgileri otomatik dolduruldu.',
+        description: 'Dosya adı, hedef pozisyon ve Cover Letter dolduruldu.',
       })
     } catch (err) {
       console.error(err)
@@ -318,8 +357,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         storageId: storageIdToSave,
         fileName: fileNameToSave,
         fileSize: fileSizeToSave,
-        skills,
-        summary: values.summary || undefined,
+        coverLetter: values.coverLetter || undefined,
         rawText: values.rawText || undefined,
         isDefault: Boolean(values.isDefault),
       }
@@ -694,60 +732,53 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
               )}
             </div>
 
-            {/* Skills Tag Input */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                Öne Çıkan Yetenekler / Anahtar Kelimeler (İlan Eşleşmesi İçin)
-              </label>
-              <div className="flex gap-2 mt-1">
-                <input
-                  value={skillInput}
-                  onChange={(e) => setSkillInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault()
-                      handleAddSkill()
-                    }
-                  }}
-                  className="flex-1 h-8 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                  placeholder="Örn: Python, SQL, Spark (Enter'a bas)"
-                />
-                <Button type="button" size="sm" variant="secondary" onClick={handleAddSkill} className="h-8 text-xs">
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Ekle
-                </Button>
+            {/* Cover Letter (Ön Yazı) */}
+            <div className="space-y-2 bg-muted/20 border border-border/70 rounded-xl p-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  Ön Yazı (Cover Letter)
+                </label>
+                <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCopyCoverLetter}
+                    disabled={!watch('coverLetter')}
+                    className="h-7 text-[11px] px-2 gap-1 text-muted-foreground hover:text-foreground"
+                  >
+                    <Copy className="h-3 w-3" />
+                    Kopyala
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateCoverLetter}
+                    disabled={isGeneratingCoverLetter}
+                    className="h-7 text-[11px] px-2.5 gap-1.5 text-primary hover:text-primary border-primary/30 bg-primary/5 font-semibold"
+                  >
+                    {isGeneratingCoverLetter ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <span>Üretiliyor…</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3 w-3" />
+                        <span>{watch('coverLetter') ? 'Cover Letter Yenile' : 'Cover Letter Oluştur'}</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
-              {skills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="inline-flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="text-primary hover:text-red-400 ml-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Summary */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                Profesyonel Özet
-              </label>
               <textarea
-                {...register('summary')}
-                rows={2}
-                className="mt-1 w-full px-3 py-2 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none leading-relaxed"
-                placeholder="Örn: Veri mühendisliği ve büyük veri projeleri öne çıkarıldı. 3 yıllık deneyim vurgulandı."
+                {...register('coverLetter')}
+                rows={5}
+                className="w-full px-3 py-2.5 rounded-lg bg-background border border-border/80 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-y leading-relaxed text-foreground placeholder:text-muted-foreground/60"
+                placeholder="Bu alana CV'nize ve hedef pozisyonunuza uygun etkileyici bir Cover Letter (Ön Yazı) yazabilir veya 'Cover Letter Oluştur' butonuna basarak yapay zekaya ürettirebilirsiniz..."
               />
             </div>
 

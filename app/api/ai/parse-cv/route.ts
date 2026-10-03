@@ -107,13 +107,14 @@ Sana verilen CV'yi (PDF veya metin) detaylıca incele ve aşağıdaki JSON forma
    - "Genel / Standart CV"
    - "Diğer"
 3. "targetRole": Kişinin CV'sine göre başvurabileceği en net hedef pozisyon unvanı (Örn: "Data Engineer", "AI Specialist", "Product Specialist").
-4. "skills": En önemli ve öne çıkan 6-12 teknik ve sektörel yetenek (Örn: ["Python", "SQL", "Spark", "Airflow", "Kafka", "Data Modeling", "Git"]).
-5. "summary": CV'nin ana yetkinliklerini, deneyim seviyesini ve güçlü yönlerini anlatan akıcı, 2-3 cümlelik Türkçe profesyonel özet.
-6. "experienceLevel": "Junior" | "Mid" | "Senior" | "Lead" değerlerinden biri.
-7. "extractedText": CV'nin okunabilir tam metin özeti.
-8. "suggestedLinkedInQueries": LinkedIn iş aramasında kullanılmak üzere 2 adet optimize edilmiş Boolean arama sorgusu (Örn: ['("Data Engineer" OR "Big Data") AND ("Python" OR "SQL")', '("Product Specialist" OR "Product Manager") AND "Remote"']).
-9. "strengths": CV'deki en güçlü 3 yön (Türkçe maddeler).
-10. "improvements": CV'yi güçlendirmek için önerilen 2 geliştirme noktası (Türkçe maddeler).
+4. "coverLetter": Adayın projelerini, teknik yetkinliklerini, girişimcilik/staj başarılarını ve motivasyonunu hedef pozisyona göre anlatan, doğrudan şirketlere ve iş ilanlarına gönderilebilecek, son derece etkileyici ve akıcı, 2-3 paragraflık profesyonel Türkçe Ön Yazı (Cover Letter).
+5. "skills": En önemli ve öne çıkan 6-12 teknik ve sektörel yetenek (Örn: ["Python", "SQL", "Spark", "Airflow", "Kafka", "Data Modeling", "Git"]).
+6. "summary": CV'nin ana yetkinliklerini, deneyim seviyesini ve güçlü yönlerini anlatan akıcı, 2-3 cümlelik Türkçe profesyonel özet.
+7. "experienceLevel": "Junior" | "Mid" | "Senior" | "Lead" değerlerinden biri.
+8. "extractedText": CV'nin okunabilir tam metin özeti.
+9. "suggestedLinkedInQueries": LinkedIn iş aramasında kullanılmak üzere 2 adet optimize edilmiş Boolean arama sorgusu.
+10. "strengths": CV'deki en güçlü 3 yön (Türkçe maddeler).
+11. "improvements": CV'yi güçlendirmek için önerilen 2 geliştirme noktası (Türkçe maddeler).
 
 DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
 

@@ -15,8 +15,9 @@ export default defineSchema({
     storageId: v.optional(v.id('_storage')), // Convex dosya depolama ID
     fileName: v.optional(v.string()),   // Yüklenen dosyanın adı (örn: CV_Atakan_Ozkan.pdf)
     fileSize: v.optional(v.number()),   // Dosya boyutu (bytes)
-    skills: v.array(v.string()),        // Örn: ["Python", "LangChain", "FastAPI", "Next.js"]
-    summary: v.optional(v.string()),    // CV özeti / öne çıkan noktalar
+    skills: v.optional(v.array(v.string())), // Geriye dönük uyumluluk
+    summary: v.optional(v.string()),    // Geriye dönük uyumluluk
+    coverLetter: v.optional(v.string()), // Özel Ön Yazı (Cover Letter)
     rawText: v.optional(v.string()),    // İlan eşleştirme için metin
     isDefault: v.boolean(),
     updatedAt: v.optional(v.number()),  // Son güncelleme zamanı (timestamp)

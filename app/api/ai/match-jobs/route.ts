@@ -78,9 +78,11 @@ export async function POST(req: NextRequest) {
     const primaryResume = activeResumes[0] || resumes[0]
 
     // Construct primary Boolean query
-    const targetKeywords = primaryResume.skills.slice(0, 4)
-    const roleTerm = primaryResume.targetRole || primaryResume.name.replace(/\s*cv\s*/gi, '')
-    const booleanQuery = `"${roleTerm}" AND (${targetKeywords.map((s) => `"${s}"`).join(' OR ')})`
+    const targetKeywords = (primaryResume?.skills || []).slice(0, 4)
+    const roleTerm = primaryResume?.targetRole || primaryResume?.name?.replace(/\s*cv\s*/gi, '') || 'Developer'
+    const booleanQuery = targetKeywords.length > 0
+      ? `"${roleTerm}" AND (${targetKeywords.map((s) => `"${s}"`).join(' OR ')})`
+      : `"${roleTerm}"`
 
     const platformLinks = buildPlatformSearchLinks({
       query: booleanQuery,
@@ -101,7 +103,8 @@ ${resumes
   .map(
     (r, idx) => `
 CV #${idx + 1}: ${r.name} (Kategori: ${r.category}, Hedef Rol: ${r.targetRole || 'Belirtilmemiş'})
-Yetenekler: ${r.skills.join(', ')}
+Yetenekler: ${(r.skills || []).join(', ')}
+Ön Yazı: ${r.coverLetter || ''}
 Özet: ${r.summary || ''}
 Metin: ${r.rawText ? r.rawText.slice(0, 500) : ''}
 `

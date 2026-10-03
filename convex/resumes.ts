@@ -90,7 +90,8 @@ export const create = mutation({
     storageId: v.optional(v.id('_storage')),
     fileName: v.optional(v.string()),
     fileSize: v.optional(v.number()),
-    skills: v.array(v.string()),
+    coverLetter: v.optional(v.string()),
+    skills: v.optional(v.array(v.string())),
     summary: v.optional(v.string()),
     rawText: v.optional(v.string()),
     isDefault: v.boolean(),
@@ -134,6 +135,7 @@ export const update = mutation({
     storageId: v.optional(v.id('_storage')),
     fileName: v.optional(v.string()),
     fileSize: v.optional(v.number()),
+    coverLetter: v.optional(v.string()),
     skills: v.optional(v.array(v.string())),
     summary: v.optional(v.string()),
     rawText: v.optional(v.string()),
@@ -226,12 +228,27 @@ export const fixOldResumeName = mutation({
   handler: async (ctx) => {
     const resumes = await ctx.db.query('resumes').collect()
     let updatedCount = 0
+    const defaultCoverLetter = `Merhaba Sayın İlgili / İşe Alım Ekibi,
+
+Matematik Mühendisliği son sınıf öğrencisi olarak veri analitiği, yapay zeka ve ürün geliştirme alanlarındaki tutkumu şirketinizin vizyonuyla birleştirmek adına bu başvuruyu yapıyorum. Kendi girişimlerimde elde ettiğim 2.5M+ TL ciro ve 45K+ kitle büyümesi başarılarının yanı sıra, AI Mühendisliği ve İş Zekası stajlarımla analitik ve kullanıcı odaklı problem çözme yetkinliklerimi sahada kanıtladım.
+
+Veri modelleme, pazar araştırması ve kullanıcı deneyimi analizleri konusundaki birikimimi ekibinize katarak ürün metriklerinizi ve hedeflerinizi daha da ileri taşımak için sabırsızlanıyorum. Katkılarımı ve deneyimlerimi detaylandırmak üzere sizinle görüşmekten memnuniyet duyarım.
+
+Saygılarımla,
+Atakan Turpcu`
+
     for (const resume of resumes) {
+      const patch: Record<string, unknown> = {}
       if (resume.name === 'Product & AI Engineer CV' || !resume.fileName) {
-        await ctx.db.patch(resume._id, {
-          name: 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV',
-          fileName: 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV.pdf',
-        })
+        patch.name = 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV'
+        patch.fileName = 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV.pdf'
+      }
+      if (!resume.coverLetter) {
+        patch.coverLetter = defaultCoverLetter
+      }
+      if (Object.keys(patch).length > 0) {
+        patch.updatedAt = Date.now()
+        await ctx.db.patch(resume._id, patch)
         updatedCount++
       }
     }
