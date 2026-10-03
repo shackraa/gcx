@@ -213,3 +213,24 @@ export const remove = mutation({
     await ctx.db.delete(id)
   },
 })
+
+// ─────────────────────────────────────────────
+// Eski CV Adını Dosya Adına Eşitleme (Migration)
+// ─────────────────────────────────────────────
+export const fixOldResumeName = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const resumes = await ctx.db.query('resumes').collect()
+    let updatedCount = 0
+    for (const resume of resumes) {
+      if (resume.name === 'Product & AI Engineer CV' || !resume.fileName) {
+        await ctx.db.patch(resume._id, {
+          name: 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV',
+          fileName: 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV.pdf',
+        })
+        updatedCount++
+      }
+    }
+    return { updatedCount }
+  },
+})
