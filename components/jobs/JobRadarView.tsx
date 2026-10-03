@@ -49,6 +49,7 @@ const DATE_OPTIONS: { value: DatePosted; label: string }[] = [
 
 export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
+  const { setView, setFilter } = useUIStore()
   const createApplicationMutation = useMutation(api.applications.create)
   const scoutedJobs = useQuery(api.scoutedJobs.list)
   const importBulkScoutedMutation = useMutation(api.scoutedJobs.importBulk)
@@ -244,13 +245,33 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
     }
   }
 
+  // Convert scouted job with direct navigation feedback
+  async function handleConvertScouted(job: any) {
+    try {
+      await convertScoutedMutation({ id: job._id, status: 'waiting' })
+      toast({
+        title: 'Başvurulara Eklendi ✓',
+        description: `${job.company} - ${job.title} 'Bekleniyor' olarak listenize eklendi.`,
+        action: {
+          label: 'Başvurularda Gör →',
+          onClick: () => {
+            setView('list')
+            setFilter('all')
+          },
+        },
+      })
+    } catch {
+      toast({ title: 'Başvurulara eklenemedi', variant: 'destructive' })
+    }
+  }
+
   // Add matched job directly to GCX applications!
   async function handleAddJobToApplications(job: MatchedJob) {
     try {
       await createApplicationMutation({
         company: job.company,
         position: job.title,
-        status: 'preparing',
+        status: 'waiting',
         appliedAt: new Date().toISOString().split('T')[0],
         channel: job.source === 'linkedin' ? 'linkedin' : 'online',
         resumeId: job.recommendedResumeId as any,
@@ -263,7 +284,14 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       setAddedJobs((prev) => [...prev, job.id])
       toast({
         title: 'Başvurulara Eklendi ✓',
-        description: `${job.company} - ${job.title} takip listenize 'Hazırlanıyor' olarak kaydedildi.`,
+        description: `${job.company} - ${job.title} takip listenize 'Bekleniyor' olarak kaydedildi.`,
+        action: {
+          label: 'Başvurularda Gör →',
+          onClick: () => {
+            setView('list')
+            setFilter('all')
+          },
+        },
       })
     } catch {
       toast({ title: 'Kaydedilemedi', variant: 'destructive' })
@@ -641,9 +669,12 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
                   <Button
                     size="sm"
-                    onClick={() => convertScoutedMutation({ id: job._id })}
+                    onClick={() => handleConvertScouted(job)}
                     disabled={job.applied}
-                    className="h-8 text-xs gap-1 font-semibold"
+                    className={cn(
+                      'h-8 text-xs gap-1.5 font-semibold transition-all',
+                      job.applied && 'bg-green-950/60 border border-green-700/60 text-green-300 hover:bg-green-950/80 cursor-default'
+                    )}
                   >
                     {job.applied ? (
                       <>

@@ -20,6 +20,8 @@ export const list = query({
   },
 })
 
+
+
 // Create single scouted job
 export const create = mutation({
   args: {
@@ -126,16 +128,34 @@ export const convertToApplication = mutation({
     const job = await ctx.db.get(args.id)
     if (!job || job.userId !== userId) throw new Error('Job not found')
 
-    // 1. Create in applications table
+    let cvLink: string | undefined = undefined
+    if (job.recommendedResumeId) {
+      try {
+        const resObj = (await ctx.db.get(job.recommendedResumeId as any)) as {
+          storageId?: any
+          fileUrl?: string
+        } | null
+        if (resObj) {
+          if (resObj.storageId) {
+            cvLink = ((await ctx.storage.getUrl(resObj.storageId)) || resObj.fileUrl) ?? undefined
+          } else {
+            cvLink = resObj.fileUrl
+          }
+        }
+      } catch {}
+    }
+
+    // 1. Create in applications table (default to 'waiting' / Başvuruldu)
     const appId = await ctx.db.insert('applications', {
       userId,
       company: job.company,
       position: job.title,
-      status: args.status || 'preparing',
+      status: args.status || 'waiting',
       appliedAt: new Date().toISOString().split('T')[0],
       channel: job.source === 'linkedin' ? 'linkedin' : 'online',
       resumeId: job.recommendedResumeId,
       cvVersion: job.recommendedResumeName,
+      cvLink,
       jobLink: job.url || undefined,
       note: `Uyumluluk Skoru: %${job.matchScore}.\n${job.reason}`,
       hrContacted: false,
@@ -145,6 +165,25 @@ export const convertToApplication = mutation({
     await ctx.db.patch(args.id, { applied: true })
 
     return appId
+  },
+})
+
+// Migration to ensure Leap Games application has waiting status and correct CV
+export const fixLeapGamesApplication = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const apps = await ctx.db.query('applications').collect()
+    let updatedCount = 0
+    for (const app of apps) {
+      if (app.company.toLowerCase().includes('leap games')) {
+        await ctx.db.patch(app._id, {
+          status: 'waiting',
+          cvVersion: 'Atakan_Turpcu_GoodJobGames_ProductSpecialist_PartTime_CV',
+        })
+        updatedCount++
+      }
+    }
+    return { updatedCount }
   },
 })
 
