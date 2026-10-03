@@ -24,6 +24,10 @@ export interface Resume {
   category: string
   targetRole?: string
   fileUrl?: string
+  storageId?: string
+  fileName?: string
+  fileSize?: number
+  downloadUrl?: string | null
   skills: string[]
   summary?: string
   rawText?: string
@@ -36,6 +40,9 @@ export interface ResumeFormValues {
   category: string
   targetRole?: string
   fileUrl?: string
+  storageId?: string
+  fileName?: string
+  fileSize?: number
   skills: string[]
   summary?: string
   rawText?: string

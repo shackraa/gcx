@@ -69,7 +69,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
       channel: editingApp?.channel,
       resumeId: editingApp?.resumeId ?? defaultResume?._id ?? '',
       cvVersion: editingApp?.cvVersion ?? defaultResume?.name ?? '',
-      cvLink: editingApp?.cvLink ?? defaultResume?.fileUrl ?? '',
+      cvLink: editingApp?.cvLink ?? defaultResume?.downloadUrl ?? defaultResume?.fileUrl ?? '',
       jobLink: editingApp?.jobLink ?? '',
       contactName: editingApp?.contactName ?? '',
       salary: editingApp?.salary ?? '',
@@ -88,8 +88,9 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
       const selected = resumes.find((r) => r._id === rId)
       if (selected) {
         setValue('cvVersion', selected.name)
-        if (selected.fileUrl) {
-          setValue('cvLink', selected.fileUrl)
+        const activeLink = selected.downloadUrl || selected.fileUrl
+        if (activeLink) {
+          setValue('cvLink', activeLink)
         }
       }
     }

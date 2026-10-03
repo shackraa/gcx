@@ -21,8 +21,11 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Download,
+  CheckCircle2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { formatFileSize, safeUrl } from '@/lib/utils/applications'
 import type { Id } from '@/convex/_generated/dataModel'
 
 const schema = z.object({
@@ -70,6 +73,7 @@ interface AIAnalysisResult {
 export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   const { closeResumeModal, editingResumeId } = useUIStore()
   const editingResume = editingResumeId ? resumes.find((r) => r._id === editingResumeId) : null
+  const generateUploadUrlMutation = useMutation(api.resumes.generateUploadUrl)
   const createMutation = useMutation(api.resumes.create)
   const updateMutation = useMutation(api.resumes.update)
   const removeMutation = useMutation(api.resumes.remove)
@@ -80,10 +84,15 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
 
   // AI & File State
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [tempApiKey, setTempApiKey] = useState('')
   const [showKeyInput, setShowKeyInput] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<{ base64: string; mimeType: string; name: string } | null>(null)
+  
+  // Selected / Pending File state
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [fileRemoved, setFileRemoved] = useState(false)
+  const [selectedFilePreview, setSelectedFilePreview] = useState<{ base64: string; mimeType: string; name: string; size: number } | null>(null)
   const [aiInsights, setAiInsights] = useState<AIAnalysisResult | null>(null)
   const [showInsights, setShowInsights] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -148,6 +157,8 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
 
   // Handle File selection
   function handleFileSelected(file: File) {
+    setPendingFile(file)
+    setFileRemoved(false)
     const reader = new FileReader()
     reader.onload = () => {
       const base64Data = (reader.result as string).split(',')[1]
@@ -155,8 +166,9 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         base64: base64Data,
         mimeType: file.type || 'application/pdf',
         name: file.name,
+        size: file.size,
       }
-      setSelectedFile(fileData)
+      setSelectedFilePreview(fileData)
       // Automatically trigger analysis!
       parseCVWithAI({ fileBase64: base64Data, mimeType: fileData.mimeType })
     }
@@ -166,14 +178,21 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     reader.readAsDataURL(file)
   }
 
+  function handleRemoveFile() {
+    setPendingFile(null)
+    setSelectedFilePreview(null)
+    setFileRemoved(true)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   // Parse CV via AI
   async function parseCVWithAI(overridePayload?: { fileBase64?: string; mimeType?: string; rawText?: string }) {
     setIsAnalyzing(true)
 
     const filePayload = overridePayload?.fileBase64
       ? { fileBase64: overridePayload.fileBase64, mimeType: overridePayload.mimeType }
-      : selectedFile
-      ? { fileBase64: selectedFile.base64, mimeType: selectedFile.mimeType }
+      : selectedFilePreview
+      ? { fileBase64: selectedFilePreview.base64, mimeType: selectedFilePreview.mimeType }
       : {}
 
     const activeKey = apiKey || (typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : '')
@@ -253,18 +272,51 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function onSubmit(values: any) {
-    const payload = {
-      name: values.name,
-      category: values.category,
-      targetRole: values.targetRole || undefined,
-      fileUrl: values.fileUrl || undefined,
-      skills,
-      summary: values.summary || undefined,
-      rawText: values.rawText || undefined,
-      isDefault: Boolean(values.isDefault),
-    }
-
+    setIsUploading(true)
     try {
+      let storageIdToSave: Id<'_storage'> | undefined = undefined
+      let fileNameToSave: string | undefined = undefined
+      let fileSizeToSave: number | undefined = undefined
+
+      if (pendingFile) {
+        // Upload the new file to Convex Storage
+        const uploadUrl = await generateUploadUrlMutation()
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': pendingFile.type || 'application/pdf' },
+          body: pendingFile,
+        })
+        if (!uploadRes.ok) {
+          throw new Error('Dosya yüklenemedi')
+        }
+        const { storageId } = await uploadRes.json()
+        storageIdToSave = storageId as Id<'_storage'>
+        fileNameToSave = pendingFile.name
+        fileSizeToSave = pendingFile.size
+      } else if (fileRemoved) {
+        storageIdToSave = undefined
+        fileNameToSave = undefined
+        fileSizeToSave = undefined
+      } else if (editingResume) {
+        storageIdToSave = editingResume.storageId as Id<'_storage'> | undefined
+        fileNameToSave = editingResume.fileName
+        fileSizeToSave = editingResume.fileSize
+      }
+
+      const payload = {
+        name: values.name,
+        category: values.category,
+        targetRole: values.targetRole || undefined,
+        fileUrl: values.fileUrl || undefined,
+        storageId: storageIdToSave,
+        fileName: fileNameToSave,
+        fileSize: fileSizeToSave,
+        skills,
+        summary: values.summary || undefined,
+        rawText: values.rawText || undefined,
+        isDefault: Boolean(values.isDefault),
+      }
+
       if (editingResume) {
         await updateMutation({
           id: editingResume._id as Id<'resumes'>,
@@ -273,11 +325,14 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         toast({ title: 'CV Güncellendi ✓' })
       } else {
         await createMutation(payload)
-        toast({ title: 'Yeni CV Eklendi ✓' })
+        toast({ title: 'Yeni CV ve Dosya Eklendi ✓' })
       }
       closeResumeModal()
-    } catch {
+    } catch (err) {
+      console.error('Save error:', err)
       toast({ title: 'CV kaydedilemedi', variant: 'destructive' })
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -383,52 +438,143 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             )}
 
             {/* Upload / Action Row */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.txt,.docx,application/pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleFileSelected(file)
-                }}
-              />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.txt,.docx,application/pdf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleFileSelected(file)
+              }}
+            />
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isAnalyzing}
-                className="h-9 text-xs gap-2 border-dashed border-primary/40 hover:border-primary bg-background/50 justify-center shrink-0 max-w-full sm:max-w-[210px]"
-              >
-                <Upload className="h-3.5 w-3.5 text-primary shrink-0" />
-                <span className="truncate">
-                  {selectedFile ? selectedFile.name : 'PDF / CV Dosyası Seç'}
-                </span>
-              </Button>
+            {pendingFile ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/50">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-md bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{pendingFile.name}</p>
+                    <p className="text-[10px] text-emerald-400">
+                      {formatFileSize(pendingFile.size)} • Kaydedildiğinde bulut depoya yüklenecek
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => parseCVWithAI()}
+                    disabled={isAnalyzing}
+                    className="h-7 text-[11px] px-2 gap-1 text-primary hover:text-primary"
+                  >
+                    {isAnalyzing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Yeniden Analiz Et
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-7 text-[11px] px-2"
+                  >
+                    Değiştir
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveFile}
+                    className="h-7 text-[11px] px-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30"
+                  >
+                    Kaldır
+                  </Button>
+                </div>
+              </div>
+            ) : editingResume?.fileName && !fileRemoved ? (
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-background/80 border border-border">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground truncate">{editingResume.fileName}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {editingResume.fileSize ? formatFileSize(editingResume.fileSize) : 'Yüklü Dosya'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                  {(editingResume.downloadUrl || editingResume.fileUrl) && (
+                    <a
+                      href={editingResume.downloadUrl || editingResume.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={editingResume.fileName || `${editingResume.name}.pdf`}
+                      className="inline-flex items-center gap-1 text-[11px] font-medium bg-primary/10 text-primary hover:bg-primary/20 px-2 py-1 rounded-md transition-colors"
+                    >
+                      <Download className="h-3 w-3" />
+                      İndir / Aç
+                    </a>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-7 text-[11px] px-2"
+                  >
+                    Değiştir
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveFile}
+                    className="h-7 text-[11px] px-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30"
+                  >
+                    Kaldır
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isAnalyzing}
+                  className="h-9 text-xs gap-2 border-dashed border-primary/40 hover:border-primary bg-background/50 justify-center shrink-0 max-w-full sm:max-w-[210px]"
+                >
+                  <Upload className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="truncate">PDF / CV Dosyası Seç</span>
+                </Button>
 
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => parseCVWithAI()}
-                disabled={isAnalyzing}
-                className="flex-1 h-9 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground shadow-sm justify-center"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Gemini CV&apos;yi İnceliyor…</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    <span>CV Analiz Et & Doldur</span>
-                  </>
-                )}
-              </Button>
-            </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => parseCVWithAI()}
+                  disabled={isAnalyzing}
+                  className="flex-1 h-9 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground shadow-sm justify-center"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Gemini CV&apos;yi İnceliyor…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>CV Analiz Et & Doldur</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* AI Insights (Strengths & LinkedIn queries if analyzed) */}
@@ -528,7 +674,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             {/* File / Drive URL */}
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                CV Linki (Google Drive / PDF / Notion vb.)
+                CV Linki (Google Drive / Harici Bağlantı vb.)
               </label>
               <input
                 {...register('fileUrl')}
@@ -647,10 +793,17 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             <Button
               size="sm"
               onClick={handleSubmit(onSubmit)}
-              disabled={isSubmitting}
-              className="text-xs font-semibold"
+              disabled={isSubmitting || isUploading}
+              className="text-xs font-semibold gap-1.5"
             >
-              {isSubmitting ? 'Kaydediliyor…' : 'Kaydet'}
+              {isUploading || isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Dosya Yükleniyor & Kaydediliyor…</span>
+                </>
+              ) : (
+                <span>Kaydet</span>
+              )}
             </Button>
           </div>
         </div>

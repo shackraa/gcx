@@ -277,3 +277,11 @@ export function safeUrl(url?: string | null): string | null {
     return null
   }
 }
+
+// Format file size in bytes to human-readable string (KB, MB)
+export function formatFileSize(bytes?: number): string {
+  if (!bytes || bytes <= 0) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}

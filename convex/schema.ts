@@ -11,7 +11,10 @@ export default defineSchema({
     name: v.string(),               // Örn: "AI & Python Developer CV"
     category: v.string(),           // Örn: "AI / ML", "Frontend", "Full-stack", "Product"
     targetRole: v.optional(v.string()), // Örn: "Senior AI Engineer"
-    fileUrl: v.optional(v.string()),    // Drive veya dosya linki
+    fileUrl: v.optional(v.string()),    // Drive veya harici dosya linki
+    storageId: v.optional(v.id('_storage')), // Convex dosya depolama ID
+    fileName: v.optional(v.string()),   // Yüklenen dosyanın adı (örn: CV_Atakan_Ozkan.pdf)
+    fileSize: v.optional(v.number()),   // Dosya boyutu (bytes)
     skills: v.array(v.string()),        // Örn: ["Python", "LangChain", "FastAPI", "Next.js"]
     summary: v.optional(v.string()),    // CV özeti / öne çıkan noktalar
     rawText: v.optional(v.string()),    // İlan eşleştirme için metin

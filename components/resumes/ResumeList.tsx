@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { Resume, Application } from '@/types'
 import { useUIStore } from '@/lib/store/ui'
-import { getResumeStats, safeUrl } from '@/lib/utils/applications'
+import { getResumeStats, safeUrl, formatFileSize } from '@/lib/utils/applications'
 import { Button } from '@/components/ui/button'
 import {
   FileText,
@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Briefcase,
   TrendingUp,
+  Download,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -65,7 +66,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
             CV Havuzum ({resumes.length} Versiyon)
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Başvurularında kullandığın farklı CV versiyonları ve performansları
+            Başvurularında kullandığın farklı CV versiyonları, yüklenen dosyalar ve performansları
           </p>
         </div>
 
@@ -98,7 +99,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
       {/* Resume Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredStats.map(({ resume, count, respondedCount, responseRate }) => {
-          const cvUrl = safeUrl(resume.fileUrl)
+          const cvUrl = safeUrl(resume.downloadUrl || resume.fileUrl)
 
           return (
             <div
@@ -130,9 +131,55 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                   </span>
                 </div>
 
+                {/* Attached File Indicator */}
+                {resume.fileName || cvUrl ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border/60 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground truncate text-xs">
+                          {resume.fileName || (resume.fileUrl ? 'Harici CV Bağlantısı' : 'CV Dosyası')}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {resume.fileSize ? formatFileSize(resume.fileSize) : 'Yüklü Belge'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {cvUrl && (
+                      <a
+                        href={cvUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        download={resume.fileName || `${resume.name}.pdf`}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold bg-primary/15 text-primary hover:bg-primary/25 px-2.5 py-1.5 rounded-md transition-colors shrink-0 ml-2"
+                        title="CV Dosyasını İndir / Aç"
+                      >
+                        <Download className="h-3 w-3" />
+                        İndir / Aç
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-muted/20 border border-dashed border-border/60 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5 text-[11px]">
+                      <FileText className="h-3.5 w-3.5 opacity-60" />
+                      Dosya eklenmemiş (PDF veya link yükleyin)
+                    </span>
+                    <button
+                      onClick={() => openResumeModal(resume._id)}
+                      className="text-[11px] text-primary hover:underline font-medium"
+                    >
+                      + Dosya Yükle
+                    </button>
+                  </div>
+                )}
+
                 {/* Summary / Notes */}
                 {resume.summary && (
-                  <p className="text-xs text-muted-foreground/90 bg-muted/30 p-2.5 rounded-lg border border-border/40 leading-relaxed">
+                  <p className="text-xs text-muted-foreground/90 bg-muted/20 p-2.5 rounded-lg border border-border/40 leading-relaxed">
                     {resume.summary}
                   </p>
                 )}
@@ -180,10 +227,11 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                         href={cvUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        download={resume.fileName || `${resume.name}.pdf`}
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground bg-muted px-2.5 py-1.5 rounded-md transition-colors"
                       >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                        CV&apos;yi Aç
+                        <Download className="h-3.5 w-3.5" />
+                        CV&apos;yi İndir
                       </a>
                     )}
                     <button

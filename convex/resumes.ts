@@ -3,7 +3,19 @@ import { v } from 'convex/values'
 import { getAuthUserId } from '@convex-dev/auth/server'
 
 // ─────────────────────────────────────────────
-// Kullanıcının tüm CV'lerini getir
+// Dosya Yükleme URL'i Üret (Convex Storage)
+// ─────────────────────────────────────────────
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Not authenticated')
+    return await ctx.storage.generateUploadUrl()
+  },
+})
+
+// ─────────────────────────────────────────────
+// Kullanıcının tüm CV'lerini getir (downloadUrl ile)
 // ─────────────────────────────────────────────
 export const list = query({
   args: {},
@@ -11,11 +23,29 @@ export const list = query({
     const userId = await getAuthUserId(ctx)
     if (!userId) return []
 
-    return await ctx.db
+    const resumes = await ctx.db
       .query('resumes')
       .withIndex('by_user', (q) => q.eq('userId', userId))
       .order('desc')
       .collect()
+
+    return await Promise.all(
+      resumes.map(async (resume) => {
+        let downloadUrl = resume.fileUrl || null
+        if (resume.storageId) {
+          try {
+            const sUrl = await ctx.storage.getUrl(resume.storageId)
+            if (sUrl) downloadUrl = sUrl
+          } catch (e) {
+            console.error('Storage URL error:', e)
+          }
+        }
+        return {
+          ...resume,
+          downloadUrl,
+        }
+      })
+    )
   },
 })
 
@@ -31,7 +61,20 @@ export const get = query({
     const resume = await ctx.db.get(id)
     if (!resume || resume.userId !== userId) return null
 
-    return resume
+    let downloadUrl = resume.fileUrl || null
+    if (resume.storageId) {
+      try {
+        const sUrl = await ctx.storage.getUrl(resume.storageId)
+        if (sUrl) downloadUrl = sUrl
+      } catch (e) {
+        console.error('Storage URL error:', e)
+      }
+    }
+
+    return {
+      ...resume,
+      downloadUrl,
+    }
   },
 })
 
@@ -44,6 +87,9 @@ export const create = mutation({
     category: v.string(),
     targetRole: v.optional(v.string()),
     fileUrl: v.optional(v.string()),
+    storageId: v.optional(v.id('_storage')),
+    fileName: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
     skills: v.array(v.string()),
     summary: v.optional(v.string()),
     rawText: v.optional(v.string()),
@@ -84,6 +130,9 @@ export const update = mutation({
     category: v.optional(v.string()),
     targetRole: v.optional(v.string()),
     fileUrl: v.optional(v.string()),
+    storageId: v.optional(v.id('_storage')),
+    fileName: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
     skills: v.optional(v.array(v.string())),
     summary: v.optional(v.string()),
     rawText: v.optional(v.string()),
@@ -96,6 +145,15 @@ export const update = mutation({
     const existing = await ctx.db.get(id)
     if (!existing || existing.userId !== userId) {
       throw new Error('Not found or unauthorized')
+    }
+
+    // If storageId is changing and old storageId exists, delete old file from storage
+    if (fields.storageId && existing.storageId && fields.storageId !== existing.storageId) {
+      try {
+        await ctx.storage.delete(existing.storageId)
+      } catch (err) {
+        console.error('Failed to clean up old storage file:', err)
+      }
     }
 
     if (fields.isDefault) {
@@ -133,7 +191,16 @@ export const remove = mutation({
       throw new Error('Not found or unauthorized')
     }
 
-    // Optional: Unlink resumeId from applications using it
+    // Delete stored file if exists
+    if (existing.storageId) {
+      try {
+        await ctx.storage.delete(existing.storageId)
+      } catch (err) {
+        console.error('Failed to delete storage file on resume remove:', err)
+      }
+    }
+
+    // Unlink resumeId from applications using it
     const linkedApps = await ctx.db
       .query('applications')
       .withIndex('by_user_resume', (q) => q.eq('userId', userId).eq('resumeId', id))
