@@ -25,6 +25,7 @@ import {
   Upload,
   Trash2,
   Terminal,
+  RotateCcw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -54,6 +55,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const scoutedJobs = useQuery(api.scoutedJobs.list)
   const importBulkScoutedMutation = useMutation(api.scoutedJobs.importBulk)
   const convertScoutedMutation = useMutation(api.scoutedJobs.convertToApplication)
+  const revertScoutedMutation = useMutation(api.scoutedJobs.revertApplication)
   const removeScoutedMutation = useMutation(api.scoutedJobs.remove)
   const clearAllScoutedMutation = useMutation(api.scoutedJobs.clearAll)
 
@@ -262,6 +264,19 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       })
     } catch {
       toast({ title: 'Başvurulara eklenemedi', variant: 'destructive' })
+    }
+  }
+
+  // Revert scouted job from application
+  async function handleRevertScouted(job: any) {
+    try {
+      await revertScoutedMutation({ id: job._id })
+      toast({
+        title: 'Başvuru Kaldırıldı ✓',
+        description: `${job.company} - ${job.title} başvurularınızdan çıkarıldı ve radara geri alındı.`,
+      })
+    } catch {
+      toast({ title: 'İşlem başarısız', variant: 'destructive' })
     }
   }
 
@@ -667,36 +682,44 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                     </button>
                   </div>
 
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (job.applied) {
-                        setView('list')
-                        setFilter('all')
-                        setSearch('')
-                      } else {
-                        handleConvertScouted(job)
-                      }
-                    }}
-                    className={cn(
-                      'h-8 text-xs gap-1.5 font-semibold transition-all cursor-pointer',
-                      job.applied
-                        ? 'bg-green-950/70 border border-green-700 text-green-300 hover:bg-green-900/90 hover:text-green-100 shadow-xs'
-                        : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs'
-                    )}
-                  >
+                  <div className="flex items-center gap-2">
                     {job.applied ? (
                       <>
-                        <Check className="h-3.5 w-3.5 text-green-400" />
-                        <span>Başvurularda Gör →</span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRevertScouted(job)}
+                          className="h-8 text-xs gap-1.5 text-red-400 border-red-900/50 hover:bg-red-950/40 hover:text-red-300 font-medium cursor-pointer"
+                          title="Başvurulardan silip radara geri döndür"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          <span>Başvuruyu Kaldır</span>
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setView('list')
+                            setFilter('all')
+                            setSearch('')
+                          }}
+                          className="h-8 text-xs gap-1.5 font-semibold bg-green-950/70 border border-green-700 text-green-300 hover:bg-green-900/90 hover:text-green-100 shadow-xs cursor-pointer"
+                        >
+                          <Check className="h-3.5 w-3.5 text-green-400" />
+                          <span>Başvurularda Gör →</span>
+                        </Button>
                       </>
                     ) : (
-                      <>
+                      <Button
+                        size="sm"
+                        onClick={() => handleConvertScouted(job)}
+                        className="h-8 text-xs gap-1.5 font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs cursor-pointer"
+                      >
                         <Plus className="h-3.5 w-3.5" />
                         <span>Başvurularıma Ekle</span>
-                      </>
+                      </Button>
                     )}
-                  </Button>
+                  </div>
                 </div>
               </div>
             ))}

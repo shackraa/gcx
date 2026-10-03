@@ -179,10 +179,64 @@ export const convertToApplication = mutation({
       hrContacted: false,
     })
 
-    // 2. Mark scouted job as applied
-    await ctx.db.patch(args.id, { applied: true })
+    // 2. Mark scouted job as applied with link to application
+    await ctx.db.patch(args.id, {
+      applied: true,
+      applicationId: appId,
+    })
 
     return appId
+  },
+})
+
+// Revert scouted job from application (remove application record and mark applied: false)
+export const revertApplication = mutation({
+  args: {
+    id: v.id('scoutedJobs'),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx)
+    if (!userId) throw new Error('Unauthenticated')
+
+    const job = await ctx.db.get(args.id)
+    if (!job || job.userId !== userId) throw new Error('Job not found')
+
+    // 1. If explicit applicationId is stored, delete it
+    if (job.applicationId) {
+      try {
+        const app = await ctx.db.get(job.applicationId)
+        if (app && app.userId === userId) {
+          await ctx.db.delete(job.applicationId)
+        }
+      } catch {}
+    }
+
+    // 2. Also search and delete matching applications in applications table
+    const matchingApps = await ctx.db
+      .query('applications')
+      .withIndex('by_user', (q) => q.eq('userId', userId))
+      .filter((q) =>
+        q.or(
+          q.and(
+            q.eq(q.field('company'), job.company),
+            q.eq(q.field('position'), job.title)
+          ),
+          job.url ? q.eq(q.field('jobLink'), job.url) : false
+        )
+      )
+      .collect()
+
+    for (const app of matchingApps) {
+      await ctx.db.delete(app._id)
+    }
+
+    // 3. Mark scouted job as not applied
+    await ctx.db.patch(args.id, {
+      applied: false,
+      applicationId: undefined,
+    })
+
+    return { success: true }
   },
 })
 

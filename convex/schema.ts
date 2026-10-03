@@ -86,6 +86,7 @@ export default defineSchema({
     recommendedResumeName: v.optional(v.string()),
     reason: v.string(),
     applied: v.boolean(),
+    applicationId: v.optional(v.id('applications')),
   })
     .index('by_user', ['userId'])
     .index('by_user_applied', ['userId', 'applied']),
