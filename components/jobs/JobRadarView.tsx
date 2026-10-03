@@ -49,7 +49,7 @@ const DATE_OPTIONS: { value: DatePosted; label: string }[] = [
 
 export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
-  const { setView, setFilter } = useUIStore()
+  const { setView, setFilter, setSearch } = useUIStore()
   const createApplicationMutation = useMutation(api.applications.create)
   const scoutedJobs = useQuery(api.scoutedJobs.list)
   const importBulkScoutedMutation = useMutation(api.scoutedJobs.importBulk)
@@ -669,17 +669,26 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
                   <Button
                     size="sm"
-                    onClick={() => handleConvertScouted(job)}
-                    disabled={job.applied}
+                    onClick={() => {
+                      if (job.applied) {
+                        setView('list')
+                        setFilter('all')
+                        setSearch('')
+                      } else {
+                        handleConvertScouted(job)
+                      }
+                    }}
                     className={cn(
-                      'h-8 text-xs gap-1.5 font-semibold transition-all',
-                      job.applied && 'bg-green-950/60 border border-green-700/60 text-green-300 hover:bg-green-950/80 cursor-default'
+                      'h-8 text-xs gap-1.5 font-semibold transition-all cursor-pointer',
+                      job.applied
+                        ? 'bg-green-950/70 border border-green-700 text-green-300 hover:bg-green-900/90 hover:text-green-100 shadow-xs'
+                        : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs'
                     )}
                   >
                     {job.applied ? (
                       <>
                         <Check className="h-3.5 w-3.5 text-green-400" />
-                        <span>Başvuruldu ✓</span>
+                        <span>Başvurularda Gör →</span>
                       </>
                     ) : (
                       <>

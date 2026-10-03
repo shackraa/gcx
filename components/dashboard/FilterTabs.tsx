@@ -22,7 +22,7 @@ const TABS: { key: FilterKey; label: string }[] = [
 ]
 
 export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
-  const { filter, setFilter } = useUIStore()
+  const { filter, setFilter, setView, setSearch } = useUIStore()
 
   function getCount(key: FilterKey): number {
     if (key === 'all') return applications.length
@@ -40,7 +40,10 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
         return (
           <button
             key={key}
-            onClick={() => setFilter(key)}
+            onClick={() => {
+              setFilter(key)
+              setView('list')
+            }}
             className={cn(
               'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
               isActive
