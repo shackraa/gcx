@@ -469,10 +469,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
-            <span className="hidden sm:inline-flex text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-800/60 px-2.5 py-1.5 rounded-lg">
-              %70+ Uyum · En Yüksek Puan En Üstte
-            </span>
-
             <Button
               onClick={handleLiveScout}
               disabled={isScouting || resumes.length === 0}
@@ -486,7 +482,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  <span>Tüm Uygun İlanları Tara (%70+ Uyum)</span>
+                  <span>Tüm Uygun İlanları Şimdi Tara</span>
                 </>
               )}
             </Button>
@@ -556,12 +552,9 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                 <Sparkles className="h-4 w-4 text-primary" />
                 Radara Takılan İlanlar {scoutedJobs && scoutedJobs.length > 0 ? `(${scoutedJobs.length} İlan)` : ''}
               </h3>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-800/60 px-2 py-0.5 rounded">
-                %70+ Uyum · En Yüksek Skor En Başta
-              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              CV&apos;nizle %70 ve üzeri uyumluluğa sahip tüm pozisyonlar en yüksek uyum puanına göre sıralanmıştır.
+              CV&apos;nizle uyumluluğa sahip tüm pozisyonlar en yüksek uyum puanına göre sıralanmıştır.
             </p>
           </div>
 
@@ -659,17 +652,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                       <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
                         CV&apos;nizdeki modern frontend teknolojileri ve React ekosistemi deneyimi pozisyon gereksinimleriyle doğrudan örtüşüyor.
                       </p>
-
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {['React', 'TypeScript', 'Next.js', 'Tailwind CSS'].map((s) => (
-                          <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
-                            ✓ {s}
-                          </span>
-                        ))}
-                        <span className="bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
-                          ✕ GraphQL
-                        </span>
-                      </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-border/50">
@@ -705,17 +687,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                       <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
                         Modern web mimarisi ve backend tecrübeniz bu pozisyonun gerektirdiği temel teknik beklentileri karşılıyor.
                       </p>
-
-                      <div className="flex flex-wrap gap-1 pt-1">
-                        {['TypeScript', 'Node.js', 'PostgreSQL', 'REST API'].map((s) => (
-                          <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
-                            ✓ {s}
-                          </span>
-                        ))}
-                        <span className="bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
-                          ✕ Docker
-                        </span>
-                      </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-border/50">
@@ -767,16 +738,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                     <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
                       {job.reason}
                     </p>
-                  )}
-
-                  {job.matchingSkills && job.matchingSkills.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                      {job.matchingSkills.map((s) => (
-                        <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
-                          ✓ {s}
-                        </span>
-                      ))}
-                    </div>
                   )}
                 </div>
 
@@ -1076,7 +1037,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
               {matchedResult.matchingSkills && matchedResult.matchingSkills.length > 0 && (
                 <div>
-                  <span className="font-semibold text-emerald-700 dark:text-green-400 block mb-1">✓ Eşleşen Yeteneklerin:</span>
+                  <span className="font-semibold text-emerald-700 dark:text-green-400 block mb-1">Eşleşen Yetenekleriniz:</span>
                   <div className="flex flex-wrap gap-1">
                     {matchedResult.matchingSkills.map((s) => (
                       <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
@@ -1089,7 +1050,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
               {matchedResult.missingSkills && matchedResult.missingSkills.length > 0 && (
                 <div>
-                  <span className="font-semibold text-amber-700 dark:text-amber-400 block mb-1">⚡ İlanda İstenen Ekstra Yetenekler:</span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-400 block mb-1">İlanda İstenen Ekstra Yetenekler:</span>
                   <div className="flex flex-wrap gap-1">
                     {matchedResult.missingSkills.map((s) => (
                       <span key={s} className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 text-[10px] px-2 py-0.5 rounded font-medium">

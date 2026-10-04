@@ -1,4 +1,47 @@
 import type { Application, BackupData } from '@/types'
+import { STATUS_LABELS, CHANNEL_LABELS } from '@/lib/utils/applications'
+
+export function exportToExcel(applications: Application[]): void {
+  // UTF-8 BOM so Excel opens Turkish letters (ç, ğ, ı, ö, ş, ü) without encoding issues
+  const BOM = '\uFEFF'
+  const headers = [
+    'Şirket',
+    'Pozisyon',
+    'Durum',
+    'Başvuru Tarihi',
+    'Kanal',
+    'CV Versiyonu',
+    'Mülakat Tarihi',
+    'İK ile İletişim',
+    'İlan Linki',
+    'Notlar',
+  ]
+
+  const rows = applications.map((app) => [
+    `"${(app.company || '').replace(/"/g, '""')}"`,
+    `"${(app.position || '').replace(/"/g, '""')}"`,
+    `"${STATUS_LABELS[app.status] || app.status}"`,
+    `"${app.appliedAt || ''}"`,
+    `"${CHANNEL_LABELS[app.channel || ''] || app.channel || ''}"`,
+    `"${(app.cvVersion || '').replace(/"/g, '""')}"`,
+    `"${app.interviewAt || ''}"`,
+    `"${app.hrContacted ? 'Evet' : 'Hayır'}"`,
+    `"${(app.jobLink || '').replace(/"/g, '""')}"`,
+    `"${(app.note || '').replace(/"/g, '""').replace(/[\r\n]+/g, ' ')}"`,
+  ])
+
+  // Use semicolon delimiter which is the standard CSV list separator for Excel in Turkish Windows
+  const csvContent = BOM + [headers.join(';'), ...rows.map((r) => r.join(';'))].join('\r\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `gcx-basvurular-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 export function exportBackup(applications: Application[]): void {
   const data: BackupData = {

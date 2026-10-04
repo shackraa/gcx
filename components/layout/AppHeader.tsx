@@ -10,7 +10,7 @@ import { useUIStore } from '@/lib/store/ui'
 import { useTourStore } from '@/lib/store/tour'
 import { Plus, Download, Upload, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { exportBackup, importBackup } from '@/lib/utils/backup'
+import { exportBackup, exportToExcel, importBackup } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
 import type { Application } from '@/types'
 import { cn } from '@/lib/utils'
@@ -30,8 +30,11 @@ export function AppHeader() {
       toast({ title: 'İndirilecek başvuru bulunamadı' })
       return
     }
-    exportBackup(applications)
-    toast({ title: 'Yedek indirildi ✓', description: 'gcx-yedek dosyası kaydedildi.' })
+    exportToExcel(applications)
+    toast({
+      title: 'Excel Tablosu İndirildi',
+      description: 'Tüm başvurularınız Excel uyumlu CSV formatında kaydedildi.',
+    })
   }
 
   async function handleImport() {
@@ -177,7 +180,7 @@ export function AppHeader() {
               variant="ghost"
               size="icon"
               onClick={handleExport}
-              title="Yedek indir"
+              title="Başvuruları Excel tablosu olarak indir"
               className="h-8 w-8"
             >
               <Download className="h-4 w-4" />
