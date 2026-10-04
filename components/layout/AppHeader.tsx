@@ -224,6 +224,7 @@ export function AppHeader() {
       <div className="sm:hidden border-t border-border/40 bg-card/60 backdrop-blur-sm px-2 py-1.5 flex items-center justify-around gap-1">
         <button
           onClick={() => setView('list')}
+          data-tour="nav-applications"
           className={cn(
             'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             isApplicationsView
@@ -237,6 +238,7 @@ export function AppHeader() {
 
         <button
           onClick={() => setView('resumes')}
+          data-tour="nav-resumes"
           className={cn(
             'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             view === 'resumes'
@@ -250,6 +252,7 @@ export function AppHeader() {
 
         <button
           onClick={() => setView('jobs')}
+          data-tour="nav-jobs"
           className={cn(
             'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             view === 'jobs'
@@ -263,6 +266,7 @@ export function AppHeader() {
 
         <button
           onClick={() => setView('analytics')}
+          data-tour="nav-analytics"
           className={cn(
             'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             view === 'analytics'

@@ -92,22 +92,12 @@ export function GuideModal() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleStartTour}
-              size="sm"
-              className="gap-1.5 text-xs font-semibold h-8"
-            >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              <span>İnteraktif Turu Başlat</span>
-            </Button>
-            <button
-              onClick={closeGuideModal}
-              className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+          <button
+            onClick={closeGuideModal}
+            className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Tab Navigation */}
@@ -140,25 +130,16 @@ export function GuideModal() {
             <div className="space-y-6">
               {/* Hero Banner */}
               <div className="bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
-                      Hoş Geldiniz
-                    </span>
-                    <h3 className="text-lg font-extrabold text-foreground">
-                      3 Kolay Adımda GCX ile İş Arama Sürecinizi Güçlendirin
-                    </h3>
-                    <p className="text-xs text-muted-foreground max-w-xl leading-relaxed">
-                      GCX, başvurularınızı unutulmanızı engeller, farklı CV versiyonlarınızın hangisinin daha çok işe yaradığını gösterir ve yapay zekâ ile size zaman kazandırır.
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleStartTour}
-                    className="gap-2 shrink-0 shadow-md"
-                  >
-                    <Play className="h-4 w-4 fill-current" />
-                    Canlı Turu Başlat
-                  </Button>
+                <div className="space-y-1">
+                  <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
+                    Hoş Geldiniz
+                  </span>
+                  <h3 className="text-lg font-extrabold text-foreground">
+                    3 Kolay Adımda GCX ile İş Arama Sürecinizi Güçlendirin
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
+                    GCX, başvurularınızı unutulmanızı engeller, farklı CV versiyonlarınızın hangisinin daha çok işe yaradığını gösterir ve yapay zekâ ile size zaman kazandırır.
+                  </p>
                 </div>
               </div>
 

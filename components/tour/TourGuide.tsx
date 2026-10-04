@@ -52,9 +52,14 @@ export function TourGuide() {
     if (!isTourOpen || !currentStep) return
 
     const selector = currentStep.targetSelector
-    const element = document.querySelector(selector) as HTMLElement | null
+    const elements = Array.from(document.querySelectorAll(selector)) as HTMLElement[]
+    const element =
+      elements.find((el) => {
+        const r = el.getBoundingClientRect()
+        return r.width > 0 && r.height > 0 && (el.offsetParent !== null || window.getComputedStyle(el).display !== 'none')
+      }) || elements[0] || null
 
-    if (element && element.offsetParent !== null) {
+    if (element) {
       const rect = element.getBoundingClientRect()
       // Check if rect is visible
       if (rect.width > 0 && rect.height > 0) {
@@ -66,10 +71,10 @@ export function TourGuide() {
         })
         setIsCentered(false)
 
-        // Smoothly scroll into view if out of viewport
+        // Smoothly scroll into view only if actually outside viewport
         const isInViewport =
-          rect.top >= 70 &&
-          rect.bottom <= window.innerHeight - 50
+          rect.top >= 0 &&
+          rect.bottom <= window.innerHeight
 
         if (!isInViewport) {
           element.scrollIntoView({
