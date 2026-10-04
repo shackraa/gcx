@@ -33,14 +33,14 @@ const STATUS_CHART_COLORS: Record<string, string> = {
 }
 
 const DEMO_ANALYTICS_APPS: Application[] = [
-  { _id: 'd1' as any, _creationTime: Date.now() - 14 * 86400000, userId: 'demo-user', company: 'Google', position: 'Frontend Eng', status: 'offer', appliedAt: '2026-03-01', channel: 'linkedin', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
-  { _id: 'd2' as any, _creationTime: Date.now() - 10 * 86400000, userId: 'demo-user', company: 'Spotify', position: 'Web Dev', status: 'interview', appliedAt: '2026-03-05', interviewAt: '2026-03-25', channel: 'linkedin', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
-  { _id: 'd3' as any, _creationTime: Date.now() - 18 * 86400000, userId: 'demo-user', company: 'Trendyol', position: 'React Dev', status: 'responded', appliedAt: '2026-02-28', channel: 'online', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
-  { _id: 'd4' as any, _creationTime: Date.now() - 16 * 86400000, userId: 'demo-user', company: 'Getir', position: 'Frontend Lead', status: 'waiting', appliedAt: '2026-02-20', channel: 'linkedin', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
-  { _id: 'd5' as any, _creationTime: Date.now() - 5 * 86400000, userId: 'demo-user', company: 'Peak Games', position: 'Fullstack Eng', status: 'interview', appliedAt: '2026-03-10', interviewAt: '2026-03-28', channel: 'referral', hrContacted: true, resumeId: 'r2' as any, cvVersion: 'Fullstack CV' },
-  { _id: 'd6' as any, _creationTime: Date.now() - 8 * 86400000, userId: 'demo-user', company: 'Dream Games', position: 'Software Eng', status: 'rejected', appliedAt: '2026-03-02', channel: 'referral', hrContacted: false, resumeId: 'r2' as any, cvVersion: 'Fullstack CV' },
-  { _id: 'd7' as any, _creationTime: Date.now() - 2 * 86400000, userId: 'demo-user', company: 'Insider', position: 'UI Specialist', status: 'waiting', appliedAt: '2026-03-12', channel: 'linkedin', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
-  { _id: 'd8' as any, _creationTime: Date.now(), userId: 'demo-user', company: 'Amazon', position: 'Front End Eng', status: 'preparing', appliedAt: '', channel: 'online', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd1' as any, _creationTime: Date.now() - 14 * 86400000, userId: 'demo-user', company: 'TechCorp', position: 'Frontend Eng', status: 'offer', appliedAt: '2026-03-01', channel: 'linkedin', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd2' as any, _creationTime: Date.now() - 10 * 86400000, userId: 'demo-user', company: 'CloudScale', position: 'Web Dev', status: 'interview', appliedAt: '2026-03-05', interviewAt: '2026-03-25', channel: 'linkedin', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd3' as any, _creationTime: Date.now() - 18 * 86400000, userId: 'demo-user', company: 'DataFlow', position: 'React Dev', status: 'responded', appliedAt: '2026-02-28', channel: 'online', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd4' as any, _creationTime: Date.now() - 16 * 86400000, userId: 'demo-user', company: 'Streamline', position: 'Frontend Lead', status: 'waiting', appliedAt: '2026-02-20', channel: 'linkedin', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd5' as any, _creationTime: Date.now() - 5 * 86400000, userId: 'demo-user', company: 'Apex Solutions', position: 'Fullstack Eng', status: 'interview', appliedAt: '2026-03-10', interviewAt: '2026-03-28', channel: 'referral', hrContacted: true, resumeId: 'r2' as any, cvVersion: 'Fullstack CV' },
+  { _id: 'd6' as any, _creationTime: Date.now() - 8 * 86400000, userId: 'demo-user', company: 'Nova Systems', position: 'Software Eng', status: 'rejected', appliedAt: '2026-03-02', channel: 'referral', hrContacted: false, resumeId: 'r2' as any, cvVersion: 'Fullstack CV' },
+  { _id: 'd7' as any, _creationTime: Date.now() - 2 * 86400000, userId: 'demo-user', company: 'Horizon Labs', position: 'UI Specialist', status: 'waiting', appliedAt: '2026-03-12', channel: 'linkedin', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd8' as any, _creationTime: Date.now(), userId: 'demo-user', company: 'Vertex Tech', position: 'Front End Eng', status: 'preparing', appliedAt: '', channel: 'online', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
 ]
 
 const DEMO_ANALYTICS_RESUMES: Resume[] = [

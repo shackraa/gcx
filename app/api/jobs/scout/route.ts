@@ -512,7 +512,7 @@ export async function POST(req: NextRequest) {
         `Lead ${role}`,
         `${role} (AI & Cloud)`,
       ]
-      const fallbackCompanies = ['Dream Games', 'Good Job Games', 'Teknoloji A.Ş.', 'Yazılım Çözümleri']
+      const fallbackCompanies = ['Global Teknoloji', 'Örnek Yazılım Ltd.', 'Bulut Bilişim A.Ş.', 'Dijital Çözümler']
 
       allDiscoveredJobs.push(
         ...fallbackTitles.map((title, idx) => ({

@@ -13,7 +13,7 @@ export default defineSchema({
     targetRole: v.optional(v.string()), // Örn: "Senior AI Engineer"
     fileUrl: v.optional(v.string()),    // Drive veya harici dosya linki
     storageId: v.optional(v.id('_storage')), // Convex dosya depolama ID
-    fileName: v.optional(v.string()),   // Yüklenen dosyanın adı (örn: CV_Atakan_Ozkan.pdf)
+    fileName: v.optional(v.string()),   // Yüklenen dosyanın adı (örn: CV_Ornek.pdf)
     fileSize: v.optional(v.number()),   // Dosya boyutu (bytes)
     skills: v.optional(v.array(v.string())), // Geriye dönük uyumluluk
     summary: v.optional(v.string()),    // Geriye dönük uyumluluk

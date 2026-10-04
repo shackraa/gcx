@@ -240,51 +240,7 @@ export const revertApplication = mutation({
   },
 })
 
-// Migration to ensure Leap Games application has waiting status and correct CV
-// Migration to sync all scouted jobs and applications with current resume names
-export const syncAllResumesAndJobs = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const resumes = await ctx.db.query('resumes').collect()
-    const resumeMap = new Map<string, string>()
-    for (const r of resumes) {
-      resumeMap.set(r._id, r.name)
-    }
 
-    const apps = await ctx.db.query('applications').collect()
-    let updatedApps = 0
-    for (const app of apps) {
-      const currentResumeName = app.resumeId ? resumeMap.get(app.resumeId) : undefined
-      const isLeap = app.company.toLowerCase().includes('leap games')
-      if (currentResumeName && app.cvVersion !== currentResumeName) {
-        await ctx.db.patch(app._id, {
-          cvVersion: currentResumeName,
-          status: isLeap ? 'waiting' : app.status,
-        })
-        updatedApps++
-      } else if (isLeap && app.status !== 'waiting') {
-        await ctx.db.patch(app._id, {
-          status: 'waiting',
-        })
-        updatedApps++
-      }
-    }
-
-    const scouted = await ctx.db.query('scoutedJobs').collect()
-    let updatedScouted = 0
-    for (const s of scouted) {
-      const currentResumeName = s.recommendedResumeId ? resumeMap.get(s.recommendedResumeId) : undefined
-      if (currentResumeName && s.recommendedResumeName !== currentResumeName) {
-        await ctx.db.patch(s._id, {
-          recommendedResumeName: currentResumeName,
-        })
-        updatedScouted++
-      }
-    }
-
-    return { updatedApps, updatedScouted }
-  },
-})
 
 // Delete scouted job
 export const remove = mutation({

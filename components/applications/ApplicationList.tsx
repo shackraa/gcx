@@ -16,7 +16,7 @@ const DEMO_APPLICATION: Application = {
   _id: 'demo-app-1' as any,
   _creationTime: Date.now() - 16 * 24 * 60 * 60 * 1000,
   userId: 'demo-user',
-  company: 'Peak Games (Örnek Başvuru)',
+  company: 'Örnek Teknoloji A.Ş. (Örnek Başvuru)',
   position: 'Senior Frontend Developer',
   status: 'waiting',
   appliedAt: new Date(Date.now() - 16 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
