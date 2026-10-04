@@ -8,9 +8,9 @@ import { api } from '@/convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/lib/store/ui'
 import { useTourStore } from '@/lib/store/tour'
-import { Plus, Download, Upload, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle } from 'lucide-react'
+import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { exportBackup, exportToExcel, importBackup } from '@/lib/utils/backup'
+import { exportToExcel } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
 import type { Application } from '@/types'
 import { cn } from '@/lib/utils'
@@ -20,7 +20,6 @@ export function AppHeader() {
   const { openGuideModal } = useTourStore()
   const { theme, setTheme } = useTheme()
   const applications = useQuery(api.applications.list) as Application[] | undefined
-  const importBulkMutation = useMutation(api.applications.importBulk)
   const { signOut } = useAuthActions()
   const { toast } = useToast()
   const router = useRouter()
@@ -35,22 +34,6 @@ export function AppHeader() {
       title: 'Excel Tablosu İndirildi',
       description: 'Tüm başvurularınız Excel uyumlu CSV formatında kaydedildi.',
     })
-  }
-
-  async function handleImport() {
-    try {
-      const imported = await importBackup()
-      if (!imported || imported.length === 0) return
-
-      await importBulkMutation({
-        applications: imported,
-        clearExisting: false,
-      })
-
-      toast({ title: `${imported.length} başvuru içeri aktarıldı ✓` })
-    } catch {
-      toast({ title: 'Yükleme başarısız', variant: 'destructive' })
-    }
   }
 
   async function handleLogout() {
@@ -164,16 +147,6 @@ export function AppHeader() {
               className="h-8 w-8"
             >
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleImport}
-              title="Yedek yükle"
-              className="h-8 w-8"
-            >
-              <Upload className="h-4 w-4" />
             </Button>
 
             <Button
