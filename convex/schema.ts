@@ -91,4 +91,11 @@ export default defineSchema({
   })
     .index('by_user', ['userId'])
     .index('by_user_applied', ['userId', 'applied']),
+
+  // Günlük Yapay Zeka Kullanım Takibi (Adil Kullanım Kotası - Max 50/gün)
+  aiUsage: defineTable({
+    userId: v.string(),
+    date: v.string(), // YYYY-MM-DD
+    count: v.number(),
+  }).index('by_user_date', ['userId', 'date']),
 })

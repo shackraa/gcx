@@ -73,10 +73,10 @@ export async function POST(req: NextRequest) {
     if (!activeApiKey) {
       return NextResponse.json(
         {
-          error: 'NO_API_KEY',
-          message: 'Gemini API anahtarı bulunamadı. Lütfen ücretsiz API anahtarınızı girin.',
+          error: 'SERVICE_UNAVAILABLE',
+          message: 'Yapay zeka servisi şu anda hazırlık aşamasında. Lütfen daha sonra tekrar deneyin.',
         },
-        { status: 400 }
+        { status: 503 }
       )
     }
 

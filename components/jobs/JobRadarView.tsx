@@ -53,6 +53,8 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { setView, setFilter, setSearch } = useUIStore()
   const createApplicationMutation = useMutation(api.applications.create)
   const scoutedJobs = useQuery(api.scoutedJobs.list)
+  const aiUsage = useQuery(api.aiUsage.getStatus)
+  const consumeQuota = useMutation(api.aiUsage.consumeQuota)
   const importBulkScoutedMutation = useMutation(api.scoutedJobs.importBulk)
   const convertScoutedMutation = useMutation(api.scoutedJobs.convertToApplication)
   const revertScoutedMutation = useMutation(api.scoutedJobs.revertApplication)
@@ -97,8 +99,19 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       return
     }
 
+    try {
+      await consumeQuota()
+    } catch (quotaErr: unknown) {
+      const err = quotaErr as Error
+      toast({
+        title: 'Günlük İşlem Limiti',
+        description: err.message || 'Günlük 50 yapay zeka işlem limitinize ulaştınız. Limitiniz gece yarısı (00:00) sıfırlanacaktır.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setIsScouting(true)
-    const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : ''
 
     try {
       const res = await fetch('/api/jobs/scout', {
@@ -112,7 +125,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           resumeId: activeResume?._id,
           resumeName: activeResume?.name,
           resumeSummary: activeResume?.summary || '',
-          apiKey,
         }),
       })
 
@@ -204,8 +216,19 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       return
     }
 
+    try {
+      await consumeQuota()
+    } catch (quotaErr: unknown) {
+      const err = quotaErr as Error
+      toast({
+        title: 'Günlük İşlem Limiti',
+        description: err.message || 'Günlük 50 yapay zeka işlem limitinize ulaştınız. Limitiniz gece yarısı (00:00) sıfırlanacaktır.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setIsMatching(true)
-    const apiKey = typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : ''
 
     try {
       const res = await fetch('/api/ai/match-jobs', {
@@ -219,7 +242,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           datePosted,
           jobText: jobInput,
           jobUrl: jobUrlInput,
-          apiKey,
         }),
       })
 
@@ -377,7 +399,12 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+            {aiUsage && (
+              <span className="text-xs font-semibold text-muted-foreground bg-background dark:bg-card border border-border px-3 py-1.5 rounded-lg shadow-2xs">
+                Günlük AI Hakkı: <strong className="text-foreground">{aiUsage.remaining}</strong>/50
+              </span>
+            )}
             <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg">
               {resumes.length} CV Havuzda
             </span>

@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useUIStore } from '@/lib/store/ui'
-import { useMutation } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import type { Resume } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,6 @@ import {
   Sparkles,
   Upload,
   Loader2,
-  Key,
   FileText,
   ExternalLink,
   ChevronDown,
@@ -89,9 +88,8 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
   const [coverLetterLang, setCoverLetterLang] = useState<'tr' | 'en'>('en')
-  const [apiKey, setApiKey] = useState('')
-  const [tempApiKey, setTempApiKey] = useState('')
-  const [showKeyInput, setShowKeyInput] = useState(false)
+  const aiUsage = useQuery(api.aiUsage.getStatus)
+  const consumeQuota = useMutation(api.aiUsage.consumeQuota)
   
   // Selected / Pending File state
   const [pendingFile, setPendingFile] = useState<File | null>(null)
@@ -122,15 +120,6 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     },
   })
 
-  // Load stored Gemini API key if present
-  useEffect(() => {
-    const saved = localStorage.getItem('gcx_gemini_api_key')
-    if (saved) {
-      setApiKey(saved)
-      setTempApiKey(saved)
-    }
-  }, [])
-
   // Close on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -140,25 +129,28 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     return () => document.removeEventListener('keydown', onKey)
   }, [closeResumeModal])
 
-  function handleSaveApiKey() {
-    const trimmed = tempApiKey.trim()
-    setApiKey(trimmed)
-    localStorage.setItem('gcx_gemini_api_key', trimmed)
-    setShowKeyInput(false)
-    toast({ title: 'Gemini API Anahtarı Kaydedildi ✓' })
-  }
-
   // Generate Cover Letter via AI (TR or EN)
   async function handleGenerateCoverLetter(lang?: 'tr' | 'en') {
     const targetLang = lang || coverLetterLang
     const rawTextValue = watch('rawText')
     const targetRoleValue = watch('targetRole')
-    const activeKey = apiKey || (typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : '')
 
     if (!rawTextValue && !selectedFilePreview?.base64) {
       toast({
         title: 'CV Bilgisi Gerekli',
         description: 'Cover Letter oluşturmak için lütfen bir CV dosyası seçin veya CV metnini girin.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      await consumeQuota()
+    } catch (quotaErr: unknown) {
+      const err = quotaErr as Error
+      toast({
+        title: 'Günlük İşlem Limiti',
+        description: err.message || 'Günlük 50 yapay zeka işlem limitinize ulaştınız. Limitiniz gece yarısı (00:00) sıfırlanacaktır.',
         variant: 'destructive',
       })
       return
@@ -173,7 +165,6 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
           rawText: rawTextValue || selectedFilePreview?.base64 || 'Aday CV Bilgileri',
           targetRole: targetRoleValue || 'İlgili Pozisyon',
           language: targetLang,
-          apiKey: activeKey || undefined,
         }),
       })
 
@@ -254,16 +245,13 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       ? { fileBase64: selectedFilePreview.base64, mimeType: selectedFilePreview.mimeType }
       : {}
 
-    const activeKey = apiKey || (typeof window !== 'undefined' ? localStorage.getItem('gcx_gemini_api_key') || '' : '')
     const rawTextValue = watch('rawText')
     const reqPayload = {
       ...filePayload,
       rawText: overridePayload?.rawText || rawTextValue || undefined,
-      apiKey: activeKey || undefined,
     }
 
     if (!reqPayload.fileBase64 && !reqPayload.rawText?.trim()) {
-      setIsAnalyzing(false)
       toast({
         title: 'CV Seçilmedi',
         description: 'Lütfen bir PDF dosyası yükleyin veya CV metnini yapıştırın.',
@@ -271,6 +259,20 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       })
       return
     }
+
+    try {
+      await consumeQuota()
+    } catch (quotaErr: unknown) {
+      const err = quotaErr as Error
+      toast({
+        title: 'Günlük İşlem Limiti',
+        description: err.message || 'Günlük 50 yapay zeka işlem limitinize ulaştınız. Limitiniz gece yarısı (00:00) sıfırlanacaktır.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsAnalyzing(true)
 
     try {
       const res = await fetch('/api/ai/parse-cv', {
@@ -282,20 +284,11 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       const json = await res.json()
 
       if (!res.ok) {
-        if (json.error === 'NO_API_KEY') {
-          setShowKeyInput(true)
-          toast({
-            title: 'Gemini API Anahtarı Gerekli',
-            description: 'Google AI Studio üzerinden aldığınız ücretsiz anahtarı girin.',
-            variant: 'destructive',
-          })
-        } else {
-          toast({
-            title: 'Analiz Başarısız',
-            description: json.message || 'CV analiz edilemedi.',
-            variant: 'destructive',
-          })
-        }
+        toast({
+          title: 'Analiz Başarısız',
+          description: json.message || 'CV analiz edilemedi.',
+          variant: 'destructive',
+        })
         setIsAnalyzing(false)
         return
       }
@@ -446,57 +439,21 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         {/* Form Content */}
         <div className="overflow-y-auto px-6 py-4 space-y-4 flex-1">
           {/* AI Auto-Fill Hero Box */}
-          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/25 rounded-xl p-3.5 space-y-3 shadow-sm">
-            <div className="flex items-center justify-between gap-2">
+          <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/25 rounded-xl p-3.5 space-y-3 shadow-xs">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary animate-pulse" />
                 <span className="text-xs font-bold text-foreground">
-                  Google Gemini AI ile Otomatik Doldur ($0 Cost)
+                  Google Gemini AI ile Otomatik Doldur
                 </span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setShowKeyInput(!showKeyInput)}
-                className="text-[11px] text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
-                title="Gemini API Anahtarı Ayarları"
-              >
-                <Key className="h-3 w-3" />
-                <span>{apiKey ? 'API Anahtarı Kayıtlı ✓' : 'API Key Gir'}</span>
-              </button>
+              {aiUsage && (
+                <div className="text-[11px] text-muted-foreground font-medium bg-background/80 dark:bg-card/80 px-2.5 py-0.5 rounded-full border border-border/60">
+                  Günlük Kalan Hak: <strong className="text-foreground">{aiUsage.remaining}</strong>/50
+                </div>
+              )}
             </div>
-
-            {/* API Key Drawer */}
-            {showKeyInput && (
-              <div className="bg-background/90 border border-border/80 rounded-lg p-2.5 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-foreground">Google AI Studio API Anahtarı (Tamamen Ücretsiz)</span>
-                  <a
-                    href="https://aistudio.google.com/apikey"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary hover:underline inline-flex items-center gap-0.5 text-[11px]"
-                  >
-                    Ücretsiz Key Al <ExternalLink className="h-2.5 w-2.5" />
-                  </a>
-                </div>
-                <div className="flex gap-1.5">
-                  <input
-                    type="password"
-                    value={tempApiKey}
-                    onChange={(e) => setTempApiKey(e.target.value)}
-                    placeholder="AIzaSy..."
-                    className="flex-1 h-8 px-2.5 rounded-md bg-muted border-0 text-xs font-mono"
-                  />
-                  <Button size="sm" onClick={handleSaveApiKey} className="h-8 text-xs">
-                    Kaydet
-                  </Button>
-                </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Google Gemini API, kişisel limitlerinizde tamamen <strong className="text-foreground font-semibold">ücretsizdir</strong> ve CV ayrıştırmada kesintisiz yüksek hız sağlar.
-                </p>
-              </div>
-            )}
 
             {/* Upload / Action Row */}
             <input

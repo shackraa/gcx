@@ -404,10 +404,10 @@ export function GuideModal() {
               <div className="bg-card border border-border rounded-xl p-4 space-y-1.5">
                 <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  Gemini API Anahtarımı Nasıl Kullanırım?
+                  Yapay Zeka Özellikleri Ücretsiz mi?
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  İlan Radarı veya CV ayrıştırma ekranındaki API anahtarı alanına Google Gemini API anahtarınızı girdiğinizde, tarama ve analizler kişisel limitlerinizde tamamen <strong className="text-foreground font-semibold">ücretsizdir</strong> ve yüksek hızda çalışır.
+                  Evet! GCX; akıllı CV ayrıştırma, ön yazı (Cover Letter) üretimi ve İlan Radarı eşleştirme özelliklerini günlük <strong className="text-foreground font-semibold">50 işleme kadar tamamen ücretsiz</strong> sunar. Herhangi bir teknik kurulum veya API anahtarı girmenize gerek yoktur.
                 </p>
               </div>
 
