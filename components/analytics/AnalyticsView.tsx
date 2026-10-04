@@ -48,6 +48,19 @@ const DEMO_ANALYTICS_RESUMES: Resume[] = [
   { _id: 'r2' as any, _creationTime: Date.now(), userId: 'demo-user', name: 'Fullstack Geliştirici CV', category: 'Fullstack', isDefault: false, targetRole: 'Fullstack Engineer' },
 ]
 
+const tooltipStyle = {
+  backgroundColor: 'var(--card)',
+  color: 'var(--card-foreground)',
+  border: '1px solid var(--border)',
+  borderRadius: 8,
+  fontSize: 12,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+}
+
+const tooltipItemStyle = {
+  color: 'var(--card-foreground)',
+}
+
 export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: AnalyticsViewProps) {
   const [showDemoAnalytics, setShowDemoAnalytics] = useState(true)
   const isDemo = applications.length === 0 && showDemoAnalytics
@@ -177,12 +190,13 @@ export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: 
                     <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11, fill: '#888' }} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip
-                      contentStyle={{ background: '#1c1c1c', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
-                      cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                      contentStyle={tooltipStyle}
+                      itemStyle={tooltipItemStyle}
+                      cursor={{ fill: 'rgba(128,128,128,0.08)' }}
                     />
                     <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
                     <Bar dataKey="Toplam Başvuru" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Dönüş Sayısı" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Dönüş Sayısı" fill="#10b981" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -235,8 +249,9 @@ export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: 
                 tickLine={false}
               />
               <Tooltip
-                contentStyle={{ background: '#1c1c1c', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
-                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                contentStyle={tooltipStyle}
+                itemStyle={tooltipItemStyle}
+                cursor={{ fill: 'rgba(128,128,128,0.08)' }}
               />
               <Bar dataKey="count" radius={4}>
                 {statusData.map((d, i) => (
@@ -268,12 +283,13 @@ export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: 
                   {channelData.map((_, i) => (
                     <Cell
                       key={i}
-                      fill={['#3b82f6', '#8b5cf6', '#22c55e', '#f59e0b', '#0ea5e9'][i % 5]}
+                      fill={['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#0ea5e9'][i % 5]}
                     />
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ background: '#1c1c1c', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -293,8 +309,9 @@ export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: 
               />
               <YAxis hide allowDecimals={false} />
               <Tooltip
-                contentStyle={{ background: '#1c1c1c', border: '1px solid #333', borderRadius: 8, fontSize: 12 }}
-                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                contentStyle={tooltipStyle}
+                itemStyle={tooltipItemStyle}
+                cursor={{ fill: 'rgba(128,128,128,0.08)' }}
               />
               <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>

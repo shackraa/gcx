@@ -39,25 +39,25 @@ function KanbanCard({ app }: { app: Application }) {
     <button
       onClick={() => openModal(app._id)}
       className={cn(
-        'w-full text-left bg-card border rounded-lg px-3 py-2.5 space-y-1 transition-all hover:border-border/80 active:scale-[0.98]',
-        overdue ? 'border-red-800 bg-red-950/20' : 'border-border'
+        'w-full text-left bg-card border rounded-lg px-3 py-2.5 space-y-1 transition-all hover:border-border/80 active:scale-[0.98] cursor-pointer shadow-2xs',
+        overdue ? 'border-red-200 bg-red-50/70 dark:border-red-800 dark:bg-red-950/20' : 'border-border'
       )}
     >
       <div className="font-semibold text-xs text-foreground leading-tight">{app.company}</div>
       <div className="text-[11px] text-muted-foreground">{app.position}</div>
       <div className="flex items-center gap-2 pt-0.5">
         {days !== null && (
-          <span className={cn('text-[10px] font-medium', overdue ? 'text-red-400' : 'text-muted-foreground/70')}>
+          <span className={cn('text-[10px] font-medium', overdue ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground/70')}>
             {days}g önce
           </span>
         )}
         {overdue && (
-          <span className="text-[10px] text-red-400 font-medium inline-flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+          <span className="text-[10px] text-red-600 dark:text-red-400 font-medium inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400 inline-block" />
             Sessiz
           </span>
         )}
-        {app.hrContacted && <span className="text-[10px] text-green-500">✓ İK</span>}
+        {app.hrContacted && <span className="text-[10px] text-emerald-600 dark:text-green-400 font-medium">✓ İK</span>}
       </div>
     </button>
   )

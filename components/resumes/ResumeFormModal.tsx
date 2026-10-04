@@ -508,14 +508,14 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             />
 
             {pendingFile ? (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-800/50">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/50">
                 <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-7 h-7 rounded-md bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                  <div className="w-7 h-7 rounded-md bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shrink-0">
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-foreground truncate">{pendingFile.name}</p>
-                    <p className="text-[10px] text-emerald-400">
+                    <p className="text-[10px] text-emerald-700 dark:text-emerald-400">
                       {formatFileSize(pendingFile.size)} • Kaydedildiğinde bulut depoya yüklenecek
                     </p>
                   </div>
@@ -527,7 +527,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     size="sm"
                     onClick={() => parseCVWithAI()}
                     disabled={isAnalyzing}
-                    className="h-7 text-[11px] px-2 gap-1 text-primary hover:text-primary"
+                    className="h-7 text-[11px] px-2 gap-1 text-primary hover:text-primary cursor-pointer"
                   >
                     {isAnalyzing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     Yeniden Analiz Et
@@ -537,7 +537,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="h-7 text-[11px] px-2"
+                    className="h-7 text-[11px] px-2 cursor-pointer"
                   >
                     Değiştir
                   </Button>
@@ -546,7 +546,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveFile}
-                    className="h-7 text-[11px] px-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30"
+                    className="h-7 text-[11px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30 cursor-pointer"
                   >
                     Kaldır
                   </Button>
@@ -583,7 +583,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="h-7 text-[11px] px-2"
+                    className="h-7 text-[11px] px-2 cursor-pointer"
                   >
                     Değiştir
                   </Button>
@@ -592,7 +592,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveFile}
-                    className="h-7 text-[11px] px-1.5 text-red-400 hover:text-red-300 hover:bg-red-950/30"
+                    className="h-7 text-[11px] px-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30 cursor-pointer"
                   >
                     Kaldır
                   </Button>
@@ -653,7 +653,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 <div className="space-y-2 pt-1 border-t border-border/40 text-[11px]">
                   {aiInsights.strengths && aiInsights.strengths.length > 0 && (
                     <div>
-                      <span className="font-semibold text-green-400">Güçlü Yönlerin:</span>
+                      <span className="font-semibold text-emerald-700 dark:text-green-400">Güçlü Yönlerin:</span>
                       <ul className="list-disc list-inside text-muted-foreground mt-0.5 space-y-0.5">
                         {aiInsights.strengths.map((s, i) => (
                           <li key={i}>{s}</li>
@@ -688,7 +688,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground">
-                  CV İsmi <span className="text-red-400">*</span>
+                  CV İsmi <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 <input
                   {...register('name')}
@@ -696,7 +696,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                   placeholder="Örn: Senior Data Engineer CV"
                 />
                 {errors.name && (
-                  <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.name.message}</p>
                 )}
               </div>
 
@@ -715,7 +715,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             {/* Category */}
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                Uzmanlık / Kategori <span className="text-red-400">*</span>
+                Uzmanlık / Kategori <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <select
                 {...register('category')}
@@ -741,7 +741,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 placeholder="https://drive.google.com/file/d/..."
               />
               {errors.fileUrl && (
-                <p className="text-xs text-red-400 mt-1">{errors.fileUrl.message}</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.fileUrl.message}</p>
               )}
             </div>
 
@@ -767,7 +767,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                       )}
                     >
                       <span>TR</span>
-                      {Boolean(watch('coverLetter')) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
+                      {Boolean(watch('coverLetter')) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                     </button>
                     <button
                       type="button"
@@ -780,7 +780,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                       )}
                     >
                       <span>EN</span>
-                      {Boolean(watch('coverLetterEn')) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
+                      {Boolean(watch('coverLetterEn')) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                     </button>
                   </div>
                 </div>
@@ -879,7 +879,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             <button
               type="button"
               onClick={handleDelete}
-              className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Sil

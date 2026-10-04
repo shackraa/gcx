@@ -53,7 +53,7 @@ export function Toaster() {
           className={cn(
             'pointer-events-auto max-w-sm w-full p-4 rounded-xl shadow-xl border text-sm font-medium animate-in slide-in-from-bottom-2 duration-200',
             t.variant === 'destructive'
-              ? 'bg-red-950/90 border-red-800 text-red-100'
+              ? 'bg-red-50 border-red-200 text-red-900 dark:bg-red-950/90 dark:border-red-800 dark:text-red-100'
               : 'bg-card/95 backdrop-blur border-border/80 text-foreground'
           )}
         >

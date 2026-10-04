@@ -37,7 +37,7 @@ export function WeeklyGoal({ current, goal }: WeeklyGoalProps) {
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground font-medium inline-flex items-center gap-1.5">
-            Bu hafta {done && <span className="text-[10px] font-semibold text-green-400 bg-green-950/50 border border-green-800/60 px-1.5 py-0.5 rounded-full">Hedef Tamamlandı</span>}
+            Bu hafta {done && <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-green-400 dark:bg-green-950/50 dark:border-green-800/60 px-1.5 py-0.5 rounded-full">Hedef Tamamlandı</span>}
           </span>
           {editing ? (
             <div className="flex items-center gap-1">
@@ -50,7 +50,7 @@ export function WeeklyGoal({ current, goal }: WeeklyGoalProps) {
                 onKeyDown={(e) => e.key === 'Enter' && saveGoal()}
                 autoFocus
               />
-              <button onClick={saveGoal} className="text-green-400 text-xs hover:text-green-300">✓</button>
+              <button onClick={saveGoal} className="text-emerald-600 dark:text-green-400 text-xs hover:text-emerald-700 dark:hover:text-green-300">✓</button>
               <button onClick={() => setEditing(false)} className="text-muted-foreground text-xs hover:text-foreground">✕</button>
             </div>
           ) : (

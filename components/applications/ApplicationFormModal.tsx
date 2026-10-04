@@ -190,7 +190,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                Şirket <span className="text-red-400">*</span>
+                Şirket <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 {...register('company')}
@@ -198,12 +198,12 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
                 placeholder="Örn: Trendyol"
               />
               {errors.company && (
-                <p className="text-xs text-red-400 mt-1">{errors.company.message}</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.company.message}</p>
               )}
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground">
-                Pozisyon <span className="text-red-400">*</span>
+                Pozisyon <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <input
                 {...register('position')}
@@ -211,7 +211,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
                 placeholder="Örn: AI Engineer"
               />
               {errors.position && (
-                <p className="text-xs text-red-400 mt-1">{errors.position.message}</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.position.message}</p>
               )}
             </div>
           </div>
@@ -382,7 +382,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
             <button
               type="button"
               onClick={handleDelete}
-              className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-300 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
             >
               <Trash2 className="h-4 w-4" />
               Sil

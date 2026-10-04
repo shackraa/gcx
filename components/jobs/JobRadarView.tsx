@@ -469,7 +469,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
-            <span className="hidden sm:inline-flex text-[11px] font-bold text-green-400 bg-green-950/40 border border-green-800/60 px-2.5 py-1.5 rounded-lg">
+            <span className="hidden sm:inline-flex text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-800/60 px-2.5 py-1.5 rounded-lg">
               %70+ Uyum · En Yüksek Puan En Üstte
             </span>
 
@@ -556,7 +556,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                 <Sparkles className="h-4 w-4 text-primary" />
                 Radara Takılan İlanlar {scoutedJobs && scoutedJobs.length > 0 ? `(${scoutedJobs.length} İlan)` : ''}
               </h3>
-              <span className="text-[10px] font-bold text-green-400 bg-green-950/40 border border-green-800/60 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 dark:text-green-400 dark:bg-green-950/40 dark:border-green-800/60 px-2 py-0.5 rounded">
                 %70+ Uyum · En Yüksek Skor En Başta
               </span>
             </div>
@@ -574,7 +574,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                   await clearAllScoutedMutation()
                   toast({ title: 'Radar Temizlendi', description: 'Tüm taranan ilanlar sıfırlandı.' })
                 }}
-                className="h-8 text-xs gap-1.5 border-border text-muted-foreground hover:text-red-400 hover:border-red-900/50"
+                className="h-8 text-xs gap-1.5 border-border text-muted-foreground hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900/50 cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>Radarı Temizle</span>
@@ -646,7 +646,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                           <h4 className="text-sm font-bold text-foreground">Senior Frontend Developer</h4>
                           <p className="text-xs text-muted-foreground font-medium mt-0.5">Peak Games</p>
                         </div>
-                        <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-green-950/40 text-green-400 border-green-800">
+                        <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
                           %94 Uyum
                         </div>
                       </div>
@@ -662,11 +662,11 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
                       <div className="flex flex-wrap gap-1 pt-1">
                         {['React', 'TypeScript', 'Next.js', 'Tailwind CSS'].map((s) => (
-                          <span key={s} className="bg-green-950/40 text-green-400 border border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                          <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
                             ✓ {s}
                           </span>
                         ))}
-                        <span className="bg-red-950/40 text-red-400 border border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                        <span className="bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
                           ✕ GraphQL
                         </span>
                       </div>
@@ -677,7 +677,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                       <Button
                         size="sm"
                         onClick={() => toast({ title: 'Örnek İlan', description: 'Gerçek tarama yaptığınızda bu buton ilanı tek tıkla Başvurularım listesine aktarır.' })}
-                        className="h-8 text-xs font-semibold"
+                        className="h-8 text-xs font-semibold cursor-pointer"
                       >
                         <Plus className="h-3.5 w-3.5 mr-1" />
                         Başvuruya Ekle
@@ -692,7 +692,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                           <h4 className="text-sm font-bold text-foreground">Full Stack Engineer</h4>
                           <p className="text-xs text-muted-foreground font-medium mt-0.5">Dream Games</p>
                         </div>
-                        <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-green-950/40 text-green-400 border-green-800">
+                        <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
                           %88 Uyum
                         </div>
                       </div>
@@ -708,11 +708,11 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
                       <div className="flex flex-wrap gap-1 pt-1">
                         {['TypeScript', 'Node.js', 'PostgreSQL', 'REST API'].map((s) => (
-                          <span key={s} className="bg-green-950/40 text-green-400 border border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                          <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
                             ✓ {s}
                           </span>
                         ))}
-                        <span className="bg-red-950/40 text-red-400 border border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                        <span className="bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
                           ✕ Docker
                         </span>
                       </div>
@@ -723,7 +723,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                       <Button
                         size="sm"
                         onClick={() => toast({ title: 'Örnek İlan', description: 'Gerçek tarama yaptığınızda bu buton ilanı tek tıkla Başvurularım listesine aktarır.' })}
-                        className="h-8 text-xs font-semibold"
+                        className="h-8 text-xs font-semibold cursor-pointer"
                       >
                         <Plus className="h-3.5 w-3.5 mr-1" />
                         Başvuruya Ekle
@@ -752,7 +752,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                     </div>
                     <div className={cn(
                       'text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0',
-                      job.matchScore >= 80 ? 'bg-green-950/40 text-green-400 border-green-800' : 'bg-primary/10 text-primary border-primary/20'
+                      job.matchScore >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800' : 'bg-primary/10 text-primary border-primary/20'
                     )}>
                       %{job.matchScore} Uyum
                     </div>
@@ -772,7 +772,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                   {job.matchingSkills && job.matchingSkills.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1">
                       {job.matchingSkills.map((s) => (
-                        <span key={s} className="bg-green-950/40 text-green-400 border border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                        <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
                           ✓ {s}
                         </span>
                       ))}
@@ -794,7 +794,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                     )}
                     <button
                       onClick={() => removeScoutedMutation({ id: job._id })}
-                      className="text-muted-foreground hover:text-red-400 p-1"
+                      className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400 p-1 cursor-pointer"
                       title="Sil"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -808,7 +808,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                           size="sm"
                           variant="outline"
                           onClick={() => handleRevertScouted(job)}
-                          className="h-8 text-xs gap-1.5 text-red-400 border-red-900/50 hover:bg-red-950/40 hover:text-red-300 font-medium cursor-pointer"
+                          className="h-8 text-xs gap-1.5 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:border-red-900/50 dark:hover:bg-red-950/40 dark:hover:text-red-300 font-medium cursor-pointer"
                           title="Başvurulardan silip radara geri döndür"
                         >
                           <RotateCcw className="h-3.5 w-3.5" />
@@ -822,9 +822,9 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                             setFilter('all')
                             setSearch('')
                           }}
-                          className="h-8 text-xs gap-1.5 font-semibold bg-green-950/70 border border-green-700 text-green-300 hover:bg-green-900/90 hover:text-green-100 shadow-xs cursor-pointer"
+                          className="h-8 text-xs gap-1.5 font-semibold bg-emerald-50 border border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:bg-green-950/70 dark:border-green-700 dark:text-green-300 dark:hover:bg-green-900/90 dark:hover:text-green-100 shadow-xs cursor-pointer"
                         >
-                          <Check className="h-3.5 w-3.5 text-green-400" />
+                          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-green-400" />
                           <span>Başvurularda Gör →</span>
                         </Button>
                       </>
@@ -875,18 +875,18 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             href={linkedinUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col justify-between p-4 rounded-xl bg-blue-950/20 border border-blue-900/40 hover:border-blue-700 hover:bg-blue-950/40 transition-all shadow-sm"
+            className="group flex flex-col justify-between p-4 rounded-xl bg-blue-50/70 border border-blue-200 hover:border-blue-300 hover:bg-blue-100/50 dark:bg-blue-950/20 dark:border-blue-900/40 dark:hover:border-blue-700 dark:hover:bg-blue-950/40 transition-all shadow-2xs"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-blue-400">LinkedIn İlanları</span>
-                <ExternalLink className="h-3.5 w-3.5 text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <span className="text-xs font-bold text-blue-700 dark:text-blue-400">LinkedIn İlanları</span>
+                <ExternalLink className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </div>
               <p className="text-[11px] text-muted-foreground">
                 {workplaceType === 'onsite' ? 'Ofiste / Yerinde' : workplaceType === 'remote' ? 'Uzaktan' : workplaceType === 'hybrid' ? 'Hibrit' : 'Tüm'} ilanlar
               </p>
             </div>
-            <span className="mt-3 text-[11px] font-semibold text-blue-300 flex items-center gap-1">
+            <span className="mt-3 text-[11px] font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
               İlanları Gör →
             </span>
           </a>
@@ -896,18 +896,18 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             href={indeedUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col justify-between p-4 rounded-xl bg-indigo-950/20 border border-indigo-900/40 hover:border-indigo-700 hover:bg-indigo-950/40 transition-all shadow-sm"
+            className="group flex flex-col justify-between p-4 rounded-xl bg-indigo-50/70 border border-indigo-200 hover:border-indigo-300 hover:bg-indigo-100/50 dark:bg-indigo-950/20 dark:border-indigo-900/40 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/40 transition-all shadow-2xs"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-indigo-400">Indeed İlanları</span>
-                <ExternalLink className="h-3.5 w-3.5 text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400">Indeed İlanları</span>
+                <ExternalLink className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </div>
               <p className="text-[11px] text-muted-foreground">
                 Tüm sektörlerdeki güncel açık pozisyonlar
               </p>
             </div>
-            <span className="mt-3 text-[11px] font-semibold text-indigo-300 flex items-center gap-1">
+            <span className="mt-3 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1">
               İlanları Gör →
             </span>
           </a>
@@ -917,18 +917,18 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             href={kariyerUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col justify-between p-4 rounded-xl bg-purple-950/20 border border-purple-900/40 hover:border-purple-700 hover:bg-purple-950/40 transition-all shadow-sm"
+            className="group flex flex-col justify-between p-4 rounded-xl bg-purple-50/70 border border-purple-200 hover:border-purple-300 hover:bg-purple-100/50 dark:bg-purple-950/20 dark:border-purple-900/40 dark:hover:border-purple-700 dark:hover:bg-purple-950/40 transition-all shadow-2xs"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-400">Kariyer.net</span>
-                <ExternalLink className="h-3.5 w-3.5 text-purple-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <span className="text-xs font-bold text-purple-700 dark:text-purple-400">Kariyer.net</span>
+                <ExternalLink className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </div>
               <p className="text-[11px] text-muted-foreground">
                 Türkiye geneli şirket ve kurumsal ilanlar
               </p>
             </div>
-            <span className="mt-3 text-[11px] font-semibold text-purple-300 flex items-center gap-1">
+            <span className="mt-3 text-[11px] font-semibold text-purple-700 dark:text-purple-300 flex items-center gap-1">
               İlanları Gör →
             </span>
           </a>
@@ -938,18 +938,18 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             href={googleJobsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col justify-between p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/40 hover:border-emerald-700 hover:bg-emerald-950/40 transition-all shadow-sm"
+            className="group flex flex-col justify-between p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 hover:border-emerald-300 hover:bg-emerald-100/50 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 transition-all shadow-2xs"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-400">Google Jobs</span>
-                <ExternalLink className="h-3.5 w-3.5 text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Google Jobs</span>
+                <ExternalLink className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </div>
               <p className="text-[11px] text-muted-foreground">
                 Tüm iş sitelerini tek ekranda toplayan arama
               </p>
             </div>
-            <span className="mt-3 text-[11px] font-semibold text-emerald-300 flex items-center gap-1">
+            <span className="mt-3 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
               İlanları Gör →
             </span>
           </a>
@@ -991,7 +991,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
               <Button
                 onClick={handleAnalyzeJob}
                 disabled={isMatching || !jobInput.trim()}
-                className="w-full h-10 gap-2 text-xs font-bold bg-primary text-primary-foreground"
+                className="w-full h-10 gap-2 text-xs font-bold bg-primary text-primary-foreground cursor-pointer"
               >
                 {isMatching ? (
                   <>
@@ -1032,7 +1032,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                   <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Uyumluluk</div>
                   <div className={cn(
                     'text-xl font-black',
-                    matchedResult.matchScore >= 80 ? 'text-green-400' : matchedResult.matchScore >= 60 ? 'text-primary' : 'text-amber-400'
+                    matchedResult.matchScore >= 80 ? 'text-emerald-600 dark:text-green-400' : matchedResult.matchScore >= 60 ? 'text-primary' : 'text-amber-600 dark:text-amber-400'
                   )}>
                     %{matchedResult.matchScore}
                   </div>
@@ -1042,11 +1042,11 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                   size="sm"
                   onClick={() => handleAddJobToApplications(matchedResult)}
                   disabled={addedJobs.includes(matchedResult.id)}
-                  className="gap-1.5 text-xs font-semibold"
+                  className="gap-1.5 text-xs font-semibold cursor-pointer"
                 >
                   {addedJobs.includes(matchedResult.id) ? (
                     <>
-                      <Check className="h-3.5 w-3.5 text-green-400" />
+                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-green-400" />
                       <span>Eklendi ✓</span>
                     </>
                   ) : (
@@ -1076,10 +1076,10 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-xs">
               {matchedResult.matchingSkills && matchedResult.matchingSkills.length > 0 && (
                 <div>
-                  <span className="font-semibold text-green-400 block mb-1">✓ Eşleşen Yeteneklerin:</span>
+                  <span className="font-semibold text-emerald-700 dark:text-green-400 block mb-1">✓ Eşleşen Yeteneklerin:</span>
                   <div className="flex flex-wrap gap-1">
                     {matchedResult.matchingSkills.map((s) => (
-                      <span key={s} className="bg-green-950/40 text-green-400 border border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                      <span key={s} className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
                         {s}
                       </span>
                     ))}
@@ -1089,10 +1089,10 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
               {matchedResult.missingSkills && matchedResult.missingSkills.length > 0 && (
                 <div>
-                  <span className="font-semibold text-amber-400 block mb-1">⚡ İlanda İstenen Ekstra Yetenekler:</span>
+                  <span className="font-semibold text-amber-700 dark:text-amber-400 block mb-1">⚡ İlanda İstenen Ekstra Yetenekler:</span>
                   <div className="flex flex-wrap gap-1">
                     {matchedResult.missingSkills.map((s) => (
-                      <span key={s} className="bg-amber-950/40 text-amber-400 border border-amber-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                      <span key={s} className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 text-[10px] px-2 py-0.5 rounded font-medium">
                         {s}
                       </span>
                     ))}

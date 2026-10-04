@@ -45,13 +45,13 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
               setView('list')
             }}
             className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer',
               isActive
                 ? isOverdueTab && count > 0
-                  ? 'bg-red-700 text-white'
+                  ? 'bg-red-600 dark:bg-red-700 text-white'
                   : 'bg-primary text-primary-foreground'
                 : isOverdueTab && count > 0
-                ? 'text-red-400 bg-red-950/40 hover:bg-red-950/60'
+                ? 'text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 dark:border-transparent dark:text-red-400 dark:bg-red-950/40 dark:hover:bg-red-950/60'
                 : 'text-muted-foreground bg-muted hover:bg-muted/80 hover:text-foreground'
             )}
           >

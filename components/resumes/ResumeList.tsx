@@ -133,7 +133,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-sm font-bold text-foreground">{DEMO_RESUME.name}</h3>
-                        <span className="bg-green-950/60 text-green-400 border border-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/60 dark:text-green-400 dark:border-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
                           Varsayılan
                         </span>
                       </div>
@@ -203,7 +203,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                                 )}
                               >
                                 <span>TR</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />
                               </button>
                               <button
                                 type="button"
@@ -216,7 +216,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                                 )}
                               >
                                 <span>EN</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />
                               </button>
                             </div>
                           </div>
@@ -261,7 +261,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <span className="text-foreground font-semibold">12 Başvuru</span>
                     <span>•</span>
-                    <span className="text-green-400 font-semibold">%33 Dönüş (4 Yanıt)</span>
+                    <span className="text-emerald-700 dark:text-green-400 font-semibold">%33 Dönüş (4 Yanıt)</span>
                   </div>
 
                   <div className="text-[11px] text-muted-foreground">
@@ -314,7 +314,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-sm font-bold text-foreground break-all">{resume.name}</h3>
                       {resume.isDefault && (
-                        <span className="bg-green-950/60 text-green-400 border border-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-green-950/60 dark:text-green-400 dark:border-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
                           Varsayılan
                         </span>
                       )}
@@ -420,7 +420,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                               )}
                             >
                               <span>TR</span>
-                              {Boolean(resume.coverLetter) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
+                              {Boolean(resume.coverLetter) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                             </button>
                             <button
                               type="button"
@@ -433,7 +433,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                               )}
                             >
                               <span>EN</span>
-                              {Boolean(resume.coverLetterEn) && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />}
+                              {Boolean(resume.coverLetterEn) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                             </button>
                           </div>
                         </div>
@@ -483,7 +483,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Dönüş</div>
-                    <div className="text-sm font-bold text-green-400 mt-0.5">{respondedCount}</div>
+                    <div className="text-sm font-bold text-emerald-700 dark:text-green-400 mt-0.5">{respondedCount}</div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Dönüş Oranı</div>

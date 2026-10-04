@@ -52,19 +52,19 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
   }
 
   const leftBorderColor: Record<string, string> = {
-    preparing: 'border-l-zinc-500',
-    waiting: 'border-l-blue-600',
-    responded: 'border-l-purple-600',
-    interview: 'border-l-amber-500',
-    offer: 'border-l-green-500',
-    rejected: 'border-l-red-700',
+    preparing: 'border-l-zinc-400 dark:border-l-zinc-500',
+    waiting: 'border-l-blue-500 dark:border-l-blue-600',
+    responded: 'border-l-purple-500 dark:border-l-purple-600',
+    interview: 'border-l-amber-500 dark:border-l-amber-500',
+    offer: 'border-l-emerald-500 dark:border-l-green-500',
+    rejected: 'border-l-rose-500 dark:border-l-red-700',
   }
 
   return (
     <div
       className={cn(
-        'group relative bg-card border border-l-4 rounded-xl px-4 py-3 transition-all hover:border-border/80',
-        overdue ? 'border-red-800 border-l-red-500 bg-red-950/10' : 'border-border',
+        'group relative bg-card border border-l-4 rounded-xl px-4 py-3 transition-all hover:border-border/80 shadow-2xs',
+        overdue ? 'border-red-200 dark:border-red-800 border-l-red-500 bg-red-50/50 dark:bg-red-950/10' : 'border-border',
         leftBorderColor[app.status] ?? 'border-l-border'
       )}
     >
@@ -85,7 +85,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <span
               className={cn(
                 'text-xs font-semibold tabular-nums',
-                overdue ? 'text-red-400' : 'text-muted-foreground'
+                overdue ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
               )}
             >
               {days}g önce
@@ -111,8 +111,8 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
         {/* Overdue badge */}
         {overdue && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-950/80 text-red-300 border border-red-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse inline-block" />
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/80 dark:text-red-300 dark:border-red-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400 animate-pulse inline-block" />
             Sessiz (Takip maili at)
           </span>
         )}
@@ -134,7 +134,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
         {/* CV version / Resume badge */}
         {app.cvVersion && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-blue-400 bg-blue-950/40 border border-blue-900/60 px-2 py-0.5 rounded-full font-medium">
+          <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 border border-blue-200 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900/60 px-2 py-0.5 rounded-full font-medium">
             <FileText className="h-3 w-3" />
             {app.cvVersion}
           </span>
@@ -142,7 +142,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
         {/* HR contacted */}
         {app.hrContacted ? (
-          <span className="text-[11px] text-green-400 bg-green-950/40 px-2 py-0.5 rounded-full">
+          <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/60 dark:text-green-400 dark:bg-green-950/40 dark:border-transparent px-2 py-0.5 rounded-full">
             ✓ İK&apos;ya yazıldı
           </span>
         ) : (
@@ -153,7 +153,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
         {/* Interview date */}
         {app.interviewAt && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 bg-amber-950/40 border border-amber-900/60 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/60 px-2 py-0.5 rounded-full">
             <Calendar className="h-3 w-3" />
             {formatDate(app.interviewAt)}
           </span>
@@ -175,7 +175,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
               href={cvUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
               <FileText className="h-3 w-3" />
@@ -197,7 +197,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           {overdue && (
             <button
               onClick={handleCopyTemplate}
-              className="inline-flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 transition-colors"
+              className="inline-flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
             >
               <Copy className="h-3 w-3" />
               Şablonu kopyala
@@ -209,7 +209,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           {app.status === 'preparing' && (
             <button
               onClick={handleMarkApplied}
-              className="inline-flex items-center gap-1 text-xs font-medium text-green-400 hover:text-green-300 bg-green-950/40 hover:bg-green-950/60 px-3 py-1 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:text-green-400 dark:hover:text-green-300 dark:bg-green-950/40 dark:hover:bg-green-950/60 dark:border-transparent px-3 py-1 rounded-lg transition-colors cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               Başvurdum
@@ -217,7 +217,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           )}
           <button
             onClick={() => openModal(app._id)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted cursor-pointer"
           >
             Düzenle
           </button>

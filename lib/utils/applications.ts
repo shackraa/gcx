@@ -25,21 +25,21 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
 }
 
 export const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  preparing: 'bg-zinc-700 text-zinc-200',
-  waiting: 'bg-blue-900 text-blue-200',
-  responded: 'bg-purple-900 text-purple-200',
-  interview: 'bg-amber-900 text-amber-200',
-  offer: 'bg-green-900 text-green-200',
-  rejected: 'bg-red-900 text-red-300',
+  preparing: 'bg-zinc-100 text-zinc-700 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700',
+  waiting: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800',
+  responded: 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800',
+  interview: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800',
+  offer: 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-green-950/80 dark:text-green-200 dark:border-green-800',
+  rejected: 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-red-950/80 dark:text-red-300 dark:border-red-800',
 }
 
 export const STATUS_BADGE_COLORS: Record<ApplicationStatus, string> = {
-  preparing: 'border-zinc-600',
-  waiting: 'border-blue-700',
-  responded: 'border-purple-700',
-  interview: 'border-amber-600',
-  offer: 'border-green-600',
-  rejected: 'border-red-700',
+  preparing: 'border-zinc-300 dark:border-zinc-600',
+  waiting: 'border-blue-300 dark:border-blue-700',
+  responded: 'border-purple-300 dark:border-purple-700',
+  interview: 'border-amber-300 dark:border-amber-600',
+  offer: 'border-emerald-300 dark:border-green-600',
+  rejected: 'border-rose-300 dark:border-red-700',
 }
 
 export const CHANNEL_LABELS: Record<string, string> = {

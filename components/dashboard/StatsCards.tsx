@@ -30,19 +30,19 @@ function StatCard({ value, label, filterKey, variant = 'default' }: StatCardProp
       type="button"
       onClick={handleClick}
       className={cn(
-        'text-left bg-card border rounded-xl p-4 space-y-1 transition-all cursor-pointer hover:border-primary/50 hover:shadow-sm w-full',
-        variant === 'danger' && value > 0 && 'border-red-800 bg-red-950/30 hover:border-red-600',
-        variant === 'warning' && value > 0 && 'border-amber-800 bg-amber-950/20 hover:border-amber-600',
-        variant === 'success' && value > 0 && 'border-green-800 bg-green-950/20 hover:border-green-600',
+        'text-left bg-card border rounded-xl p-4 space-y-1 transition-all cursor-pointer hover:border-primary/50 hover:shadow-xs w-full',
+        variant === 'danger' && value > 0 && 'border-red-200 bg-red-50 hover:border-red-300 dark:border-red-800 dark:bg-red-950/30 dark:hover:border-red-600',
+        variant === 'warning' && value > 0 && 'border-amber-200 bg-amber-50 hover:border-amber-300 dark:border-amber-800 dark:bg-amber-950/20 dark:hover:border-amber-600',
+        variant === 'success' && value > 0 && 'border-emerald-200 bg-emerald-50 hover:border-emerald-300 dark:border-green-800 dark:bg-green-950/20 dark:hover:border-green-600',
         (variant === 'default' || value === 0) && 'border-border'
       )}
     >
       <div
         className={cn(
           'text-3xl font-extrabold',
-          variant === 'danger' && value > 0 && 'text-red-400',
-          variant === 'success' && value > 0 && 'text-green-400',
-          variant === 'warning' && value > 0 && 'text-amber-400',
+          variant === 'danger' && value > 0 && 'text-red-600 dark:text-red-400',
+          variant === 'success' && value > 0 && 'text-emerald-700 dark:text-green-400',
+          variant === 'warning' && value > 0 && 'text-amber-700 dark:text-amber-400',
           variant === 'default' && 'text-foreground'
         )}
       >

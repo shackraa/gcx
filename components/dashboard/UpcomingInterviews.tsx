@@ -39,9 +39,9 @@ export function UpcomingInterviews({ interviews }: UpcomingInterviewsProps) {
               key={app._id}
               onClick={() => openModal(app._id)}
               className={cn(
-                'w-full flex items-center justify-between px-4 py-3 rounded-lg border text-left transition-colors hover:bg-muted/50',
-                isToday && 'border-red-700 bg-red-950/30',
-                isTomorrow && 'border-amber-700 bg-amber-950/20',
+                'w-full flex items-center justify-between px-4 py-3 rounded-lg border text-left transition-colors hover:bg-muted/50 cursor-pointer',
+                isToday && 'border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-950/30',
+                isTomorrow && 'border-amber-200 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/20',
                 !isToday && !isTomorrow && !isPast && 'border-border bg-card',
                 isPast && 'border-border bg-card opacity-60'
               )}
@@ -54,8 +54,8 @@ export function UpcomingInterviews({ interviews }: UpcomingInterviewsProps) {
                 <div
                   className={cn(
                     'text-xs font-bold',
-                    isToday && 'text-red-400',
-                    isTomorrow && 'text-amber-400',
+                    isToday && 'text-red-600 dark:text-red-400',
+                    isTomorrow && 'text-amber-700 dark:text-amber-400',
                     !isToday && !isTomorrow && 'text-muted-foreground'
                   )}
                 >
