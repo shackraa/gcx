@@ -269,7 +269,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           {app.status === 'preparing' && (
             <button
               onClick={handleMarkApplied}
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Başvurdum</span>
@@ -279,7 +279,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <button
               onClick={() => handleStatusChange('responded')}
               title="Doğrudan dönüş aldı olarak güncelle"
-              className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
             >
               <span>Dönüş Aldı</span>
               <ArrowRight className="h-3 w-3" />
@@ -289,7 +289,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <button
               onClick={() => handleStatusChange('interview')}
               title="Mülakat aşamasına taşı"
-              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
             >
               <span>Mülakat</span>
               <ArrowRight className="h-3 w-3" />
@@ -299,7 +299,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <button
               onClick={() => handleStatusChange('offer')}
               title="Teklif aşamasına taşı"
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Teklif Aldı</span>
@@ -308,7 +308,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
           <button
             onClick={() => openModal(app._id)}
-            className="text-xs font-medium text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors cursor-pointer"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1 rounded-md hover:bg-muted transition-all active:scale-95 cursor-pointer"
           >
             Düzenle
           </button>

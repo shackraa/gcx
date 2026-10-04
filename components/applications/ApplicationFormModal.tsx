@@ -167,7 +167,10 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full sm:max-w-lg bg-card border border-border rounded-t-2xl sm:rounded-xl shadow-2xl max-h-[90vh] flex flex-col">
+      <div className="relative z-10 w-full sm:max-w-lg bg-card border border-border rounded-t-2xl sm:rounded-xl shadow-2xl max-h-[92vh] sm:max-h-[90vh] flex flex-col">
+        {/* Mobile Drag Handle */}
+        <div className="w-10 h-1 bg-muted-foreground/25 rounded-full mx-auto mt-2.5 mb-0.5 sm:hidden shrink-0" />
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
           <h2 className="text-base font-bold text-foreground">

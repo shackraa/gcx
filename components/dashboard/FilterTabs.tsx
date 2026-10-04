@@ -31,7 +31,10 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
   }
 
   return (
-    <div data-tour="filter-tabs" className="flex flex-wrap items-center gap-1.5">
+    <div
+      data-tour="filter-tabs"
+      className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex-wrap scroll-smooth"
+    >
       {TABS.map(({ key, label, dot }) => {
         const count = getCount(key)
         const isActive = filter === key
@@ -45,7 +48,7 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
               setView('list')
             }}
             className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border shrink-0',
               isActive
                 ? isOverdueTab && count > 0
                   ? 'bg-red-600 dark:bg-red-700 text-white border-transparent shadow-xs font-semibold'

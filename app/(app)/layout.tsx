@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 
+import { MobileNav } from '@/components/layout/MobileNav'
+
 export default function AppLayout({
   children,
 }: {
@@ -41,7 +43,8 @@ export default function AppLayout({
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="max-w-5xl mx-auto px-4 pb-20 pt-4">{children}</main>
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 pb-28 sm:pb-20 pt-3 sm:pt-4">{children}</main>
+      <MobileNav />
       <TourGuide />
       <GuideModal />
       <WelcomePrompt />

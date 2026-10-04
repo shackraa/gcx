@@ -187,7 +187,7 @@ export function KanbanBoard({ applications, search }: KanbanBoardProps) {
         onDragStart={(e) => setDraggingId(String(e.active.id))}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-3 overflow-x-auto pb-4">
+        <div className="flex gap-3 overflow-x-auto pb-4 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scroll-smooth touch-pan-x">
           {COLUMNS.map((status) => {
             const colApps = filtered.filter((a) => a.status === status)
             return (

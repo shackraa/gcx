@@ -194,14 +194,14 @@ export function SearchAndFilters() {
       </div>
 
       {/* Search Input */}
-      <div className="relative">
+      <div className="relative flex-1 min-w-[130px] sm:w-52 sm:flex-none">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Şirket, pozisyon, CV…"
-          className="h-8 pl-8 pr-7 text-xs bg-background border border-border/60 hover:border-border/90 rounded-lg w-40 sm:w-52 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-all shadow-2xs"
+          className="h-8 pl-8 pr-7 text-xs bg-background border border-border/60 hover:border-border/90 rounded-lg w-full focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 placeholder:text-muted-foreground transition-all shadow-2xs"
         />
         {search && (
           <button

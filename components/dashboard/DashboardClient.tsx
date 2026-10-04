@@ -65,10 +65,12 @@ export function DashboardClient() {
           />
 
           {/* Controls */}
-          <div className="space-y-3 mt-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <FilterTabs applications={applications} overdueDays={overdueDays} />
-              <div className="ml-auto flex items-center gap-2">
+          <div className="space-y-2.5 mt-4 sm:mt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="order-2 sm:order-1 overflow-hidden min-w-0">
+                <FilterTabs applications={applications} overdueDays={overdueDays} />
+              </div>
+              <div className="order-1 sm:order-2 flex items-center justify-between sm:justify-end gap-2 shrink-0">
                 <SearchAndFilters />
                 <ViewToggle />
               </div>
