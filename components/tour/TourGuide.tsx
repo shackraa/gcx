@@ -22,9 +22,11 @@ interface RectPosition {
   left: number
   width: number
   height: number
+  isInsideHeader?: boolean
 }
 
 const PADDING = 8
+const NAVBAR_CLEARANCE = 62 // 56px sticky navbar + 6px clean safety margin
 
 export function TourGuide() {
   const {
@@ -47,8 +49,8 @@ export function TourGuide() {
   const isFirstStep = currentStepIndex === 0
   const isLastStep = currentStepIndex === TOUR_STEPS.length - 1
 
-  // Update target rect
-  const updatePosition = useCallback(() => {
+  // Update target rect with navbar offset awareness and clamping
+  const updatePosition = useCallback((shouldScroll = false) => {
     if (!isTourOpen || !currentStep) return
 
     const selector = currentStep.targetSelector
@@ -63,27 +65,49 @@ export function TourGuide() {
       const rect = element.getBoundingClientRect()
       // Check if rect is visible
       if (rect.width > 0 && rect.height > 0) {
-        setTargetRect({
-          top: rect.top,
-          left: rect.left,
-          width: rect.width,
-          height: rect.height,
-        })
-        setIsCentered(false)
+        const isInsideHeader = Boolean(element.closest('header'))
 
-        // Smoothly scroll into view only if actually outside viewport
-        const isInViewport =
-          rect.top >= 0 &&
-          rect.bottom <= window.innerHeight
+        // Smoothly scroll into view with top clearance so target never sits behind the navbar
+        if (shouldScroll && !isInsideHeader) {
+          const elementDocTop = window.scrollY + rect.top
+          const targetScrollY = Math.max(0, elementDocTop - NAVBAR_CLEARANCE - 16)
+          const isTopComfortablyVisible =
+            rect.top >= NAVBAR_CLEARANCE + 12 && rect.top <= window.innerHeight - 100
 
-        if (!isInViewport) {
-          element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'nearest',
-          })
+          if (!isTopComfortablyVisible) {
+            window.scrollTo({
+              top: targetScrollY,
+              behavior: 'smooth',
+            })
+          }
         }
-        return
+
+        // Calculate highlight box coordinates including padding
+        let boxTop = rect.top - PADDING
+        let boxHeight = rect.height + PADDING * 2
+        const boxLeft = rect.left - PADDING
+        const boxWidth = rect.width + PADDING * 2
+
+        // If target is in the page body, strictly clamp boxTop to prevent any overlap with the top navbar
+        if (!isInsideHeader) {
+          if (boxTop < NAVBAR_CLEARANCE) {
+            const overlap = NAVBAR_CLEARANCE - boxTop
+            boxTop = NAVBAR_CLEARANCE
+            boxHeight = Math.max(0, boxHeight - overlap)
+          }
+        }
+
+        if (boxWidth > 0 && boxHeight > 0) {
+          setTargetRect({
+            top: boxTop,
+            left: boxLeft,
+            width: boxWidth,
+            height: boxHeight,
+            isInsideHeader,
+          })
+          setIsCentered(false)
+          return
+        }
       }
     }
 
@@ -101,17 +125,17 @@ export function TourGuide() {
       useUIStore.getState().setView(currentStep.targetView)
     }
 
-    // Delay to allow React view transitions to mount target elements
+    // Delay to allow React view transitions to mount target elements and initiate scroll
     const timer1 = setTimeout(() => {
-      updatePosition()
-    }, 180)
+      updatePosition(true)
+    }, 120)
 
     const timer2 = setTimeout(() => {
-      updatePosition()
-    }, 400)
+      updatePosition(false)
+    }, 350)
 
-    const handleResize = () => updatePosition()
-    const handleScroll = () => updatePosition()
+    const handleResize = () => updatePosition(false)
+    const handleScroll = () => updatePosition(false)
 
     window.addEventListener('resize', handleResize, { passive: true })
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -159,17 +183,22 @@ export function TourGuide() {
     const popoverHeight = 360
     const margin = 16
 
-    let top = targetRect.top + targetRect.height + PADDING + 12
+    let top = targetRect.top + targetRect.height + 12
     let left = targetRect.left + targetRect.width / 2 - popoverWidth / 2
 
-    // Check if bottom overflow -> place on top
+    // Check if bottom overflow -> place above
     if (top + popoverHeight > window.innerHeight - margin) {
-      top = targetRect.top - PADDING - popoverHeight - 12
+      const topPlacement = targetRect.top - popoverHeight - 12
+      if (topPlacement >= NAVBAR_CLEARANCE + 10) {
+        top = topPlacement
+      } else {
+        top = Math.max(NAVBAR_CLEARANCE + 12, (window.innerHeight - popoverHeight) / 2)
+      }
     }
 
-    // Check if top overflow -> place below or center
-    if (top < margin) {
-      top = Math.max(margin, window.innerHeight / 2 - popoverHeight / 2)
+    // Never let popover go above navbar if target is in page body
+    if (!targetRect.isInsideHeader && top < NAVBAR_CLEARANCE + 8) {
+      top = NAVBAR_CLEARANCE + 12
     }
 
     // Check horizontal constraints
@@ -201,10 +230,10 @@ export function TourGuide() {
             {/* Black cuts out the spotlight hole */}
             {targetRect && (
               <rect
-                x={targetRect.left - PADDING}
-                y={targetRect.top - PADDING}
-                width={targetRect.width + PADDING * 2}
-                height={targetRect.height + PADDING * 2}
+                x={targetRect.left}
+                y={targetRect.top}
+                width={targetRect.width}
+                height={targetRect.height}
                 rx="12"
                 ry="12"
                 fill="black"
@@ -228,10 +257,10 @@ export function TourGuide() {
         <div
           className="fixed pointer-events-none z-[9999] rounded-xl ring-2 ring-primary/80 ring-offset-2 ring-offset-background/40 shadow-[0_0_24px_rgba(59,130,246,0.45)] transition-all duration-300 animate-pulse"
           style={{
-            top: targetRect.top - PADDING,
-            left: targetRect.left - PADDING,
-            width: targetRect.width + PADDING * 2,
-            height: targetRect.height + PADDING * 2,
+            top: targetRect.top,
+            left: targetRect.left,
+            width: targetRect.width,
+            height: targetRect.height,
           }}
         />
       )}

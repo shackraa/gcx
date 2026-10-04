@@ -184,7 +184,7 @@ export const TOUR_STEPS: TourStep[] = [
       'Tebrikler! Hem üst menüdeki sekmeleri hem de sayfadaki tüm özellikleri sırasıyla öğrendiniz.',
     bulletPoints: [
       'Üst menüdeki "Rehber" butonuna dilediğiniz zaman tıklayarak bu tura veya detaylı kullanım kılavuzuna ulaşabilirsiniz.',
-      'JSON yedekleme butonlarıyla verilerinizi dışa aktarabilirsiniz.',
+      'Excel, Google E-Tablolar ve JSON dışa aktarma menüsünden verilerinizi dilediğiniz formatta kaydedebilirsiniz.',
     ],
     position: 'bottom',
   },

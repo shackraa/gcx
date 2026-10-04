@@ -397,7 +397,7 @@ export function GuideModal() {
                   Verilerim Güvende mi?
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Evet! Verileriniz güvenli Convex bulut veritabanında saklanır. Ayrıca dilediğiniz zaman üst menüdeki <strong>Yedek İndir (JSON)</strong> butonuyla verilerinizin tam yedeğini bilgisayarınıza kaydedebilirsiniz.
+                  Evet! Verileriniz güvenli Convex bulut veritabanında saklanır. Ayrıca dilediğiniz zaman üst menüdeki <strong>Dışa Aktar (Excel, E-Tablolar, JSON)</strong> menüsüyle verilerinizin tam kopyasını bilgisayarınıza kaydedebilirsiniz.
                 </p>
               </div>
 
@@ -407,7 +407,7 @@ export function GuideModal() {
                   Gemini API Anahtarımı Nasıl Kullanırım?
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  İlan Radarı veya CV ayrıştırma ekranındaki API anahtarı alanına ücretsiz Google Gemini API anahtarınızı girdiğinizde, tarama ve analizler tamamen kişisel limitlerinizle yüksek hızda çalışır.
+                  İlan Radarı veya CV ayrıştırma ekranındaki API anahtarı alanına Google Gemini API anahtarınızı girdiğinizde, tarama ve analizler kişisel limitlerinizde tamamen <strong className="text-foreground font-semibold">ücretsizdir</strong> ve yüksek hızda çalışır.
                 </p>
               </div>
 

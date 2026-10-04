@@ -8,9 +8,10 @@ import { api } from '@/convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/lib/store/ui'
 import { useTourStore } from '@/lib/store/tour'
-import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle, FileSpreadsheet, Sheet, ExternalLink, Copy } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import { exportToExcel } from '@/lib/utils/backup'
+import { exportToStyledExcel, exportToGoogleSheetsCsv, copyForGoogleSheets, exportBackup } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
 import type { Application } from '@/types'
 import { cn } from '@/lib/utils'
@@ -23,16 +24,87 @@ export function AppHeader() {
   const { signOut } = useAuthActions()
   const { toast } = useToast()
   const router = useRouter()
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
+  const exportMenuRef = useRef<HTMLDivElement>(null)
 
-  function handleExport() {
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setIsExportMenuOpen(false)
+      }
+    }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsExportMenuOpen(false)
+      }
+    }
+    if (isExportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEscape)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isExportMenuOpen])
+
+  function handleExportExcel() {
     if (!applications || applications.length === 0) {
-      toast({ title: 'İndirilecek başvuru bulunamadı' })
+      toast({ title: 'Dışa aktarılacak başvuru bulunamadı' })
       return
     }
-    exportToExcel(applications)
+    exportToStyledExcel(applications)
+    setIsExportMenuOpen(false)
     toast({
-      title: 'Excel Tablosu İndirildi',
-      description: 'Tüm başvurularınız Excel uyumlu CSV formatında kaydedildi.',
+      title: 'Excel Tablosu İndirildi ✓',
+      description: 'Renkli başlıklar ve okunaklı hücrelerle biçimlendirilmiş Excel dosyası (.xls) kaydedildi.',
+    })
+  }
+
+  function handleExportGoogleSheetsCsv() {
+    if (!applications || applications.length === 0) {
+      toast({ title: 'Dışa aktarılacak başvuru bulunamadı' })
+      return
+    }
+    exportToGoogleSheetsCsv(applications)
+    setIsExportMenuOpen(false)
+    toast({
+      title: 'Google E-Tablolar CSV İndirildi ✓',
+      description: 'E-Tablolar ve Drive ile tam uyumlu CSV dosyası kaydedildi.',
+    })
+  }
+
+  async function handleCopyGoogleSheets() {
+    if (!applications || applications.length === 0) {
+      toast({ title: 'Aktarılacak başvuru bulunamadı' })
+      return
+    }
+    const success = await copyForGoogleSheets(applications)
+    setIsExportMenuOpen(false)
+    if (success) {
+      window.open('https://sheets.new', '_blank')
+      toast({
+        title: 'Veriler Panoya Kopyalandı ✓',
+        description: 'Yeni açılan Google E-Tablo sayfasında Ctrl+V ile anında yapıştırabilirsiniz.',
+      })
+    } else {
+      toast({
+        title: 'Kopyalama Başarısız',
+        description: 'Lütfen CSV indirme seçeneğini kullanın.',
+      })
+    }
+  }
+
+  function handleExportBackupJson() {
+    if (!applications || applications.length === 0) {
+      toast({ title: 'Yedeklenecek başvuru bulunamadı' })
+      return
+    }
+    exportBackup(applications)
+    setIsExportMenuOpen(false)
+    toast({
+      title: 'JSON Yedeği İndirildi ✓',
+      description: 'Tüm başvuru verilerinizin tam yedeği kaydedildi.',
     })
   }
 
@@ -149,15 +221,111 @@ export function AppHeader() {
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleExport}
-              title="Başvuruları Excel tablosu olarak indir"
-              className="h-8 w-8"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            {/* Export & Spreadsheet Dropdown */}
+            <div className="relative" ref={exportMenuRef}>
+              <Button
+                variant={isExportMenuOpen ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => setIsExportMenuOpen((prev) => !prev)}
+                title="Dışa aktar: Excel, Google E-Tablolar, JSON"
+                aria-expanded={isExportMenuOpen}
+                className="h-8 w-8 relative"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+
+              {isExportMenuOpen && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl p-2 z-[60] animate-in fade-in zoom-in-95"
+                  role="menu"
+                >
+                  <div className="px-2.5 py-2 border-b border-border/60">
+                    <div className="text-xs font-bold text-foreground">Dışa Aktar & Tablolar</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      Başvurularınızı istediğiniz formatta dışa aktarın ({applications?.length || 0} kayıt)
+                    </div>
+                  </div>
+
+                  <div className="py-1 space-y-1">
+                    {/* Excel Option */}
+                    <button
+                      onClick={handleExportExcel}
+                      className="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-muted text-left transition-colors cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-green-500/10 text-green-600 dark:text-green-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <FileSpreadsheet className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-foreground flex items-center justify-between">
+                          <span>Microsoft Excel (.xls)</span>
+                          <span className="text-[10px] text-green-600 dark:text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded font-medium">Önerilen</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                          Renkli başlıklar, durum etiketleri ve okunaklı tablo formatı.
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Google Sheets CSV Option */}
+                    <button
+                      onClick={handleExportGoogleSheetsCsv}
+                      className="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-muted text-left transition-colors cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Sheet className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-foreground">
+                          Google E-Tablolar (CSV)
+                        </div>
+                        <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                          Google Drive ve E-Tablolar içe aktarmaya hazır dosya.
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Google Sheets Direct Copy & Open */}
+                    <button
+                      onClick={handleCopyGoogleSheets}
+                      className="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-muted text-left transition-colors cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <ExternalLink className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-foreground flex items-center justify-between">
+                          <span>E-Tablolara Aktar (Kopyala & Aç)</span>
+                          <Copy className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                        <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                          Panoya kopyalar ve yeni Google E-Tablo açar (Ctrl+V ile yapıştır).
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="h-px bg-border/60 my-1" />
+
+                    {/* JSON Backup Option */}
+                    <button
+                      onClick={handleExportBackupJson}
+                      className="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-muted text-left transition-colors cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Download className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-foreground">
+                          Tam Veri Yedeği (.json)
+                        </div>
+                        <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                          Tüm başvuru kayıtlarının tam JSON yedeği.
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <Button
               variant="ghost"
