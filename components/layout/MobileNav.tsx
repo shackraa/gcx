@@ -18,6 +18,7 @@ export function MobileNav() {
         {/* 1. Başvurularım */}
         <button
           type="button"
+          data-tour="nav-applications"
           onClick={() => setView('list')}
           className={cn(
             'flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
@@ -38,6 +39,7 @@ export function MobileNav() {
         {/* 2. CV Havuzu */}
         <button
           type="button"
+          data-tour="nav-resumes"
           onClick={() => setView('resumes')}
           className={cn(
             'flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
@@ -58,6 +60,7 @@ export function MobileNav() {
         {/* 3. Center: Hızlı Başvuru Ekle (Floating Hero Action) */}
         <button
           type="button"
+          data-tour="nav-add-btn"
           onClick={() => openModal()}
           title="Yeni Başvuru Ekle"
           className="flex flex-col items-center justify-center -mt-4 p-2 bg-primary text-primary-foreground rounded-full shadow-lg ring-4 ring-background active:scale-90 transition-all cursor-pointer"
@@ -69,6 +72,7 @@ export function MobileNav() {
         {/* 4. İlan Radarı */}
         <button
           type="button"
+          data-tour="nav-jobs"
           onClick={() => setView('jobs')}
           className={cn(
             'flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
@@ -89,6 +93,7 @@ export function MobileNav() {
         {/* 5. Analiz */}
         <button
           type="button"
+          data-tour="nav-analytics"
           onClick={() => setView('analytics')}
           className={cn(
             'flex flex-col items-center justify-center py-1 px-2.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',

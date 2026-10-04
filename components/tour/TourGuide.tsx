@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useTourStore } from '@/lib/store/tour'
 import { useUIStore } from '@/lib/store/ui'
-import { TOUR_STEPS } from '@/lib/tourSteps'
+import { getTourSteps } from '@/lib/tourSteps'
 import { Button } from '@/components/ui/button'
 import {
   X,
@@ -23,6 +23,7 @@ interface RectPosition {
   width: number
   height: number
   isInsideHeader?: boolean
+  isInsideMobileNav?: boolean
 }
 
 const PADDING = 8
@@ -41,13 +42,22 @@ export function TourGuide() {
     setDontShowAutoPrompt,
   } = useTourStore()
 
+  const [isMobile, setIsMobile] = useState(false)
   const [targetRect, setTargetRect] = useState<RectPosition | null>(null)
   const [isCentered, setIsCentered] = useState(false)
   const popoverRef = useRef<HTMLDivElement>(null)
 
-  const currentStep = TOUR_STEPS[currentStepIndex] || TOUR_STEPS[0]
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  const steps = getTourSteps(isMobile)
+  const currentStep = steps[currentStepIndex] || steps[0]
   const isFirstStep = currentStepIndex === 0
-  const isLastStep = currentStepIndex === TOUR_STEPS.length - 1
+  const isLastStep = currentStepIndex === steps.length - 1
 
   // Update target rect with navbar offset awareness and clamping
   const updatePosition = useCallback((shouldScroll = false) => {
@@ -66,9 +76,11 @@ export function TourGuide() {
       // Check if rect is visible
       if (rect.width > 0 && rect.height > 0) {
         const isInsideHeader = Boolean(element.closest('header'))
+        const isInsideMobileNav = Boolean(element.closest('nav[aria-label="Mobil Navigasyon"]'))
+        const isFixedElement = isInsideHeader || isInsideMobileNav
 
         // Smoothly scroll into view with top clearance so target always sits cleanly below the navbar
-        if (shouldScroll && !isInsideHeader) {
+        if (shouldScroll && !isFixedElement) {
           const elementDocTop = window.scrollY + rect.top
           const targetScrollY = Math.max(0, elementDocTop - NAVBAR_CLEARANCE - 16)
           if (Math.abs(rect.top - (NAVBAR_CLEARANCE + 16)) > 20) {
@@ -82,11 +94,11 @@ export function TourGuide() {
         // Calculate highlight box coordinates including padding
         let boxTop = rect.top - PADDING
         let boxHeight = rect.height + PADDING * 2
-        const boxLeft = rect.left - PADDING
+        const boxLeft = Math.max(4, rect.left - PADDING)
         const boxWidth = rect.width + PADDING * 2
 
         // If target is in the page body, strictly clamp boxTop to prevent any overlap with the top navbar
-        if (!isInsideHeader) {
+        if (!isFixedElement) {
           if (boxTop < NAVBAR_CLEARANCE) {
             const overlap = NAVBAR_CLEARANCE - boxTop
             boxTop = NAVBAR_CLEARANCE
@@ -101,6 +113,7 @@ export function TourGuide() {
             width: boxWidth,
             height: boxHeight,
             isInsideHeader,
+            isInsideMobileNav,
           })
           setIsCentered(false)
           return
@@ -176,25 +189,26 @@ export function TourGuide() {
       }
     }
 
-    const popoverWidth = 420
-    const popoverHeight = 360
-    const margin = 16
+    const margin = 12
+    const popoverWidth = Math.min(window.innerWidth - margin * 2, 440)
+    const popoverHeight = isMobile ? 320 : 360
 
     let top = targetRect.top + targetRect.height + 12
     let left = targetRect.left + targetRect.width / 2 - popoverWidth / 2
 
-    // Check if bottom overflow -> place above
-    if (top + popoverHeight > window.innerHeight - margin) {
-      const topPlacement = targetRect.top - popoverHeight - 12
-      if (topPlacement >= NAVBAR_CLEARANCE + 10) {
+    // If target is in bottom nav or overflows below -> place ABOVE target!
+    const isNearBottom = targetRect.top > window.innerHeight - 130
+    if (isNearBottom || top + popoverHeight > window.innerHeight - margin) {
+      const topPlacement = targetRect.top - popoverHeight - 14
+      if (topPlacement >= (isMobile ? 12 : NAVBAR_CLEARANCE + 10)) {
         top = topPlacement
       } else {
-        top = Math.max(NAVBAR_CLEARANCE + 12, (window.innerHeight - popoverHeight) / 2)
+        top = Math.max(isMobile ? 12 : NAVBAR_CLEARANCE + 12, (window.innerHeight - popoverHeight) / 2)
       }
     }
 
-    // Never let popover go above navbar if target is in page body
-    if (!targetRect.isInsideHeader && top < NAVBAR_CLEARANCE + 8) {
+    // Never let popover go above navbar on desktop if target is in page body
+    if (!targetRect.isInsideHeader && !isMobile && top < NAVBAR_CLEARANCE + 8) {
       top = NAVBAR_CLEARANCE + 12
     }
 
@@ -277,7 +291,7 @@ export function TourGuide() {
           <div
             className="bg-primary h-full transition-all duration-300 rounded-full"
             style={{
-              width: `${((currentStepIndex + 1) / TOUR_STEPS.length) * 100}%`,
+              width: `${((currentStepIndex + 1) / steps.length) * 100}%`,
             }}
           />
         </div>
@@ -289,7 +303,7 @@ export function TourGuide() {
               {currentStep.badge}
             </span>
             <span className="text-xs font-semibold text-muted-foreground">
-              {currentStepIndex + 1} / {TOUR_STEPS.length}
+              {currentStepIndex + 1} / {steps.length}
             </span>
           </div>
 
