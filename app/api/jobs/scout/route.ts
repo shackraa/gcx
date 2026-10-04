@@ -198,6 +198,105 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
   return jobs
 }
 
+// Domain skill pools for intelligent alignment
+const DOMAIN_SKILL_MAP: Record<string, string[]> = {
+  frontend: ['react', 'vue', 'angular', 'next.js', 'nextjs', 'typescript', 'javascript', 'tailwind', 'css', 'html', 'redux', 'ui', 'frontend'],
+  backend: ['node.js', 'nodejs', 'go', 'golang', 'python', 'java', 'c#', '.net', 'django', 'fastapi', 'spring', 'sql', 'postgresql', 'mongodb', 'redis', 'microservices', 'rest api', 'backend'],
+  mobile: ['flutter', 'react native', 'swift', 'kotlin', 'ios', 'android', 'dart', 'mobile'],
+  ai: ['ai', 'yapay zeka', 'machine learning', 'deep learning', 'llm', 'pytorch', 'tensorflow', 'nlp', 'computer vision', 'data scientist', 'python'],
+  data: ['data', 'veri', 'sql', 'power bi', 'tableau', 'etl', 'pandas', 'bigquery', 'data analyst', 'analitik'],
+  product: ['product', 'ürün', 'agile', 'scrum', 'jira', 'roadmap', 'product management', 'ux', 'kullanıcı deneyimi'],
+  devops: ['docker', 'kubernetes', 'aws', 'azure', 'gcp', 'ci/cd', 'terraform', 'devops', 'linux'],
+  qa: ['qa', 'test', 'selenium', 'cypress', 'jest', 'otomasyon'],
+}
+
+const COMMON_MISSING_BY_DOMAIN: Record<string, string[]> = {
+  frontend: ['Next.js App Router', 'Tailwind CSS', 'TypeScript', 'Jest / Vitest', 'GraphQL'],
+  backend: ['Docker', 'PostgreSQL', 'Redis', 'Mikroservis Mimarisi', 'Kubernetes'],
+  mobile: ['CI/CD Pipeline', 'State Management', 'Native Modüller', 'App Store Dağıtımı'],
+  ai: ['LangChain / LlamaIndex', 'Model İnce Ayar (Fine-Tuning)', 'FastAPI', 'Vektör Veritabanları'],
+  data: ['Power BI', 'Apache Airflow', 'BigQuery', 'dbt', 'İleri SQL'],
+  product: ['A/B Test Metodolojisi', 'Jira / Confluence', 'Kullanıcı Araştırması', 'Ürün Metrikleri / OKR'],
+  devops: ['Kubernetes', 'Terraform', 'ArgoCD', 'Prometheus / Grafana'],
+  qa: ['Playwright', 'Cypress', 'API Test Otomasyonu', 'CI/CD Entegrasyonu'],
+  fullstack: ['Docker', 'Mikroservisler', 'Next.js', 'Redis'],
+  general: ['Modern CI/CD', 'Birim Testleri', 'Bulut Altyapısı'],
+}
+
+function detectJobDomain(title: string, cvRole: string): string {
+  const t = `${title} ${cvRole}`.toLowerCase()
+  if (t.includes('fullstack') || t.includes('full-stack') || t.includes('full stack')) return 'fullstack'
+  if (t.includes('front') || t.includes('react') || t.includes('vue') || t.includes('angular') || t.includes('ui/ux') || t.includes('css')) return 'frontend'
+  if (t.includes('mobile') || t.includes('ios') || t.includes('android') || t.includes('flutter') || t.includes('swift')) return 'mobile'
+  if (t.includes('ai') || t.includes('yapay zeka') || t.includes('machine learning') || t.includes('llm') || t.includes('nlp')) return 'ai'
+  if (t.includes('data') || t.includes('veri') || t.includes('power bi') || t.includes('analist') || t.includes('bi analyst')) return 'data'
+  if (t.includes('product') || t.includes('ürün') || t.includes('scrum') || t.includes('project') || t.includes('proje')) return 'product'
+  if (t.includes('devops') || t.includes('cloud') || t.includes('bulut') || t.includes('sre') || t.includes('kubernetes')) return 'devops'
+  if (t.includes('test') || t.includes('qa') || t.includes('quality')) return 'qa'
+  if (t.includes('back') || t.includes('node') || t.includes('java') || t.includes('golang') || t.includes('.net') || t.includes('c#')) return 'backend'
+  return 'general'
+}
+
+function generateCareerReason(
+  company: string,
+  title: string,
+  domain: string,
+  matchedSkills: string[],
+  idx: number,
+  cvRole: string
+): string {
+  const skillsStr = matchedSkills.length > 0 ? matchedSkills.join(' ve ') : 'teknik uzmanlık'
+
+  const templates: Record<string, string[]> = {
+    frontend: [
+      `${company} bünyesindeki bu pozisyon, modern arayüz mimarisi ve ${skillsStr} tecrübenizle güçlü bir teknik sinerji oluşturuyor.`,
+      `${title} rolünün gerektirdiği kullanıcı deneyimi ve ${skillsStr} odağı, mevcut CV profilinizle doğrudan örtüşmektedir.`,
+      `${company} ekibinin ön yüz geliştirme beklentileri, ${skillsStr} konusundaki pratik birikiminiz için hedeflenen seviyede bir fırsattır.`,
+    ],
+    backend: [
+      `${company} ekibinin mimari ve servis geliştirme gereksinimleri, ${skillsStr} geçmişiniz ile doğrudan uyum gösteriyor.`,
+      `${skillsStr} alanındaki teknik hakimiyetiniz, ${company} bünyesindeki servis altyapısına hızlı ve verimli adapte olmanızı sağlar.`,
+      `${title} pozisyonundaki veri akışı ve mimari sorumluluklar, ${skillsStr} birikiminizle güçlü bir aday profili sunuyor.`,
+    ],
+    fullstack: [
+      `${company} için aranan ${title} rolü, uçtan uca ürün geliştirme pratiğiniz ve ${skillsStr} yetkinliklerinizle mükemmel örtüşüyor.`,
+      `${skillsStr} odaklı geniş teknik yelpazeniz, ${company} bünyesindeki çevik sprint süreçlerine doğrudan değer katacaktır.`,
+      `${company} ekibinde hem ön yüz hem servis katmanını yönetecek bu pozisyon, ${skillsStr} tecrübeniz için ideal bir eşleşme.`,
+    ],
+    mobile: [
+      `${company} mobil uygulama geliştirme vizyonu, ${skillsStr} tecrübeniz ve mobil ekosistem hakimiyetinizle tam uyum sağlıyor.`,
+      `${title} pozisyonundaki dinamik mobil mimari, ${skillsStr} alanındaki proje deneyiminizle doğrudan örtüşmektedir.`,
+    ],
+    ai: [
+      `${company} yapay zeka inisiyatifleri ve model geliştirme süreçleri, ${skillsStr} uzmanlığınızla yüksek katma değer üretecek potansiyelde.`,
+      `${title} rolü, ${skillsStr} odağındaki yenilikçi bilgi birikiminiz için güçlü ve vizyoner bir kariyer adımıdır.`,
+    ],
+    data: [
+      `${company} veri analitiği ve raporlama süreçleri, ${skillsStr} yetkinliklerinizle doğrudan değer üretecek bir eşleşmeye sahip.`,
+      `${title} pozisyonunun gerektirdiği veri modelleme ve analitik vizyon, ${skillsStr} birikiminiz ile tam örtüşüyor.`,
+    ],
+    product: [
+      `${company} ürün yönetimi ve büyüme vizyonu, ${skillsStr} alanındaki stratejik ve çevik iş yapış pratiğinizle uyumlu.`,
+      `${title} rolündeki paydaş yönetimi ve ürün yaşam döngüsü sorumlulukları, ${skillsStr} geçmişinizle profesyonel bir uyum yakalıyor.`,
+    ],
+    devops: [
+      `${company} bulut altyapısı ve kesintisiz dağıtım süreçleri, ${skillsStr} odağındaki otomasyon tecrübenizle yüksek oranda örtüşüyor.`,
+      `${title} pozisyonundaki sistem güvenilirliği hedefleri, ${skillsStr} yetkinlikleriniz için güçlü bir eşleşme sunuyor.`,
+    ],
+    qa: [
+      `${company} kalite güvence ve test süreçleri, ${skillsStr} alanındaki test otomasyonu tecrübenizle birebir örtüşüyor.`,
+    ],
+    general: [
+      `${company} bünyesindeki ${title} arayışı, hedeflediğiniz ${cvRole || 'kariyer yolu'} ve ${skillsStr} yetkinlikleriniz ile güçlü bir uyum sergiliyor.`,
+      `${title} pozisyonundaki sorumluluklar, ${skillsStr} tecrübeniz ve genel teknik profilinizle sizi öne çıkaran bir aday yapıyor.`,
+      `${company} şirketinin bu ilanı, ${skillsStr} odağındaki profesyonel birikiminiz için hedeflenen seviyede bir kariyer adımıdır.`,
+    ],
+  }
+
+  const list = templates[domain] || templates.general
+  return list[idx % list.length]
+}
+
 // Smart heuristic job evaluator when AI is unavailable
 function evaluateJobHeuristic(
   job: { title: string; company: string; location: string; workplaceType: string; url: string; source: string },
@@ -209,54 +308,38 @@ function evaluateJobHeuristic(
 ) {
   const titleLower = job.title.toLowerCase()
   const cvRoleLower = cvRole.toLowerCase()
+  const domain = detectJobDomain(job.title, cvRole)
+  const domainKeywords = DOMAIN_SKILL_MAP[domain] || []
 
-  // Match skills that actually appear or relate to this specific job title
+  // Match skills that actually relate to this specific job and domain
   const matchedSkills: string[] = []
-  const missingSkills: string[] = []
-
   for (const s of cvSkills) {
     const sLower = s.toLowerCase()
-    if (titleLower.includes(sLower)) {
-      matchedSkills.push(s)
-    } else if (titleLower.includes('developer') && ['react', 'python', 'javascript', 'sql', 'typescript'].includes(sLower)) {
-      matchedSkills.push(s)
-    } else if (titleLower.includes('product') && ['ürün yönetimi', 'product management', 'agile', 'scrum', 'ai', 'sql', 'python'].includes(sLower)) {
-      matchedSkills.push(s)
-    } else if (titleLower.includes('ai') && ['ai', 'python', 'machine learning', 'yapay zeka', 'llm', 'fastapi'].includes(sLower)) {
-      matchedSkills.push(s)
-    } else if (titleLower.includes('data') && ['sql', 'python', 'power bi', 'etl', 'veri'].includes(sLower)) {
+    if (titleLower.includes(sLower) || domainKeywords.some((k) => sLower.includes(k) || k.includes(sLower))) {
       matchedSkills.push(s)
     }
   }
 
-  // Calculate score based on role alignment and skills
-  let score = 75
-  if (titleLower.includes('ai') && cvRoleLower.includes('ai')) {
-    score += 18
-  } else if (titleLower.includes('product') && (cvRoleLower.includes('product') || cvRoleLower.includes('ürün'))) {
-    score += 16
-  } else if (titleLower.includes('software') || titleLower.includes('engineer') || titleLower.includes('developer')) {
-    score += 12
-  }
+  // Deduplicate and select final matched skills
+  const finalMatched = matchedSkills.length > 0
+    ? Array.from(new Set(matchedSkills)).slice(0, 3)
+    : cvSkills.slice(0, 2)
 
-  if (titleLower.includes('senior') && cvRoleLower.includes('senior')) {
-    score += 4
-  }
+  // Suggest realistic domain-specific missing skills
+  const missingCandidates = COMMON_MISSING_BY_DOMAIN[domain] || COMMON_MISSING_BY_DOMAIN.general
+  const userSkillsLower = new Set(cvSkills.map((s) => s.toLowerCase()))
+  const missingSkills = missingCandidates
+    .filter((c) => !userSkillsLower.has(c.toLowerCase()))
+    .slice(0, 2)
 
-  if (matchedSkills.length >= 2) {
-    score += 8
-  } else if (matchedSkills.length === 1) {
-    score += 4
-  }
+  // Calculate score based on domain alignment and seniority
+  let score = 76
+  if (domain !== 'general') score += 10
+  if (titleLower.includes('senior') && cvRoleLower.includes('senior')) score += 4
+  if (finalMatched.length >= 2) score += 6
+  score = Math.min(97, Math.max(74, score + ((idx * 3) % 7)))
 
-  // Variance & bounds
-  score = Math.min(98, Math.max(72, score + (idx % 5)))
-
-  const finalMatched = matchedSkills.length > 0 ? matchedSkills.slice(0, 3) : cvSkills.slice(0, 2)
-  const remaining = cvSkills.filter((s) => !finalMatched.includes(s))
-  if (remaining.length > 0) {
-    missingSkills.push(remaining[0])
-  }
+  const reason = generateCareerReason(job.company, job.title, domain, finalMatched, idx, cvRole)
 
   return {
     ...job,
@@ -266,7 +349,7 @@ function evaluateJobHeuristic(
     missingSkills,
     recommendedResumeId: resumeId || undefined,
     recommendedResumeName: resumeName,
-    reason: `${job.company} şirketindeki ${job.title} pozisyonu ${finalMatched.join(', ')} yetkinlikleriniz ile doğrudan örtüşmektedir.`,
+    reason,
     applied: false,
   }
 }
@@ -301,7 +384,9 @@ Aşağıda taranan ${jobs.length} adet iş ilanı bulunmaktadır. Her ilan için
    - Eğer tamamen alakasız sektörse: <%50 ver.
 2. matchingSkills: İlanda aranan ve kullanıcının CV'sinde OLAN yetenekler (En fazla 3 adet).
 3. missingSkills: İlanda gerekebilecek ama CV'de öne çıkmayan yetenekler (En fazla 2 adet).
-4. reason: 1 cümlelik Türkçe spesifik gerekçe (örn: "${cvRole} profiliniz ve ${cvSkills.slice(0, 2).join(', ')} yetkinlikleriniz bu rol için uygundur.").
+4. reason: Her ilana ve şirkete ÖZEL 1-2 cümlelik Türkçe profesyonel kariyer değerlendirmesi.
+   - KESİNLİKLE DİKKAT: Standart, tekrarlayan veya robotik şablonlar ASLA kullanma (örneğin tüm ilanlara "sql python yetkinlikleriniz örtüşmektedir" veya "profiliniz uygundur" gibi klişeleri asla tekrar etme).
+   - Pozisyonun uzmanlık alanına (${cvRole}), şirketin çalışma vizyonuna ve adayın gerçek eşleşen becerilerine değinen özgün ve şirkete özel bir gerekçe oluştur.
 
 İlan Listesi:
 ${JSON.stringify(jobs.map((j, i) => ({ index: i, title: j.title, company: j.company, location: j.location })), null, 2)}
@@ -343,15 +428,23 @@ SADECE geçerli bir JSON dizisi formatında yanıt ver:
           if (Array.isArray(evaluations)) {
             return jobs.map((job, i) => {
               const ev = evaluations.find((e: any) => e.index === i) || evaluations[i] || {}
+              const finalMatched = Array.isArray(ev.matchingSkills) && ev.matchingSkills.length > 0
+                ? ev.matchingSkills
+                : cvSkills.slice(0, 2)
+              const domain = detectJobDomain(job.title, cvRole)
+              const reason = ev.reason && !ev.reason.toLowerCase().includes('sql, python')
+                ? ev.reason
+                : generateCareerReason(job.company, job.title, domain, finalMatched, i, cvRole)
+
               return {
                 ...job,
                 id: `scouted_${Date.now()}_${i}`,
                 matchScore: typeof ev.matchScore === 'number' ? ev.matchScore : 85,
-                matchingSkills: Array.isArray(ev.matchingSkills) && ev.matchingSkills.length > 0 ? ev.matchingSkills : cvSkills.slice(0, 2),
+                matchingSkills: finalMatched,
                 missingSkills: Array.isArray(ev.missingSkills) ? ev.missingSkills : [],
                 recommendedResumeId: resumeId || undefined,
                 recommendedResumeName: resumeName,
-                reason: ev.reason || `${job.company} şirketindeki ${job.title} pozisyonu CV'niz ile değerlendirilmiştir.`,
+                reason,
                 applied: false,
               }
             })

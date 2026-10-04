@@ -19,6 +19,8 @@ import {
   Calendar,
   Clock,
   Copy,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
@@ -35,7 +37,12 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
   const { toast } = useToast()
   const resumeStats = getResumeStats(applications, resumes)
   const [selectedLangMap, setSelectedLangMap] = useState<Record<string, 'tr' | 'en'>>({})
+  const [expandedLetters, setExpandedLetters] = useState<Record<string, boolean>>({})
   const [showDemoResume, setShowDemoResume] = useState(true)
+
+  function toggleLetterExpand(id: string) {
+    setExpandedLetters((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
 
   async function handleCopyCoverLetter(text: string) {
     if (!text) return
@@ -231,9 +238,30 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                           </button>
                         </div>
 
-                        <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap line-clamp-3">
-                          {currentLetterText}
-                        </p>
+                        <div className="space-y-1.5">
+                          <p
+                            className={cn(
+                              'text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap transition-all',
+                              !expandedLetters['demo-resume-1'] && 'line-clamp-3'
+                            )}
+                          >
+                            {currentLetterText}
+                          </p>
+                          {currentLetterText && currentLetterText.length > 120 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleLetterExpand('demo-resume-1')}
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                            >
+                              <span>{expandedLetters['demo-resume-1'] ? 'Daha Az Göster' : 'Devamını Gör'}</span>
+                              {expandedLetters['demo-resume-1'] ? (
+                                <ChevronUp className="h-3 w-3" />
+                              ) : (
+                                <ChevronDown className="h-3 w-3" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )
                   })()}
@@ -451,9 +479,30 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                       </div>
 
                       {currentLetterText ? (
-                        <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap line-clamp-3 hover:line-clamp-none transition-all">
-                          {currentLetterText}
-                        </p>
+                        <div className="space-y-1.5">
+                          <p
+                            className={cn(
+                              'text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap transition-all',
+                              !expandedLetters[resume._id] && 'line-clamp-3'
+                            )}
+                          >
+                            {currentLetterText}
+                          </p>
+                          {currentLetterText.length > 120 && (
+                            <button
+                              type="button"
+                              onClick={() => toggleLetterExpand(resume._id)}
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                            >
+                              <span>{expandedLetters[resume._id] ? 'Daha Az Göster' : 'Devamını Gör'}</span>
+                              {expandedLetters[resume._id] ? (
+                                <ChevronUp className="h-3 w-3" />
+                              ) : (
+                                <ChevronDown className="h-3 w-3" />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         <div className="flex items-center justify-between p-2 rounded-lg bg-muted/15 border border-dashed border-border/60 text-xs text-muted-foreground">
                           <span className="text-[11px] flex items-center gap-1 italic">

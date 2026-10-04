@@ -1,6 +1,6 @@
 'use client'
 
-import type { Application } from '@/types'
+import type { Application, ApplicationStatus } from '@/types'
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -15,7 +15,7 @@ import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useUIStore } from '@/lib/store/ui'
 import { cn } from '@/lib/utils'
-import { ExternalLink, FileText, Copy, CheckCircle2, Calendar } from 'lucide-react'
+import { ExternalLink, FileText, Copy, CheckCircle2, Calendar, ChevronDown, ArrowRight } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import type { Id } from '@/convex/_generated/dataModel'
 
@@ -27,11 +27,25 @@ interface ApplicationCardProps {
 export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps) {
   const { openModal } = useUIStore()
   const markAppliedMutation = useMutation(api.applications.markApplied)
+  const updateMutation = useMutation(api.applications.update)
   const { toast } = useToast()
   const overdue = isOverdue(app, overdueDays)
   const days = daysSinceApplied(app)
   const cvUrl = safeUrl(app.cvLink)
   const jobUrl = safeUrl(app.jobLink)
+
+  async function handleStatusChange(newStatus: ApplicationStatus) {
+    if (newStatus === app.status) return
+    try {
+      await updateMutation({
+        id: app._id as Id<'applications'>,
+        status: newStatus,
+      })
+      toast({ title: `Durum güncellendi: ${STATUS_LABELS[newStatus]}` })
+    } catch {
+      toast({ title: 'Durum güncellenemedi', variant: 'destructive' })
+    }
+  }
 
   async function handleCopyTemplate() {
     const template = generateFollowUpTemplate(app)
@@ -99,15 +113,29 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
       {/* Tags row */}
       <div className="flex flex-wrap items-center gap-1.5 mt-2">
-        {/* Status badge */}
-        <span
-          className={cn(
-            'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold',
-            STATUS_COLORS[app.status]
-          )}
-        >
-          {STATUS_LABELS[app.status]}
-        </span>
+        {/* Interactive Status Selector Badge */}
+        <div className="relative inline-flex items-center">
+          <select
+            value={app.status}
+            onChange={(e) => handleStatusChange(e.target.value as ApplicationStatus)}
+            title="Durumu doğrudan değiştir"
+            className={cn(
+              'appearance-none pl-2.5 pr-5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer border border-transparent hover:border-current/30 focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all shadow-2xs',
+              STATUS_COLORS[app.status]
+            )}
+          >
+            {Object.entries(STATUS_LABELS).map(([key, label]) => (
+              <option
+                key={key}
+                value={key}
+                className="bg-card text-foreground py-1 font-medium"
+              >
+                {label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="w-3 h-3 absolute right-1.5 pointer-events-none opacity-60" />
+        </div>
 
         {/* Overdue badge */}
         {overdue && (
@@ -205,14 +233,44 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {app.status === 'preparing' && (
             <button
               onClick={handleMarkApplied}
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:text-green-400 dark:hover:text-green-300 dark:bg-green-950/40 dark:hover:bg-green-950/60 dark:border-transparent px-3 py-1 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:text-green-400 dark:hover:text-green-300 dark:bg-green-950/40 dark:hover:bg-green-950/60 dark:border-transparent px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               Başvurdum
+            </button>
+          )}
+          {app.status === 'waiting' && (
+            <button
+              onClick={() => handleStatusChange('responded')}
+              title="Doğrudan dönüş aldı olarak güncelle"
+              className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 dark:text-purple-300 dark:hover:text-purple-200 dark:bg-purple-950/40 dark:hover:bg-purple-950/60 dark:border-purple-800/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <ArrowRight className="h-3 w-3" />
+              Dönüş Aldı
+            </button>
+          )}
+          {app.status === 'responded' && (
+            <button
+              onClick={() => handleStatusChange('interview')}
+              title="Mülakat aşamasına taşı"
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 dark:text-amber-300 dark:hover:text-amber-200 dark:bg-amber-950/40 dark:hover:bg-amber-950/60 dark:border-amber-800/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <ArrowRight className="h-3 w-3" />
+              Mülakat
+            </button>
+          )}
+          {app.status === 'interview' && (
+            <button
+              onClick={() => handleStatusChange('offer')}
+              title="Teklif aşamasına taşı"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:text-green-300 dark:hover:text-green-200 dark:bg-green-950/40 dark:hover:bg-green-950/60 dark:border-green-800/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Teklif Aldı
             </button>
           )}
           <button

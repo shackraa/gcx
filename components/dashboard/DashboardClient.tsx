@@ -19,6 +19,7 @@ import { SearchAndFilters } from '@/components/dashboard/SearchAndFilters'
 import { filterApplications, computeStats, getUpcomingInterviews, getThisWeekApps } from '@/lib/utils/applications'
 import type { Application, Resume } from '@/types'
 import { Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export function DashboardClient() {
   const applications = useQuery(api.applications.list) as Application[] | undefined
@@ -43,35 +44,41 @@ export function DashboardClient() {
   const thisWeekApps = getThisWeekApps(applications)
   const filteredApps = filterApplications(applications, filter, search, channelFilter, overdueDays, resumeFilter)
 
+  const isApplicationsView = view === 'list' || view === 'kanban'
+
   return (
     <>
-      {/* Stats */}
-      <StatsCards stats={stats} overdueDays={overdueDays} />
+      {isApplicationsView && (
+        <>
+          {/* Stats */}
+          <StatsCards stats={stats} overdueDays={overdueDays} />
 
-      {/* Upcoming interviews */}
-      {upcomingInterviews.length > 0 && (
-        <UpcomingInterviews interviews={upcomingInterviews} />
+          {/* Upcoming interviews */}
+          {upcomingInterviews.length > 0 && (
+            <UpcomingInterviews interviews={upcomingInterviews} />
+          )}
+
+          {/* Weekly goal */}
+          <WeeklyGoal
+            current={thisWeekApps.length}
+            goal={weeklyGoal}
+          />
+
+          {/* Controls */}
+          <div className="space-y-3 mt-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <FilterTabs applications={applications} overdueDays={overdueDays} />
+              <div className="ml-auto flex items-center gap-2">
+                <SearchAndFilters />
+                <ViewToggle />
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Weekly goal */}
-      <WeeklyGoal
-        current={thisWeekApps.length}
-        goal={weeklyGoal}
-      />
-
-      {/* Controls */}
-      <div className="space-y-3 mt-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <FilterTabs applications={applications} overdueDays={overdueDays} />
-          <div className="ml-auto flex items-center gap-2">
-            <SearchAndFilters />
-            <ViewToggle />
-          </div>
-        </div>
-      </div>
-
       {/* Main content */}
-      <div className="mt-4">
+      <div className={cn(isApplicationsView ? 'mt-4' : 'mt-2')}>
         {view === 'list' && (
           <ApplicationList
             applications={filteredApps}
