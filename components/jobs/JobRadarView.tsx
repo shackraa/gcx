@@ -74,6 +74,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const [isMatching, setIsMatching] = useState(false)
   const [matchedResult, setMatchedResult] = useState<MatchedJob | null>(null)
   const [addedJobs, setAddedJobs] = useState<string[]>([])
+  const [showDemoShowcase, setShowDemoShowcase] = useState(true)
   const jsonUploadRef = useRef<HTMLInputElement>(null)
 
   const activeResume = selectedResumeId === 'all'
@@ -547,7 +548,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
       </div>
 
       {/* Scouted Jobs List (Found by Live Scout or jev Bot) */}
-      <div className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
+      <div data-tour="scouted-jobs-section" className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -593,27 +594,145 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           )}
         </div>
 
-        {/* Empty State */}
+        {/* Empty State / Demo Showcase */}
         {(!scoutedJobs || scoutedJobs.length === 0) && (
-          <div className="border border-dashed border-border/80 rounded-xl p-8 text-center space-y-3 bg-muted/20">
-            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-              <Sparkles className="h-6 w-6" />
+          <div className="space-y-4">
+            <div className="border border-dashed border-border/80 rounded-xl p-6 text-center space-y-3 bg-muted/20">
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-foreground">Henüz İlan Taranmadı</h4>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                  Yukarıdaki filtreleri seçip <strong>&quot;CV&apos;me Uygun İlanları Şimdi Tara&quot;</strong> butonuna basarak web üzerindeki tüm güncel pozisyonları tek tıkla listeleyebilirsiniz.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                <Button
+                  onClick={handleLiveScout}
+                  disabled={isScouting || resumes.length === 0}
+                  size="sm"
+                  className="gap-1.5 text-xs font-semibold shadow-sm"
+                >
+                  {isScouting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  <span>Hemen İlanları Tara</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDemoShowcase(!showDemoShowcase)}
+                  className="text-xs"
+                >
+                  {showDemoShowcase ? 'Örnekleri Gizle' : 'Örnek İlanları Göster'}
+                </Button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h4 className="text-sm font-bold text-foreground">Henüz İlan Taranmadı</h4>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                Yukarıdaki filtreleri seçip <strong>&quot;✨ CV&apos;me Uygun İlanları Şimdi Tara&quot;</strong> butonuna basarak LinkedIn ve web&apos;deki tüm güncel pozisyonları tek tıkla listeleyebilirsiniz.
-              </p>
-            </div>
-            <Button
-              onClick={handleLiveScout}
-              disabled={isScouting || resumes.length === 0}
-              size="sm"
-              className="gap-2 text-xs font-semibold shadow-sm"
-            >
-              {isScouting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              <span>Hemen İlanları Tara</span>
-            </Button>
+
+            {/* Demo Showcase Cards */}
+            {showDemoShowcase && (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    Örnek İlan Gösterimi (Nasıl Listelenir?)
+                  </span>
+                  <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                    Demo Görünüm
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div className="bg-muted/30 border border-primary/30 rounded-xl p-4 space-y-3 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm font-bold text-foreground">Senior Frontend Developer</h4>
+                          <p className="text-xs text-muted-foreground font-medium mt-0.5">Peak Games</p>
+                        </div>
+                        <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-green-950/40 text-green-400 border-green-800">
+                          %94 Uyum
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3" />
+                        İstanbul · Hibrit
+                      </p>
+
+                      <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
+                        CV&apos;nizdeki modern frontend teknolojileri ve React ekosistemi deneyimi pozisyon gereksinimleriyle doğrudan örtüşüyor.
+                      </p>
+
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {['React', 'TypeScript', 'Next.js', 'Tailwind CSS'].map((s) => (
+                          <span key={s} className="bg-green-950/40 text-green-400 border border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                            ✓ {s}
+                          </span>
+                        ))}
+                        <span className="bg-red-950/40 text-red-400 border border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                          ✕ GraphQL
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                      <span className="text-[11px] text-muted-foreground">Demo İlan</span>
+                      <Button
+                        size="sm"
+                        onClick={() => toast({ title: 'Örnek İlan', description: 'Gerçek tarama yaptığınızda bu buton ilanı tek tıkla Başvurularım listesine aktarır.' })}
+                        className="h-8 text-xs font-semibold"
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Başvuruya Ekle
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-muted/30 border border-border rounded-xl p-4 space-y-3 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm font-bold text-foreground">Full Stack Engineer</h4>
+                          <p className="text-xs text-muted-foreground font-medium mt-0.5">Dream Games</p>
+                        </div>
+                        <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-green-950/40 text-green-400 border-green-800">
+                          %88 Uyum
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3" />
+                        İstanbul / Remote · Uzaktan
+                      </p>
+
+                      <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
+                        Modern web mimarisi ve backend tecrübeniz bu pozisyonun gerektirdiği temel teknik beklentileri karşılıyor.
+                      </p>
+
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {['TypeScript', 'Node.js', 'PostgreSQL', 'REST API'].map((s) => (
+                          <span key={s} className="bg-green-950/40 text-green-400 border border-green-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                            ✓ {s}
+                          </span>
+                        ))}
+                        <span className="bg-red-950/40 text-red-400 border border-red-800 text-[10px] px-2 py-0.5 rounded font-medium">
+                          ✕ Docker
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                      <span className="text-[11px] text-muted-foreground">Demo İlan</span>
+                      <Button
+                        size="sm"
+                        onClick={() => toast({ title: 'Örnek İlan', description: 'Gerçek tarama yaptığınızda bu buton ilanı tek tıkla Başvurularım listesine aktarır.' })}
+                        className="h-8 text-xs font-semibold"
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Başvuruya Ekle
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

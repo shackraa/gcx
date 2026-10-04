@@ -63,9 +63,9 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2 sm:gap-4">
         {/* Logo & Main Nav */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
           <Link
             href="/dashboard"
             data-tour="app-logo"
@@ -134,30 +134,24 @@ export function AppHeader() {
               <BarChart2 className="h-3.5 w-3.5" />
               Analiz
             </button>
-
-            <button
-              onClick={() => openGuideModal()}
-              data-tour="guide-button"
-              className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <HelpCircle className="h-3.5 w-3.5" />
-              Rehber
-            </button>
           </nav>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <div data-tour="header-actions" className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => openGuideModal()}
-              title="Kullanım Rehberi"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </Button>
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openGuideModal()}
+            title="Kullanım Rehberi"
+            data-tour="guide-button"
+            className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground font-medium shrink-0"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden md:inline">Rehber</span>
+          </Button>
+
+          <div data-tour="header-actions" className="flex items-center gap-0.5 sm:gap-1">
 
             <Button
               variant="ghost"

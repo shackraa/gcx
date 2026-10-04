@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useTourStore } from '@/lib/store/tour'
+import { useUIStore } from '@/lib/store/ui'
 import { TOUR_STEPS } from '@/lib/tourSteps'
 import { Button } from '@/components/ui/button'
 import {
@@ -90,12 +91,17 @@ export function TourGuide() {
 
   // Recalculate on step change, resize, scroll, and view changes
   useEffect(() => {
-    if (!isTourOpen) return
+    if (!isTourOpen || !currentStep) return
 
-    // Small delay to allow react view transitions to mount target elements
+    // Immediately trigger view switch if step specifies targetView
+    if (currentStep.targetView) {
+      useUIStore.getState().setView(currentStep.targetView)
+    }
+
+    // Delay to allow React view transitions to mount target elements
     const timer = setTimeout(() => {
       updatePosition()
-    }, 150)
+    }, 220)
 
     const handleResize = () => updatePosition()
     const handleScroll = () => updatePosition()
@@ -108,7 +114,7 @@ export function TourGuide() {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [isTourOpen, currentStepIndex, updatePosition])
+  }, [isTourOpen, currentStepIndex, currentStep, updatePosition])
 
   // Keyboard navigation (Escape, ArrowRight, ArrowLeft)
   useEffect(() => {
