@@ -31,7 +31,7 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div data-tour="filter-tabs" className="flex flex-wrap gap-1">
       {TABS.map(({ key, label }) => {
         const count = getCount(key)
         const isActive = filter === key

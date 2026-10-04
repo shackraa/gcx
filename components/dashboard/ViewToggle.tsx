@@ -24,7 +24,7 @@ export function ViewToggle() {
           onClick={() => setView(mode)}
           title={label}
           className={cn(
-            'flex items-center gap-1.5 px-2.5 h-7 rounded-md transition-all text-xs font-medium',
+            'flex items-center gap-1.5 px-2.5 h-7 rounded-md transition-all text-xs font-medium cursor-pointer',
             view === mode
               ? 'bg-background text-foreground shadow-sm font-semibold'
               : 'text-muted-foreground hover:text-foreground'

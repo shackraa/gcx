@@ -55,7 +55,7 @@ function StatCard({ value, label, filterKey, variant = 'default' }: StatCardProp
 
 export function StatsCards({ stats, overdueDays }: StatsCardsProps) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
+    <div data-tour="stats-cards" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4">
       <StatCard value={stats.total} label="Toplam başvuru" filterKey="all" />
       <StatCard value={stats.active} label="Süreci devam eden" filterKey="waiting" />
       <StatCard

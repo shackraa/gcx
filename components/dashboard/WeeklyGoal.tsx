@@ -33,7 +33,7 @@ export function WeeklyGoal({ current, goal }: WeeklyGoalProps) {
   }
 
   return (
-    <div className="mt-4 flex items-center gap-3">
+    <div data-tour="weekly-goal" className="mt-4 flex items-center gap-3">
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground font-medium">

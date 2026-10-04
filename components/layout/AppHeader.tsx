@@ -7,7 +7,8 @@ import { useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/lib/store/ui'
-import { Plus, Download, Upload, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase } from 'lucide-react'
+import { useTourStore } from '@/lib/store/tour'
+import { Plus, Download, Upload, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { exportBackup, importBackup } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils'
 
 export function AppHeader() {
   const { openModal, openResumeModal, view, setView } = useUIStore()
+  const { openGuideModal } = useTourStore()
   const { theme, setTheme } = useTheme()
   const applications = useQuery(api.applications.list) as Application[] | undefined
   const importBulkMutation = useMutation(api.applications.importBulk)
@@ -64,7 +66,11 @@ export function AppHeader() {
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         {/* Logo & Main Nav */}
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="flex flex-col leading-none shrink-0">
+          <Link
+            href="/dashboard"
+            data-tour="app-logo"
+            className="flex flex-col leading-none shrink-0"
+          >
             <span className="text-xl font-extrabold tracking-tight text-foreground">GCX.</span>
             <span className="text-[10px] text-muted-foreground hidden lg:block">
               Nereye başvurdum, hangi CV ile, kim döndü.
@@ -75,8 +81,9 @@ export function AppHeader() {
           <nav className="hidden sm:flex items-center gap-1 bg-muted/60 p-1 rounded-lg">
             <button
               onClick={() => setView('list')}
+              data-tour="nav-applications"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 isApplicationsView
                   ? 'bg-background text-foreground shadow-sm font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -88,8 +95,9 @@ export function AppHeader() {
 
             <button
               onClick={() => setView('resumes')}
+              data-tour="nav-resumes"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'resumes'
                   ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -101,8 +109,9 @@ export function AppHeader() {
 
             <button
               onClick={() => setView('jobs')}
+              data-tour="nav-jobs"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'jobs'
                   ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -114,8 +123,9 @@ export function AppHeader() {
 
             <button
               onClick={() => setView('analytics')}
+              data-tour="nav-analytics"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'analytics'
                   ? 'bg-background text-foreground shadow-sm font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -124,56 +134,78 @@ export function AppHeader() {
               <BarChart2 className="h-3.5 w-3.5" />
               Analiz
             </button>
+
+            <button
+              onClick={() => openGuideModal()}
+              data-tour="guide-button"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+              Rehber
+            </button>
           </nav>
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title="Temayı değiştir"
-            className="h-8 w-8"
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          <div data-tour="header-actions" className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => openGuideModal()}
+              title="Kullanım Rehberi"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleImport}
-            title="Yedek yükle"
-            className="h-8 w-8"
-          >
-            <Upload className="h-4 w-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Temayı değiştir"
+              className="h-8 w-8"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleExport}
-            title="Yedek indir"
-            className="h-8 w-8"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleImport}
+              title="Yedek yükle"
+              className="h-8 w-8"
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleLogout}
-            title="Çıkış yap"
-            className="h-8 w-8"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              title="Yedek indir"
+              className="h-8 w-8"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              title="Çıkış yap"
+              className="h-8 w-8"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
 
           {/* Quick CV Add Button */}
           <Button
             onClick={() => openResumeModal()}
             size="sm"
             variant="outline"
+            data-tour="add-cv-btn"
             className="h-8 gap-1 text-xs border-primary/30 hover:border-primary/60 text-primary hidden md:inline-flex"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -184,6 +216,7 @@ export function AppHeader() {
           <Button
             onClick={() => openModal()}
             size="sm"
+            data-tour="add-application-btn"
             className="h-8 gap-1.5 text-xs font-medium"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -198,20 +231,20 @@ export function AppHeader() {
         <button
           onClick={() => setView('list')}
           className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             isApplicationsView
               ? 'bg-primary/10 text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <LayoutList className="h-3.5 w-3.5" />
-          Başvurularım
+          Başvurular
         </button>
 
         <button
           onClick={() => setView('resumes')}
           className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             view === 'resumes'
               ? 'bg-primary/10 text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
@@ -224,7 +257,7 @@ export function AppHeader() {
         <button
           onClick={() => setView('jobs')}
           className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             view === 'jobs'
               ? 'bg-primary/10 text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
@@ -237,7 +270,7 @@ export function AppHeader() {
         <button
           onClick={() => setView('analytics')}
           className={cn(
-            'flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+            'flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
             view === 'analytics'
               ? 'bg-primary/10 text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
@@ -245,6 +278,14 @@ export function AppHeader() {
         >
           <BarChart2 className="h-3.5 w-3.5" />
           Analiz
+        </button>
+
+        <button
+          onClick={() => openGuideModal()}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+          Rehber
         </button>
       </div>
     </header>
