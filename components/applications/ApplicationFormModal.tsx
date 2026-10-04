@@ -222,7 +222,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
               <label className="text-xs font-medium text-muted-foreground">Durum</label>
               <select
                 {...register('status')}
-                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                className="mt-1 w-full h-9 px-3 rounded-lg bg-background dark:bg-muted/30 border border-border/70 hover:border-border text-foreground text-sm focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 cursor-pointer transition-all"
               >
                 <option value="preparing">Hazırlanıyor</option>
                 <option value="waiting">Bekleniyor</option>
@@ -260,7 +260,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
               <select
                 value={selectedResumeId}
                 onChange={handleResumeChange}
-                className="w-full h-9 px-3 rounded-lg bg-background border border-border text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full h-9 px-3 rounded-lg bg-background dark:bg-muted/30 border border-border/70 hover:border-border text-foreground text-xs focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 cursor-pointer transition-all"
               >
                 <option value="">— Kayıtlı CV Seç veya Manuel Gir —</option>
                 {resumes.map((r) => (
@@ -311,7 +311,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
               <label className="text-xs font-medium text-muted-foreground">Başvuru Kanalı</label>
               <select
                 {...register('channel')}
-                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                className="mt-1 w-full h-9 px-3 rounded-lg bg-background dark:bg-muted/30 border border-border/70 hover:border-border text-foreground text-sm focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 cursor-pointer transition-all"
               >
                 <option value="">— Seç —</option>
                 <option value="online">Online ilan</option>
