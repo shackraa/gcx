@@ -51,15 +51,69 @@ function KanbanCard({ app }: { app: Application }) {
             {days}g önce
           </span>
         )}
-        {overdue && <span className="text-[10px] text-red-400">🔴 Sessiz</span>}
+        {overdue && (
+          <span className="text-[10px] text-red-400 font-medium inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+            Sessiz
+          </span>
+        )}
         {app.hrContacted && <span className="text-[10px] text-green-500">✓ İK</span>}
       </div>
     </button>
   )
 }
 
+const DEMO_KANBAN_APPS: Application[] = [
+  {
+    _id: 'demo-k-1' as any,
+    _creationTime: Date.now(),
+    userId: 'demo-user',
+    company: 'Trendyol (Örnek)',
+    position: 'Frontend Developer',
+    status: 'preparing',
+    appliedAt: '',
+    channel: 'linkedin',
+    hrContacted: false,
+  },
+  {
+    _id: 'demo-k-2' as any,
+    _creationTime: Date.now() - 3 * 24 * 60 * 60 * 1000,
+    userId: 'demo-user',
+    company: 'Getir (Örnek)',
+    position: 'Fullstack Engineer',
+    status: 'waiting',
+    appliedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    channel: 'online',
+    hrContacted: true,
+  },
+  {
+    _id: 'demo-k-3' as any,
+    _creationTime: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    userId: 'demo-user',
+    company: 'Peak Games (Örnek)',
+    position: 'Senior Web Engineer',
+    status: 'interview',
+    appliedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    interviewAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    channel: 'linkedin',
+    hrContacted: true,
+  },
+  {
+    _id: 'demo-k-4' as any,
+    _creationTime: Date.now() - 12 * 24 * 60 * 60 * 1000,
+    userId: 'demo-user',
+    company: 'Insider (Örnek)',
+    position: 'React Specialist',
+    status: 'offer',
+    appliedAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    channel: 'referral',
+    hrContacted: true,
+  },
+]
+
 export function KanbanBoard({ applications, search }: KanbanBoardProps) {
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [showDemoKanban, setShowDemoKanban] = useState(true)
   const updateMutation = useMutation(api.applications.update)
   const { toast } = useToast()
 
@@ -67,15 +121,18 @@ export function KanbanBoard({ applications, search }: KanbanBoardProps) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
+  const isDemo = applications.length === 0 && showDemoKanban
+  const appsToDisplay = isDemo ? DEMO_KANBAN_APPS : applications
+
   const filtered = search
-    ? applications.filter(
+    ? appsToDisplay.filter(
         (a) =>
           a.company.toLowerCase().includes(search.toLowerCase()) ||
           a.position.toLowerCase().includes(search.toLowerCase())
       )
-    : applications
+    : appsToDisplay
 
-  const draggingApp = draggingId ? applications.find((a) => a._id === draggingId) : null
+  const draggingApp = draggingId ? appsToDisplay.find((a) => a._id === draggingId) : null
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -83,9 +140,13 @@ export function KanbanBoard({ applications, search }: KanbanBoardProps) {
 
     if (!over) return
     const newStatus = over.id as ApplicationStatus
-    const app = applications.find((a) => a._id === active.id)
+    const app = appsToDisplay.find((a) => a._id === active.id)
 
     if (app && app.status !== newStatus) {
+      if (isDemo) {
+        toast({ title: `${app.company} → ${STATUS_LABELS[newStatus]} (Örnek Kart Taşındı)` })
+        return
+      }
       try {
         await updateMutation({
           id: app._id as Id<'applications'>,
@@ -99,33 +160,55 @@ export function KanbanBoard({ applications, search }: KanbanBoardProps) {
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={(e) => setDraggingId(String(e.active.id))}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-3 overflow-x-auto pb-4">
-        {COLUMNS.map((status) => {
-          const colApps = filtered.filter((a) => a.status === status)
-          return (
-            <KanbanColumn
-              key={status}
-              status={status}
-              apps={colApps}
-            />
-          )
-        })}
-      </div>
-
-      <DragOverlay>
-        {draggingApp && (
-          <div className="w-52 opacity-90 rotate-1">
-            <KanbanCard app={draggingApp} />
+    <div data-tour="kanban-board-section" className="space-y-3">
+      {applications.length === 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-card border border-border/80 rounded-xl p-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+              Örnek Gösterim
+            </span>
+            <span className="text-muted-foreground">
+              Henüz başvuru eklemediğiniz için panonun işleyişini gösteren örnek kartlar listeleniyor. Kartları sütunlar arasında sürükleyebilirsiniz.
+            </span>
           </div>
-        )}
-      </DragOverlay>
-    </DndContext>
+          <button
+            type="button"
+            onClick={() => setShowDemoKanban(!showDemoKanban)}
+            className="text-xs text-primary hover:underline font-medium self-start sm:self-auto cursor-pointer shrink-0"
+          >
+            {showDemoKanban ? 'Örnek Kartları Gizle' : 'Örnek Kartları Göster'}
+          </button>
+        </div>
+      )}
+
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={(e) => setDraggingId(String(e.active.id))}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-3 overflow-x-auto pb-4">
+          {COLUMNS.map((status) => {
+            const colApps = filtered.filter((a) => a.status === status)
+            return (
+              <KanbanColumn
+                key={status}
+                status={status}
+                apps={colApps}
+              />
+            )
+          })}
+        </div>
+
+        <DragOverlay>
+          {draggingApp && (
+            <div className="w-52 opacity-90 rotate-1">
+              <KanbanCard app={draggingApp} />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+    </div>
   )
 }
 

@@ -68,15 +68,13 @@ export function TourGuide() {
 
         // Smoothly scroll into view if out of viewport
         const isInViewport =
-          rect.top >= 0 &&
-          rect.left >= 0 &&
-          rect.bottom <= window.innerHeight &&
-          rect.right <= window.innerWidth
+          rect.top >= 70 &&
+          rect.bottom <= window.innerHeight - 50
 
         if (!isInViewport) {
           element.scrollIntoView({
             behavior: 'smooth',
-            block: 'nearest',
+            block: 'center',
             inline: 'nearest',
           })
         }
@@ -99,9 +97,13 @@ export function TourGuide() {
     }
 
     // Delay to allow React view transitions to mount target elements
-    const timer = setTimeout(() => {
+    const timer1 = setTimeout(() => {
       updatePosition()
-    }, 220)
+    }, 180)
+
+    const timer2 = setTimeout(() => {
+      updatePosition()
+    }, 400)
 
     const handleResize = () => updatePosition()
     const handleScroll = () => updatePosition()
@@ -110,7 +112,8 @@ export function TourGuide() {
     window.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
-      clearTimeout(timer)
+      clearTimeout(timer1)
+      clearTimeout(timer2)
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('scroll', handleScroll)
     }

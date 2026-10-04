@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -31,28 +32,56 @@ const STATUS_CHART_COLORS: Record<string, string> = {
   rejected: '#ef4444',
 }
 
+const DEMO_ANALYTICS_APPS: Application[] = [
+  { _id: 'd1' as any, _creationTime: Date.now() - 14 * 86400000, userId: 'demo-user', company: 'Google', position: 'Frontend Eng', status: 'offer', appliedAt: '2026-03-01', channel: 'linkedin', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd2' as any, _creationTime: Date.now() - 10 * 86400000, userId: 'demo-user', company: 'Spotify', position: 'Web Dev', status: 'interview', appliedAt: '2026-03-05', interviewAt: '2026-03-25', channel: 'linkedin', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd3' as any, _creationTime: Date.now() - 18 * 86400000, userId: 'demo-user', company: 'Trendyol', position: 'React Dev', status: 'responded', appliedAt: '2026-02-28', channel: 'online', hrContacted: true, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd4' as any, _creationTime: Date.now() - 16 * 86400000, userId: 'demo-user', company: 'Getir', position: 'Frontend Lead', status: 'waiting', appliedAt: '2026-02-20', channel: 'linkedin', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd5' as any, _creationTime: Date.now() - 5 * 86400000, userId: 'demo-user', company: 'Peak Games', position: 'Fullstack Eng', status: 'interview', appliedAt: '2026-03-10', interviewAt: '2026-03-28', channel: 'referral', hrContacted: true, resumeId: 'r2' as any, cvVersion: 'Fullstack CV' },
+  { _id: 'd6' as any, _creationTime: Date.now() - 8 * 86400000, userId: 'demo-user', company: 'Dream Games', position: 'Software Eng', status: 'rejected', appliedAt: '2026-03-02', channel: 'referral', hrContacted: false, resumeId: 'r2' as any, cvVersion: 'Fullstack CV' },
+  { _id: 'd7' as any, _creationTime: Date.now() - 2 * 86400000, userId: 'demo-user', company: 'Insider', position: 'UI Specialist', status: 'waiting', appliedAt: '2026-03-12', channel: 'linkedin', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+  { _id: 'd8' as any, _creationTime: Date.now(), userId: 'demo-user', company: 'Amazon', position: 'Front End Eng', status: 'preparing', appliedAt: '', channel: 'online', hrContacted: false, resumeId: 'r1' as any, cvVersion: 'Frontend CV' },
+]
+
+const DEMO_ANALYTICS_RESUMES: Resume[] = [
+  { _id: 'r1' as any, _creationTime: Date.now(), userId: 'demo-user', name: 'Frontend Geliştirici CV', category: 'Frontend', isDefault: true, targetRole: 'Frontend Developer' },
+  { _id: 'r2' as any, _creationTime: Date.now(), userId: 'demo-user', name: 'Fullstack Geliştirici CV', category: 'Fullstack', isDefault: false, targetRole: 'Fullstack Engineer' },
+]
+
 export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: AnalyticsViewProps) {
-  const total = applications.length
-  if (total === 0) {
+  const [showDemoAnalytics, setShowDemoAnalytics] = useState(true)
+  const isDemo = applications.length === 0 && showDemoAnalytics
+  const effectiveApps = isDemo ? DEMO_ANALYTICS_APPS : applications
+  const effectiveResumes = isDemo ? DEMO_ANALYTICS_RESUMES : resumes
+
+  if (applications.length === 0 && !showDemoAnalytics) {
     return (
-      <div className="text-center py-20 text-muted-foreground text-sm">
-        Henüz analiz edilecek veri yok.
+      <div data-tour="analytics-view-section" className="flex flex-col items-center justify-center py-20 text-center gap-3 bg-card border border-dashed rounded-2xl p-8">
+        <p className="text-muted-foreground text-sm">Henüz analiz edilecek başvuru verisi yok.</p>
+        <button
+          type="button"
+          onClick={() => setShowDemoAnalytics(true)}
+          className="text-xs text-primary hover:underline font-medium cursor-pointer"
+        >
+          Örnek Analiz Grafiklerini Göster
+        </button>
       </div>
     )
   }
 
-  const responded = applications.filter((a) =>
+  const total = effectiveApps.length
+  const responded = effectiveApps.filter((a) =>
     ['responded', 'interview', 'offer', 'rejected'].includes(a.status)
   ).length
   const responseRate = Math.round((responded / total) * 100)
-  const overdueCount = applications.filter((a) => isOverdue(a, overdueDays)).length
-  const hrContacted = applications.filter((a) => a.hrContacted).length
-  const withInterviewDate = applications.filter((a) => a.interviewAt).length
+  const overdueCount = effectiveApps.filter((a) => isOverdue(a, overdueDays)).length
+  const hrContacted = effectiveApps.filter((a) => a.hrContacted).length
+  const withInterviewDate = effectiveApps.filter((a) => a.interviewAt).length
 
   // Status distribution for bar chart
   const statusData = Object.keys(STATUS_LABELS).map((s) => ({
     name: STATUS_LABELS[s as keyof typeof STATUS_LABELS],
-    count: applications.filter((a) => a.status === s).length,
+    count: effectiveApps.filter((a) => a.status === s).length,
     color: STATUS_CHART_COLORS[s] ?? '#666',
   })).filter((d) => d.count > 0)
 
@@ -60,15 +89,15 @@ export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: 
   const channelData = Object.keys(CHANNEL_LABELS)
     .map((key) => ({
       name: CHANNEL_LABELS[key],
-      count: applications.filter((a) => a.channel === key).length,
+      count: effectiveApps.filter((a) => a.channel === key).length,
     }))
     .filter((d) => d.count > 0)
 
   // Weekly data
-  const weeklyData = getWeeklyData(applications, 8)
+  const weeklyData = getWeeklyData(effectiveApps, 8)
 
   // Resume performance data
-  const resumeStats = getResumeStats(applications, resumes)
+  const resumeStats = getResumeStats(effectiveApps, effectiveResumes)
   const activeResumeStats = resumeStats.filter((s) => s.count > 0)
   const bestResume = activeResumeStats.length > 0
     ? [...activeResumeStats].sort((a, b) => b.responseRate - a.responseRate)[0]
@@ -82,7 +111,26 @@ export function AnalyticsView({ applications, resumes = [], overdueDays = 14 }: 
   }))
 
   return (
-    <div className="space-y-6">
+    <div data-tour="analytics-view-section" className="space-y-6">
+      {applications.length === 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-card border border-border/80 rounded-xl p-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+              Örnek Gösterim
+            </span>
+            <span className="text-muted-foreground">
+              Henüz başvuru kaydetmediğiniz için örnek analiz grafikleri ve başarı oranları gösterilmektedir.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDemoAnalytics(false)}
+            className="text-xs text-primary hover:underline font-medium self-start sm:self-auto cursor-pointer shrink-0"
+          >
+            Örnek Grafikleri Gizle
+          </button>
+        </div>
+      )}
       {/* Metrics Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[

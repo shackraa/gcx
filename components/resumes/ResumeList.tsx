@@ -35,6 +35,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
   const { toast } = useToast()
   const resumeStats = getResumeStats(applications, resumes)
   const [selectedLangMap, setSelectedLangMap] = useState<Record<string, 'tr' | 'en'>>({})
+  const [showDemoResume, setShowDemoResume] = useState(true)
 
   async function handleCopyCoverLetter(text: string) {
     if (!text) return
@@ -42,28 +43,241 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
     toast({ title: 'Cover Letter Panoya Kopyalandı ✓' })
   }
 
+  const DEMO_RESUME: Resume = {
+    _id: 'demo-resume-1' as any,
+    _creationTime: Date.now() - 7 * 24 * 60 * 60 * 1000,
+    userId: 'demo-user',
+    name: 'Kıdemli Yazılım Geliştirici (Örnek CV)',
+    category: 'Yazılım / Frontend',
+    targetRole: 'Senior Frontend / React & TypeScript',
+    isDefault: true,
+    fileName: 'frontend_developer_cv_2026.pdf',
+    fileSize: 1845200,
+    fileUrl: '#',
+    downloadUrl: '#',
+    summary: '5+ yıl React, TypeScript, TailwindCSS ve mikroservis mimarileri deneyimli kıdemli geliştirici.',
+    skills: ['React', 'TypeScript', 'Next.js', 'TailwindCSS', 'Redux', 'GraphQL', 'REST API'],
+    coverLetter:
+      'Sayın Yetkili,\n\nŞirketiniz bünyesindeki yazılım geliştirme pozisyonu için 5 yılı aşkın modern web mimarileri, React, Next.js ve ölçeklenebilir frontend sistemleri deneyimimle başvurumu sunmaktan memnuniyet duyarım. Performans odaklı, temiz kod standartlarına bağlı çalışma prensiplerimle ekibinize değer katmayı hedefliyorum.\n\nİlginiz için teşekkür ederim.',
+    coverLetterEn:
+      'Dear Hiring Team,\n\nI am writing to express my strong interest in the software engineering role at your company. With over 5 years of experience building modern, performant web applications using React and Next.js, I look forward to contributing to your team\'s goals.\n\nThank you for your consideration.',
+    updatedAt: Date.now() - 2 * 24 * 60 * 60 * 1000,
+  }
+
   if (resumes.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center gap-4 bg-card border border-dashed rounded-2xl p-8">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-          <FileText className="h-8 w-8" />
+      <div data-tour="resume-pool-section" className="space-y-5">
+        {/* Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card border rounded-xl p-4">
+          <div>
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              CV Havuzum (0 Versiyon)
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Farklı uzmanlık veya pozisyonlara göre CV versiyonlarınızı buraya yükleyin
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDemoResume(!showDemoResume)}
+              className="text-xs text-muted-foreground hover:text-foreground h-8"
+            >
+              {showDemoResume ? 'Örnek CV’yi Gizle' : 'Örnek CV’yi Göster'}
+            </Button>
+            <Button onClick={() => openResumeModal()} size="sm" className="gap-1.5 h-8">
+              <Plus className="h-4 w-4" />
+              İlk CV&apos;ni Ekle
+            </Button>
+          </div>
         </div>
-        <div className="max-w-md">
-          <h3 className="text-base font-bold text-foreground">Henüz CV Eklenmemiş</h3>
-          <p className="text-muted-foreground text-xs mt-1.5 leading-relaxed">
-            Farklı pozisyonlar veya uzmanlıklar için hazırladığın CV&apos;lerini buraya ekle. Her başvuruda hangi CV&apos;yi kullandığını takip edebilir ve CV&apos;lerinin başarı oranını karşılaştırabilirsin.
-          </p>
+
+        {/* Empty state prompt */}
+        <div className="flex flex-col items-center justify-center py-10 text-center gap-3 bg-card border border-dashed rounded-2xl p-6">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <FileText className="h-6 w-6" />
+          </div>
+          <div className="max-w-md">
+            <h3 className="text-sm font-bold text-foreground">Henüz CV Eklenmemiş</h3>
+            <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
+              Farklı pozisyonlar için hazırladığın PDF formatındaki CV&apos;lerini buraya yükle. Yapay zekâ yeteneklerini ve ön yazını otomatik oluştursun.
+            </p>
+          </div>
+          <Button onClick={() => openResumeModal()} size="sm" className="gap-1.5 text-xs">
+            <Plus className="h-4 w-4" />
+            PDF CV Yükle
+          </Button>
         </div>
-        <Button onClick={() => openResumeModal()} className="gap-2">
-          <Plus className="h-4 w-4" />
-          İlk CV&apos;ni Ekle
-        </Button>
+
+        {/* Demo CV Card Showcase */}
+        {showDemoResume && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                Örnek CV Kartı (Sistemin nasıl çalıştığını inceleyebilirsiniz)
+              </span>
+              <span className="text-[11px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                Örnek Gösterim
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-card border border-primary/20 rounded-xl p-5 space-y-4 shadow-sm flex flex-col justify-between">
+                <div className="space-y-3">
+                  {/* Title & Date */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-bold text-foreground">{DEMO_RESUME.name}</h3>
+                        <span className="bg-green-950/60 text-green-400 border border-green-800 text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0">
+                          Varsayılan
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <Briefcase className="h-3 w-3 shrink-0" />
+                        <span>{DEMO_RESUME.targetRole}</span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 border border-border/50 px-2 py-1 rounded-md shrink-0">
+                      <Calendar className="h-3 w-3 text-primary shrink-0" />
+                      <span>Bugün güncellendi</span>
+                    </div>
+                  </div>
+
+                  {/* Attached File Indicator */}
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 border border-border/60 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground truncate text-xs">
+                          {DEMO_RESUME.fileName}
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                          <span>{formatFileSize(DEMO_RESUME.fileSize || 1800000)}</span>
+                          <span>•</span>
+                          <span>Yüklendi</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => toast({ title: 'Örnek CV dosyası indirilemez', description: 'Kendi CV’nizi yüklediğinizde PDF dosyanız burada listelenir.' })}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold bg-primary/15 text-primary hover:bg-primary/25 px-2.5 py-1.5 rounded-md transition-colors shrink-0 ml-2 cursor-pointer"
+                    >
+                      <Download className="h-3 w-3" />
+                      İndir / Aç
+                    </button>
+                  </div>
+
+                  {/* Cover Letter (Ön Yazı - Türkçe & İngilizce) */}
+                  {(() => {
+                    const activeLang = selectedLangMap['demo-resume-1'] || 'tr'
+                    const currentLetterText = activeLang === 'en' ? DEMO_RESUME.coverLetterEn : DEMO_RESUME.coverLetter
+
+                    return (
+                      <div className="space-y-2 bg-muted/20 border border-border/60 rounded-xl p-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+                              <Sparkles className="h-3.5 w-3.5 text-primary" />
+                              Ön Yazı (Cover Letter)
+                            </span>
+
+                            <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-md border border-border/60">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLangMap((prev) => ({ ...prev, 'demo-resume-1': 'tr' }))}
+                                className={cn(
+                                  'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
+                                  activeLang === 'tr'
+                                    ? 'bg-primary text-primary-foreground shadow-xs'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                )}
+                              >
+                                <span>TR</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedLangMap((prev) => ({ ...prev, 'demo-resume-1': 'en' }))}
+                                className={cn(
+                                  'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
+                                  activeLang === 'en'
+                                    ? 'bg-primary text-primary-foreground shadow-xs'
+                                    : 'text-muted-foreground hover:text-foreground'
+                                )}
+                              >
+                                <span>EN</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCopyCoverLetter(currentLetterText || '')}
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium cursor-pointer"
+                          >
+                            <Copy className="h-3 w-3" />
+                            Kopyala
+                          </button>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground/90 leading-relaxed whitespace-pre-wrap line-clamp-3">
+                          {currentLetterText}
+                        </p>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Skills tags */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      Çıkarılan Yetenekler (7 Yetenek):
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {DEMO_RESUME.skills?.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-muted text-muted-foreground text-[10px] px-2 py-0.5 rounded-md border border-border/40 font-medium"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Stats & Actions */}
+                <div className="pt-3 border-t border-border/60 flex items-center justify-between text-xs mt-3">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <span className="text-foreground font-semibold">12 Başvuru</span>
+                    <span>•</span>
+                    <span className="text-green-400 font-semibold">%33 Dönüş (4 Yanıt)</span>
+                  </div>
+
+                  <div className="text-[11px] text-muted-foreground">
+                    Varsayılan Versiyon
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div data-tour="resume-pool-section" className="space-y-5">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card border rounded-xl p-4">
         <div>

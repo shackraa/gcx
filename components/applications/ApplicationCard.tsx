@@ -15,7 +15,7 @@ import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useUIStore } from '@/lib/store/ui'
 import { cn } from '@/lib/utils'
-import { ExternalLink, FileText, Copy, CheckCircle2 } from 'lucide-react'
+import { ExternalLink, FileText, Copy, CheckCircle2, Calendar } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import type { Id } from '@/convex/_generated/dataModel'
 
@@ -111,15 +111,17 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
         {/* Overdue badge */}
         {overdue && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-950 text-red-300">
-            🔴 Takip maili at
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-950/80 text-red-300 border border-red-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse inline-block" />
+            Sessiz (Takip maili at)
           </span>
         )}
 
         {/* Applied date */}
         {app.appliedAt && (
-          <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            📅 {formatDate(app.appliedAt)}
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            <Calendar className="h-3 w-3 opacity-70" />
+            {formatDate(app.appliedAt)}
           </span>
         )}
 
@@ -151,8 +153,9 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
         {/* Interview date */}
         {app.interviewAt && (
-          <span className="text-[11px] text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded-full">
-            🗓 {formatDate(app.interviewAt)}
+          <span className="inline-flex items-center gap-1 text-[11px] text-amber-400 bg-amber-950/40 border border-amber-900/60 px-2 py-0.5 rounded-full">
+            <Calendar className="h-3 w-3" />
+            {formatDate(app.interviewAt)}
           </span>
         )}
       </div>

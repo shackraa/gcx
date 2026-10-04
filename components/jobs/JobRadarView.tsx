@@ -34,11 +34,11 @@ interface JobRadarViewProps {
   applications: Application[]
 }
 
-const WORKPLACE_OPTIONS: { value: WorkplaceType; label: string; icon: string }[] = [
-  { value: 'all', label: 'Tümü (Tüm Modeller)', icon: '🏢' },
-  { value: 'onsite', label: 'Fiziksel / Ofiste', icon: '📍' },
-  { value: 'hybrid', label: 'Hibrit', icon: '🔄' },
-  { value: 'remote', label: 'Uzaktan (Remote)', icon: '🌐' },
+const WORKPLACE_OPTIONS: { value: WorkplaceType; label: string }[] = [
+  { value: 'all', label: 'Tümü (Tüm Modeller)' },
+  { value: 'onsite', label: 'Fiziksel / Ofiste' },
+  { value: 'hybrid', label: 'Hibrit' },
+  { value: 'remote', label: 'Uzaktan (Remote)' },
 ]
 
 const DATE_OPTIONS: { value: DatePosted; label: string }[] = [
@@ -144,7 +144,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
         await importBulkScoutedMutation({ jobs: cleanJobs })
         toast({
-          title: '🚀 İlanlar Başarıyla Bulundu & Eşleştirildi!',
+          title: 'İlanlar Başarıyla Bulundu & Eşleştirildi!',
           description: `${cleanJobs.length} adet güncel ilan radara eklendi.`,
         })
       } else {
@@ -364,8 +364,8 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Hero Banner */}
-      <div className="bg-gradient-to-br from-primary/15 via-primary/5 to-card border border-primary/25 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+      {/* Hero Banner & Search Controls */}
+      <div data-tour="job-radar-controls" className="bg-gradient-to-br from-primary/15 via-primary/5 to-card border border-primary/25 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
@@ -399,7 +399,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
               <option value="all">Tüm CV&apos;lerim ({resumes.length} Adet)</option>
               {resumes.map((r) => (
                 <option key={r._id} value={r._id}>
-                  📄 {r.name} ({r.category})
+                  {r.name} ({r.category})
                 </option>
               ))}
             </select>
@@ -417,7 +417,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             >
               {WORKPLACE_OPTIONS.map((w) => (
                 <option key={w.value} value={w.value}>
-                  {w.icon} {w.label}
+                  {w.label}
                 </option>
               ))}
             </select>
@@ -470,7 +470,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
           <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
             <span className="hidden sm:inline-flex text-[11px] font-bold text-green-400 bg-green-950/40 border border-green-800/60 px-2.5 py-1.5 rounded-lg">
-              🎯 %70+ Uyum · En Yüksek Puan En Üstte
+              %70+ Uyum · En Yüksek Puan En Üstte
             </span>
 
             <Button
@@ -486,7 +486,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  <span>🚀 Tüm Uygun İlanları Tara (%70+ Uyum)</span>
+                  <span>Tüm Uygun İlanları Tara (%70+ Uyum)</span>
                 </>
               )}
             </Button>
@@ -494,7 +494,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
         </div>
       </div>
 
-      {/* 🤖 jev-ultrafast Otonom Bot Entegrasyon Paneli */}
+      {/* jev-ultrafast Otonom Bot Entegrasyon Paneli */}
       <div className="bg-card border border-primary/20 rounded-xl p-5 space-y-3 shadow-sm bg-gradient-to-r from-card via-primary/5 to-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3">
           <div className="flex items-center gap-2.5">
@@ -760,12 +760,12 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
                   <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
                     <MapPin className="h-3 w-3" />
-                    {job.location} · {job.workplaceType === 'onsite' ? '📍 Fiziksel' : job.workplaceType === 'remote' ? '🌐 Uzaktan' : '🔄 Hibrit'}
+                    {job.location} · {job.workplaceType === 'onsite' ? 'Fiziksel' : job.workplaceType === 'remote' ? 'Uzaktan' : 'Hibrit'}
                   </p>
 
                   {job.reason && (
                     <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
-                      💡 {job.reason}
+                      {job.reason}
                     </p>
                   )}
 
@@ -1061,14 +1061,14 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
             {/* AI Recommendation Reason */}
             <p className="text-xs text-muted-foreground/90 bg-background/50 p-2.5 rounded-lg border border-border/40 leading-relaxed">
-              💡 <strong>AI Tavsiyesi:</strong> {matchedResult.reason}
+              <strong>AI Tavsiyesi:</strong> {matchedResult.reason}
             </p>
 
             {/* Recommended Resume */}
             <div className="flex items-center gap-2 text-xs">
               <span className="text-muted-foreground">Önerilen CV:</span>
               <span className="font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-md">
-                📄 {matchedResult.recommendedResumeName}
+                {matchedResult.recommendedResumeName}
               </span>
             </div>
 

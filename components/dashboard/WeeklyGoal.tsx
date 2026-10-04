@@ -36,8 +36,8 @@ export function WeeklyGoal({ current, goal }: WeeklyGoalProps) {
     <div data-tour="weekly-goal" className="mt-4 flex items-center gap-3">
       <div className="flex-1 space-y-1">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground font-medium">
-            Bu hafta {done && '🎉'}
+          <span className="text-muted-foreground font-medium inline-flex items-center gap-1.5">
+            Bu hafta {done && <span className="text-[10px] font-semibold text-green-400 bg-green-950/50 border border-green-800/60 px-1.5 py-0.5 rounded-full">Hedef Tamamlandı</span>}
           </span>
           {editing ? (
             <div className="flex items-center gap-1">

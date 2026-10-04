@@ -265,7 +265,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
                 <option value="">— Kayıtlı CV Seç veya Manuel Gir —</option>
                 {resumes.map((r) => (
                   <option key={r._id} value={r._id}>
-                    📄 {r.name} ({r.category}) {r.isDefault ? '⭐' : ''}
+                    {r.name} ({r.category}){r.isDefault ? ' (Varsayılan)' : ''}
                   </option>
                 ))}
               </select>
@@ -300,7 +300,7 @@ export function ApplicationFormModal({ applications }: ApplicationFormModalProps
           {/* Interview At & Channel */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">🗓 Mülakat Tarihi & Saati</label>
+              <label className="text-xs font-medium text-muted-foreground">Mülakat Tarihi & Saati</label>
               <input
                 type="datetime-local"
                 {...register('interviewAt')}

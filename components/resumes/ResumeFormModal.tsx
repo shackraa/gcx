@@ -653,7 +653,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                 <div className="space-y-2 pt-1 border-t border-border/40 text-[11px]">
                   {aiInsights.strengths && aiInsights.strengths.length > 0 && (
                     <div>
-                      <span className="font-semibold text-green-400">💪 Güçlü Yönlerin:</span>
+                      <span className="font-semibold text-green-400">Güçlü Yönlerin:</span>
                       <ul className="list-disc list-inside text-muted-foreground mt-0.5 space-y-0.5">
                         {aiInsights.strengths.map((s, i) => (
                           <li key={i}>{s}</li>
@@ -664,7 +664,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
 
                   {aiInsights.suggestedLinkedInQueries && aiInsights.suggestedLinkedInQueries.length > 0 && (
                     <div>
-                      <span className="font-semibold text-primary">🔍 Önerilen LinkedIn Arama Sorguları:</span>
+                      <span className="font-semibold text-primary">Önerilen LinkedIn Arama Sorguları:</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {aiInsights.suggestedLinkedInQueries.map((q, i) => (
                           <span

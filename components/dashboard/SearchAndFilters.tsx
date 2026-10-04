@@ -32,7 +32,7 @@ export function SearchAndFilters() {
           <option value="all">Tüm CV&apos;ler</option>
           {resumes.map((r) => (
             <option key={r._id} value={r._id}>
-              📄 {r.name}
+              {r.name}
             </option>
           ))}
         </select>
