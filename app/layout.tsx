@@ -13,8 +13,8 @@ const fontSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'GCX — Başvuru Takip',
-  description: 'Nereye başvurdum, hangi CV ile, kim döndü.',
+  title: 'GCX — Kariyer & Başvuru Yönetimi',
+  description: 'Kariyer ve iş başvurusu yönetim platformu.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,

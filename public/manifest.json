@@ -1,7 +1,7 @@
 {
   "name": "GCX",
   "short_name": "GCX",
-  "description": "Başvuru takip uygulaması",
+  "description": "Kariyer ve Başvuru Yönetim Platformu",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0c0c0c",

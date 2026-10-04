@@ -107,12 +107,19 @@ export function AppHeader() {
           <Link
             href="/dashboard"
             data-tour="app-logo"
-            className="flex flex-col leading-none shrink-0"
+            className="flex items-center gap-2.5 shrink-0 group focus:outline-none"
           >
-            <span className="text-xl font-extrabold tracking-tight text-foreground">GCX.</span>
-            <span className="text-[10px] text-muted-foreground hidden lg:block">
-              Nereye başvurdum, hangi CV ile, kim döndü.
-            </span>
+            <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center font-extrabold text-xs tracking-wider shadow-2xs transition-transform group-hover:scale-105">
+              GCX
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold tracking-tight text-foreground leading-tight">
+                GCX
+              </span>
+              <span className="text-[11px] font-medium text-muted-foreground leading-tight hidden lg:block">
+                Kariyer & Başvuru Yönetimi
+              </span>
+            </div>
           </Link>
 
           {/* Navigation Links */}

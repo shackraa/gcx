@@ -25,12 +25,12 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
 }
 
 export const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  preparing: 'bg-zinc-100 text-zinc-700 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700',
-  waiting: 'bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-800',
-  responded: 'bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/80 dark:text-purple-200 dark:border-purple-800',
-  interview: 'bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800',
-  offer: 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-green-950/80 dark:text-green-200 dark:border-green-800',
-  rejected: 'bg-rose-50 text-rose-700 border border-rose-200 dark:bg-red-950/80 dark:text-red-300 dark:border-red-800',
+  preparing: 'bg-zinc-100 text-zinc-700 border border-zinc-200/60 dark:bg-zinc-800/60 dark:text-zinc-300 dark:border-zinc-700/50',
+  waiting: 'bg-blue-50 text-blue-700 border border-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50',
+  responded: 'bg-purple-50 text-purple-700 border border-purple-200/60 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50',
+  interview: 'bg-amber-50 text-amber-800 border border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50',
+  offer: 'bg-emerald-50 text-emerald-800 border border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50',
+  rejected: 'bg-rose-50 text-rose-700 border border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50',
 }
 
 export const STATUS_BADGE_COLORS: Record<ApplicationStatus, string> = {

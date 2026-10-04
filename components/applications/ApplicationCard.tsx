@@ -3,7 +3,6 @@
 import type { Application, ApplicationStatus } from '@/types'
 import {
   STATUS_LABELS,
-  STATUS_COLORS,
   CHANNEL_LABELS,
   isOverdue,
   daysSinceApplied,
@@ -16,7 +15,7 @@ import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useUIStore } from '@/lib/store/ui'
 import { cn } from '@/lib/utils'
-import { ExternalLink, FileText, Copy, CheckCircle2, Calendar, ChevronDown, ArrowRight, Sparkles } from 'lucide-react'
+import { ExternalLink, FileText, Copy, CheckCircle2, ChevronDown, ArrowRight, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import type { Id } from '@/convex/_generated/dataModel'
 
@@ -34,6 +33,24 @@ function humanizeCvName(raw?: string): string {
 interface ApplicationCardProps {
   app: Application
   overdueDays?: number
+}
+
+const STATUS_DOT: Record<ApplicationStatus, string> = {
+  preparing: 'bg-zinc-400 dark:bg-zinc-500',
+  waiting: 'bg-blue-500 dark:bg-blue-400',
+  responded: 'bg-purple-500 dark:bg-purple-400',
+  interview: 'bg-amber-500 dark:bg-amber-400',
+  offer: 'bg-emerald-500 dark:bg-emerald-400',
+  rejected: 'bg-rose-500 dark:bg-rose-400',
+}
+
+const STATUS_TEXT: Record<ApplicationStatus, string> = {
+  preparing: 'text-zinc-600 dark:text-zinc-300',
+  waiting: 'text-blue-600 dark:text-blue-400',
+  responded: 'text-purple-600 dark:text-purple-400',
+  interview: 'text-amber-600 dark:text-amber-400',
+  offer: 'text-emerald-600 dark:text-emerald-400',
+  rejected: 'text-rose-600 dark:text-rose-400',
 }
 
 export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps) {
@@ -98,233 +115,226 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
     }
   }
 
-  const leftBorderColor: Record<string, string> = {
-    preparing: 'border-l-zinc-400 dark:border-l-zinc-500',
-    waiting: 'border-l-blue-500 dark:border-l-blue-600',
-    responded: 'border-l-purple-500 dark:border-l-purple-600',
-    interview: 'border-l-amber-500 dark:border-l-amber-500',
-    offer: 'border-l-emerald-500 dark:border-l-green-500',
-    rejected: 'border-l-rose-500 dark:border-l-red-700',
-  }
-
   return (
     <div
       className={cn(
-        'group relative bg-card border border-l-4 rounded-xl px-4 py-3 transition-all hover:border-border/80 shadow-2xs',
-        overdue ? 'border-red-200 dark:border-red-800 border-l-red-500 bg-red-50/50 dark:bg-red-950/10' : 'border-border',
-        leftBorderColor[app.status] ?? 'border-l-border'
+        'group relative bg-card border rounded-xl p-3.5 sm:p-4 transition-all duration-150 hover:border-border hover:shadow-xs space-y-2.5',
+        overdue
+          ? 'border-red-200 bg-red-50/20 dark:border-red-900/40 dark:bg-red-950/10'
+          : 'border-border/70 hover:bg-card/90'
       )}
     >
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="font-bold text-foreground text-sm">{app.company}</span>
-            {app.position && (
-              <span className="text-muted-foreground text-xs">{app.position}</span>
-            )}
-          </div>
-        </div>
+      {/* Top row: Company, Position, Job Link & Time */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-sm text-foreground tracking-tight group-hover:text-primary transition-colors">
+            {app.company}
+          </span>
 
-        {/* Days counter */}
-        <div className="shrink-0 flex items-center gap-2">
-          {days !== null && (
-            <span
-              className={cn(
-                'text-xs font-semibold tabular-nums',
-                overdue ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-              )}
-            >
-              {daysText}
-            </span>
+          {app.position && (
+            <>
+              <span className="text-muted-foreground/30 text-xs hidden sm:inline">•</span>
+              <span className="text-xs text-muted-foreground font-normal truncate max-w-[280px]">
+                {app.position}
+              </span>
+            </>
           )}
-          {!app.appliedAt && (
-            <span className="text-xs text-muted-foreground/60 italic">tarih yok</span>
-          )}
-        </div>
-      </div>
 
-      {/* Tags row */}
-      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-        {/* Interactive Status Selector Badge */}
-        <div className="relative inline-flex items-center">
-          <select
-            value={app.status}
-            onChange={(e) => handleStatusChange(e.target.value as ApplicationStatus)}
-            title="Durumu doğrudan değiştir"
-            className={cn(
-              'appearance-none pl-2.5 pr-5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer border border-transparent hover:border-current/30 focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all shadow-2xs',
-              STATUS_COLORS[app.status]
-            )}
-          >
-            {Object.entries(STATUS_LABELS).map(([key, label]) => (
-              <option
-                key={key}
-                value={key}
-                className="bg-card text-foreground py-1 font-medium"
-              >
-                {label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="w-3 h-3 absolute right-1.5 pointer-events-none opacity-60" />
-        </div>
-
-        {/* Overdue badge */}
-        {overdue && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/80 dark:text-red-300 dark:border-red-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400 animate-pulse inline-block" />
-            Sessiz (Takip maili at)
-          </span>
-        )}
-
-        {/* Applied date */}
-        {app.appliedAt && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            <Calendar className="h-3 w-3 opacity-70" />
-            {formatDate(app.appliedAt)}
-          </span>
-        )}
-
-        {/* Channel */}
-        {app.channel && (
-          <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            {CHANNEL_LABELS[app.channel] ?? app.channel}
-          </span>
-        )}
-
-        {/* Match score badge (extracted from note if present) */}
-        {matchScore && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-800/60 px-2 py-0.5 rounded-full">
-            <Sparkles className="h-3 w-3 opacity-80" />
-            %{matchScore} Uyum
-          </span>
-        )}
-
-        {/* CV version / Resume badge */}
-        {app.cvVersion && (
-          <span
-            title={app.cvVersion}
-            className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50/80 border border-blue-200/80 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900/60 px-2 py-0.5 rounded-full font-medium max-w-[200px]"
-          >
-            <FileText className="h-3 w-3 shrink-0 opacity-70" />
-            <span className="truncate">{humanizeCvName(app.cvVersion)}</span>
-          </span>
-        )}
-
-        {/* HR contacted */}
-        {app.hrContacted ? (
-          <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200/60 dark:text-green-400 dark:bg-green-950/40 dark:border-transparent px-2 py-0.5 rounded-full">
-            ✓ İK&apos;ya yazıldı
-          </span>
-        ) : (
-          <span className="text-[11px] text-muted-foreground/60 px-2 py-0.5 rounded-full">
-            İK&apos;ya yazılmadı
-          </span>
-        )}
-
-        {/* Interview date */}
-        {app.interviewAt && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/60 px-2 py-0.5 rounded-full">
-            <Calendar className="h-3 w-3" />
-            {formatDate(app.interviewAt)}
-          </span>
-        )}
-      </div>
-
-      {/* Note (only real user note, no repetitive boilerplate) */}
-      {cleanNote && cleanNote.length > 0 && (
-        <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2 bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/40 font-normal">
-          {cleanNote}
-        </p>
-      )}
-
-      {/* Actions row */}
-      <div className="flex items-center justify-between mt-3 gap-2">
-        <div className="flex items-center gap-2">
-          {cvUrl && (
-            <a
-              href={cvUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <FileText className="h-3 w-3" />
-              CV&apos;yi Aç
-            </a>
-          )}
           {jobUrl && (
             <a
               href={jobUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+              title="İlanı Aç"
+              className="inline-flex items-center text-muted-foreground/60 hover:text-foreground transition-colors p-0.5 rounded hover:bg-muted"
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="h-3 w-3" />
-              İlanı Aç
             </a>
-          )}
-          {overdue && (
-            <button
-              onClick={handleCopyTemplate}
-              className="inline-flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors cursor-pointer"
-            >
-              <Copy className="h-3 w-3" />
-              Şablonu kopyala
-            </button>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        {/* Right side: Overdue badge + relative time */}
+        <div className="shrink-0 flex items-center gap-2">
+          {overdue && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-0.5 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              Sessiz
+            </span>
+          )}
+          {days !== null ? (
+            <span
+              className={cn(
+                'text-xs tabular-nums',
+                overdue ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-muted-foreground'
+              )}
+            >
+              {daysText}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground/50">Tarih yok</span>
+          )}
+        </div>
+      </div>
+
+      {/* Middle row: Metadata & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-0.5">
+        {/* Left: Metadata list */}
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs">
+          {/* Status Selector */}
+          <div className="relative inline-flex items-center">
+            <span className={cn('w-2 h-2 rounded-full mr-1.5 shrink-0', STATUS_DOT[app.status])} />
+            <select
+              value={app.status}
+              onChange={(e) => handleStatusChange(e.target.value as ApplicationStatus)}
+              title="Durumu değiştir"
+              className={cn(
+                'appearance-none pl-0.5 pr-4 py-0.5 text-xs font-semibold cursor-pointer bg-transparent hover:bg-muted/60 focus:outline-none rounded transition-colors',
+                STATUS_TEXT[app.status]
+              )}
+            >
+              {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                <option key={key} value={key} className="bg-card text-foreground py-1 font-medium">
+                  {label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3 h-3 absolute right-0 pointer-events-none opacity-40" />
+          </div>
+
+          {/* Channel & Applied Date */}
+          {(app.channel || app.appliedAt) && (
+            <>
+              <span className="text-muted-foreground/30">•</span>
+              <span className="text-muted-foreground">
+                {app.channel && (CHANNEL_LABELS[app.channel] ?? app.channel)}
+                {app.channel && app.appliedAt && ' • '}
+                {app.appliedAt && formatDate(app.appliedAt)}
+              </span>
+            </>
+          )}
+
+          {/* Match Score */}
+          {matchScore && (
+            <>
+              <span className="text-muted-foreground/30">•</span>
+              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                <Sparkles className="h-3 w-3 opacity-80" />
+                %{matchScore} Uyum
+              </span>
+            </>
+          )}
+
+          {/* CV Used */}
+          {app.cvVersion && (
+            <>
+              <span className="text-muted-foreground/30">•</span>
+              {cvUrl ? (
+                <a
+                  href={cvUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="CV'yi İndir / Aç"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline transition-colors max-w-[190px]"
+                >
+                  <FileText className="h-3 w-3 shrink-0 text-primary" />
+                  <span className="truncate">{humanizeCvName(app.cvVersion)}</span>
+                </a>
+              ) : (
+                <span
+                  title={app.cvVersion}
+                  className="inline-flex items-center gap-1 text-muted-foreground/80 max-w-[180px]"
+                >
+                  <FileText className="h-3 w-3 shrink-0 opacity-50" />
+                  <span className="truncate">{humanizeCvName(app.cvVersion)}</span>
+                </span>
+              )}
+            </>
+          )}
+
+          {/* HR Contacted */}
+          {app.hrContacted && (
+            <>
+              <span className="text-muted-foreground/30">•</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+                ✓ İK ile Görüşüldü
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Right: Quick Advance & Edit */}
+        <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
           {app.status === 'preparing' && (
             <button
               onClick={handleMarkApplied}
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:text-green-400 dark:hover:text-green-300 dark:bg-green-950/40 dark:hover:bg-green-950/60 dark:border-transparent px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Başvurdum
+              <span>Başvurdum</span>
             </button>
           )}
           {app.status === 'waiting' && (
             <button
               onClick={() => handleStatusChange('responded')}
               title="Doğrudan dönüş aldı olarak güncelle"
-              className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 dark:text-purple-300 dark:hover:text-purple-200 dark:bg-purple-950/40 dark:hover:bg-purple-950/60 dark:border-purple-800/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
             >
+              <span>Dönüş Aldı</span>
               <ArrowRight className="h-3 w-3" />
-              Dönüş Aldı
             </button>
           )}
           {app.status === 'responded' && (
             <button
               onClick={() => handleStatusChange('interview')}
               title="Mülakat aşamasına taşı"
-              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 dark:text-amber-300 dark:hover:text-amber-200 dark:bg-amber-950/40 dark:hover:bg-amber-950/60 dark:border-amber-800/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
             >
+              <span>Mülakat</span>
               <ArrowRight className="h-3 w-3" />
-              Mülakat
             </button>
           )}
           {app.status === 'interview' && (
             <button
               onClick={() => handleStatusChange('offer')}
               title="Teklif aşamasına taşı"
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 dark:text-green-300 dark:hover:text-green-200 dark:bg-green-950/40 dark:hover:bg-green-950/60 dark:border-green-800/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Teklif Aldı
+              <span>Teklif Aldı</span>
             </button>
           )}
+
           <button
             onClick={() => openModal(app._id)}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted cursor-pointer"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors cursor-pointer"
           >
             Düzenle
           </button>
         </div>
       </div>
+
+      {/* Note or Overdue Template (if any) */}
+      {(cleanNote || overdue) && (
+        <div className="pt-2 border-t border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+          {cleanNote ? (
+            <p className="text-muted-foreground leading-relaxed line-clamp-1 italic font-normal">
+              &ldquo;{cleanNote}&rdquo;
+            </p>
+          ) : <div />}
+
+          {overdue && (
+            <button
+              onClick={handleCopyTemplate}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 dark:text-red-400 hover:underline cursor-pointer shrink-0"
+            >
+              <Copy className="h-3 w-3" />
+              <span>Takip şablonunu kopyala</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

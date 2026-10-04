@@ -57,10 +57,13 @@ export function LoginForm() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         {/* Logo */}
-        <div className="text-center space-y-1.5">
-          <h1 className="text-4xl font-extrabold tracking-tight text-foreground">GCX.</h1>
-          <p className="text-muted-foreground text-xs">
-            Nereye başvurdum, hangi CV ile, kim döndü.
+        <div className="text-center space-y-2">
+          <div className="inline-flex w-12 h-12 rounded-xl bg-foreground text-background items-center justify-center font-extrabold text-sm tracking-wider shadow-md mb-0.5">
+            GCX
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">GCX</h1>
+          <p className="text-muted-foreground text-xs font-medium">
+            Kariyer & Başvuru Yönetim Platformu
           </p>
         </div>
 
