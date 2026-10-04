@@ -236,9 +236,14 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   }
 
   // Parse CV via AI
-  async function parseCVWithAI(overridePayload?: { fileBase64?: string; mimeType?: string; rawText?: string; preferredName?: string }) {
-    setIsAnalyzing(true)
-
+  async function parseCVWithAI(overridePayload?: {
+    fileBase64?: string
+    mimeType?: string
+    rawText?: string
+    preferredName?: string
+    fileUrl?: string
+  }) {
+    const targetUrl = overridePayload?.fileUrl || (!overridePayload?.fileBase64 && !selectedFilePreview ? watch('fileUrl') : undefined)
     const filePayload = overridePayload?.fileBase64
       ? { fileBase64: overridePayload.fileBase64, mimeType: overridePayload.mimeType }
       : selectedFilePreview
@@ -249,12 +254,13 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     const reqPayload = {
       ...filePayload,
       rawText: overridePayload?.rawText || rawTextValue || undefined,
+      fileUrl: !filePayload.fileBase64 && targetUrl?.trim() ? targetUrl.trim() : undefined,
     }
 
-    if (!reqPayload.fileBase64 && !reqPayload.rawText?.trim()) {
+    if (!reqPayload.fileBase64 && !reqPayload.rawText?.trim() && !reqPayload.fileUrl) {
       toast({
-        title: 'CV Seçilmedi',
-        description: 'Lütfen bir PDF dosyası yükleyin veya CV metnini yapıştırın.',
+        title: 'CV Seçilmedi veya Link Girilmedi',
+        description: 'Lütfen bir PDF dosyası seçin, CV metnini girin veya Google Drive linki yapıştırın.',
         variant: 'destructive',
       })
       return
@@ -296,9 +302,23 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       const data: AIAnalysisResult = json.data
       setAiInsights(data)
 
+      // If server fetched fileData from Google Drive/URL, set it in preview!
+      if (json.fileData) {
+        setSelectedFilePreview({
+          base64: json.fileData.base64,
+          mimeType: json.fileData.mimeType,
+          name: json.fileData.name,
+          size: json.fileData.size,
+        })
+        setFileRemoved(false)
+      }
+
       // Auto-populate form fields!
-      // Keep file name as the CV name if a file was selected, otherwise use AI extracted name
-      const targetName = overridePayload?.preferredName || (pendingFile ? pendingFile.name.replace(/\.[^/.]+$/, '') : data.name)
+      const targetName =
+        overridePayload?.preferredName ||
+        (json.fileData?.name ? json.fileData.name.replace(/\.[^/.]+$/, '') : null) ||
+        (pendingFile ? pendingFile.name.replace(/\.[^/.]+$/, '') : data.name)
+
       if (targetName) setValue('name', targetName, { shouldValidate: true, shouldDirty: true })
       if (data.category) setValue('category', data.category, { shouldValidate: true, shouldDirty: true })
       if (data.targetRole) setValue('targetRole', data.targetRole, { shouldValidate: true, shouldDirty: true })
@@ -306,8 +326,8 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       if (data.extractedText) setValue('rawText', data.extractedText, { shouldValidate: true, shouldDirty: true })
 
       toast({
-        title: 'CV Başarıyla Analiz Edildi',
-        description: 'Dosya adı, hedef pozisyon ve Cover Letter dolduruldu.',
+        title: json.fileData ? 'Google Drive CV Çekildi & Analiz Edildi ✓' : 'CV Başarıyla Analiz Edildi ✓',
+        description: 'Dosya siteye aktarıldı, hedef pozisyon ve Cover Letter dolduruldu.',
       })
     } catch (err) {
       console.error(err)
@@ -344,6 +364,32 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
         storageIdToSave = storageId as Id<'_storage'>
         fileNameToSave = pendingFile.name
         fileSizeToSave = pendingFile.size
+      } else if (selectedFilePreview?.base64 && !editingResume?.storageId) {
+        // Upload the base64 file fetched from Google Drive to Convex Storage
+        try {
+          const uploadUrl = await generateUploadUrlMutation()
+          const byteCharacters = atob(selectedFilePreview.base64)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], { type: selectedFilePreview.mimeType || 'application/pdf' })
+
+          const uploadRes = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': selectedFilePreview.mimeType || 'application/pdf' },
+            body: blob,
+          })
+          if (uploadRes.ok) {
+            const { storageId } = await uploadRes.json()
+            storageIdToSave = storageId as Id<'_storage'>
+            fileNameToSave = selectedFilePreview.name
+            fileSizeToSave = selectedFilePreview.size
+          }
+        } catch (e) {
+          console.warn('Convex storage upload error for fetched Drive CV:', e)
+        }
       } else if (fileRemoved) {
         storageIdToSave = undefined
         fileNameToSave = undefined
@@ -467,16 +513,18 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
               }}
             />
 
-            {pendingFile ? (
+            {pendingFile || selectedFilePreview ? (
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800/50">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="w-7 h-7 rounded-md bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-700 dark:text-emerald-400 shrink-0">
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">{pendingFile.name}</p>
+                    <p className="text-xs font-semibold text-foreground truncate">
+                      {selectedFilePreview?.name || pendingFile?.name}
+                    </p>
                     <p className="text-[10px] text-emerald-700 dark:text-emerald-400">
-                      {formatFileSize(pendingFile.size)} • Kaydedildiğinde bulut depoya yüklenecek
+                      {formatFileSize(selectedFilePreview?.size || pendingFile?.size)} • Kaydedildiğinde bulut depoya yüklenecek
                     </p>
                   </div>
                 </div>
@@ -673,33 +721,104 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
             </div>
 
             {/* Category */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                Uzmanlık / Kategori <span className="text-red-600 dark:text-red-400">*</span>
-              </label>
-              <select
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Uzmanlık / Kategori <span className="text-red-600 dark:text-red-400">*</span>
+                </label>
+                <span className="text-[10px] text-muted-foreground">Özgürce yazabilir veya seçebilirsiniz</span>
+              </div>
+              <input
                 {...register('category')}
-                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-              >
+                list="category-suggestions"
+                type="text"
+                className="w-full h-9 px-3 rounded-lg bg-background border border-border text-xs focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"
+                placeholder="Örn: Yapay Zeka & Veri, Frontend, Ürün Yönetimi..."
+              />
+              <datalist id="category-suggestions">
                 {COMMON_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                  <option key={cat} value={cat} />
                 ))}
-              </select>
+              </datalist>
+
+              {/* Quick suggestion chips */}
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {COMMON_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setValue('category', cat, { shouldValidate: true, shouldDirty: true })}
+                    className={cn(
+                      'px-2 py-0.5 rounded-md text-[10px] font-medium transition-colors border cursor-pointer',
+                      watch('category') === cat
+                        ? 'bg-primary text-primary-foreground border-primary font-semibold shadow-2xs'
+                        : 'bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground border-border/50'
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              {errors.category && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.category.message}</p>
+              )}
             </div>
 
             {/* File / Drive URL */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                CV Linki (Google Drive / Harici Bağlantı vb.)
-              </label>
-              <input
-                {...register('fileUrl')}
-                type="url"
-                className="mt-1 w-full h-9 px-3 rounded-lg bg-muted border-0 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                placeholder="https://drive.google.com/file/d/..."
-              />
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-muted-foreground">
+                  CV Linki (Google Drive / Harici Bağlantı vb.)
+                </label>
+                {watch('fileUrl') && (
+                  <button
+                    type="button"
+                    onClick={() => parseCVWithAI({ fileUrl: watch('fileUrl') })}
+                    disabled={isAnalyzing}
+                    className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    <span>Bağlantıdan İndir & Analiz Et</span>
+                  </button>
+                )}
+              </div>
+              <div className="relative flex items-center">
+                <input
+                  {...register('fileUrl')}
+                  type="url"
+                  className="w-full h-9 pl-3 pr-28 rounded-lg bg-background border border-border text-xs focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/20 transition-all"
+                  placeholder="https://drive.google.com/file/d/..."
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = watch('fileUrl')
+                    if (!url) {
+                      toast({
+                        title: 'Link Girilmedi',
+                        description: 'Lütfen önce geçerli bir Google Drive veya PDF linki yapıştırın.',
+                        variant: 'destructive',
+                      })
+                      return
+                    }
+                    parseCVWithAI({ fileUrl: url })
+                  }}
+                  disabled={isAnalyzing}
+                  className="absolute right-1 h-7 text-[11px] px-2.5 gap-1 border-primary/30 text-primary hover:bg-primary/10 font-semibold cursor-pointer"
+                >
+                  {isAnalyzing ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  <span>Çek & Doldur</span>
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Google Drive bağlantınızı yapıştırıp &quot;Çek & Doldur&quot; butonuna bastığınızda dosya otomatik indirilir, siteye depolanır ve CV bilgileri doldurulur.
+              </p>
               {errors.fileUrl && (
                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.fileUrl.message}</p>
               )}
@@ -774,11 +893,11 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                         <span>
                           {coverLetterLang === 'en'
                             ? watch('coverLetterEn')
-                              ? 'EN Yenile'
-                              : 'EN Oluştur'
+                              ? 'Yenile'
+                              : 'Oluştur'
                             : watch('coverLetter')
-                            ? 'TR Yenile'
-                            : 'TR Oluştur'}
+                            ? 'Yenile'
+                            : 'Oluştur'}
                         </span>
                       </>
                     )}

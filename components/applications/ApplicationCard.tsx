@@ -10,6 +10,7 @@ import {
   formatDate,
   generateFollowUpTemplate,
   safeUrl,
+  getDirectDownloadUrl,
 } from '@/lib/utils/applications'
 import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
@@ -42,7 +43,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
   const { toast } = useToast()
   const overdue = isOverdue(app, overdueDays)
   const days = daysSinceApplied(app)
-  const cvUrl = safeUrl(app.cvLink)
+  const cvUrl = getDirectDownloadUrl(app.cvLink)
   const jobUrl = safeUrl(app.jobLink)
 
   // Relative human time text

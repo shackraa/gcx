@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { Resume, Application } from '@/types'
 import { useUIStore } from '@/lib/store/ui'
-import { getResumeStats, safeUrl, formatFileSize } from '@/lib/utils/applications'
+import { getResumeStats, safeUrl, getDirectDownloadUrl, formatFileSize } from '@/lib/utils/applications'
 import { Button } from '@/components/ui/button'
 import {
   FileText,
@@ -325,7 +325,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
       {/* Resume Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {resumeStats.map(({ resume, count, respondedCount, responseRate }) => {
-          const cvUrl = safeUrl(resume.downloadUrl || resume.fileUrl)
+          const cvUrl = getDirectDownloadUrl(resume.downloadUrl || resume.fileUrl)
           const dateTimestamp = resume.updatedAt || resume._creationTime
 
           return (

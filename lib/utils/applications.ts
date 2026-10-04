@@ -278,6 +278,34 @@ export function safeUrl(url?: string | null): string | null {
   }
 }
 
+// Extract Google Drive ID from any Drive or Docs URL
+export function getGoogleDriveFileId(url?: string | null): string | null {
+  if (!url) return null
+  const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+  if (driveMatch) return driveMatch[1]
+
+  const idParamMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+  if (idParamMatch) return idParamMatch[1]
+
+  const docsMatch = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/)
+  if (docsMatch) return docsMatch[1]
+
+  return null
+}
+
+// Convert any Google Drive view or preview link into a direct download link
+export function getDirectDownloadUrl(url?: string | null): string | null {
+  if (!url) return null
+  const fileId = getGoogleDriveFileId(url)
+  if (fileId) {
+    if (url.includes('docs.google.com/document')) {
+      return `https://docs.google.com/document/d/${fileId}/export?format=pdf`
+    }
+    return `https://drive.google.com/uc?export=download&id=${fileId}`
+  }
+  return safeUrl(url)
+}
+
 // Format file size in bytes to human-readable string (KB, MB)
 export function formatFileSize(bytes?: number): string {
   if (!bytes || bytes <= 0) return ''

@@ -4,6 +4,7 @@ interface ParseRequest {
   fileBase64?: string
   mimeType?: string
   rawText?: string
+  fileUrl?: string
   apiKey?: string
 }
 
@@ -66,7 +67,10 @@ function extractJsonFromResponse(text: string): Record<string, unknown> {
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ParseRequest
-    const { fileBase64, mimeType, rawText, apiKey } = body
+    let { fileBase64, mimeType, rawText, fileUrl, apiKey } = body
+    let fetchedFileName: string | undefined
+    let fetchedFileSize: number | undefined
+    let directDownloadUrl: string | undefined
 
     const activeApiKey = apiKey?.trim() || process.env.GEMINI_API_KEY?.trim()
 
@@ -80,11 +84,72 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Google Drive / Harici URL'den CV dosyasını otomatik çek ve indir
+    if (fileUrl && fileUrl.trim() && !fileBase64) {
+      let targetFetchUrl = fileUrl.trim()
+      const driveMatch = targetFetchUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+      const idParamMatch = targetFetchUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/)
+      const docsMatch = targetFetchUrl.match(/\/document\/d\/([a-zA-Z0-9_-]+)/)
+
+      const fileId = driveMatch?.[1] || idParamMatch?.[1] || docsMatch?.[1]
+      if (fileId) {
+        if (docsMatch) {
+          targetFetchUrl = `https://docs.google.com/document/d/${fileId}/export?format=pdf`
+        } else {
+          targetFetchUrl = `https://drive.google.com/uc?export=download&id=${fileId}`
+        }
+      }
+      directDownloadUrl = targetFetchUrl
+
+      try {
+        const fileRes = await fetch(targetFetchUrl, {
+          headers: {
+            'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          },
+          redirect: 'follow',
+        })
+
+        if (!fileRes.ok) {
+          return NextResponse.json(
+            {
+              error: 'FETCH_FAILED',
+              message:
+                'Bağlantıdaki CV dosyası indirilemedi. Lütfen Google Drive bağlantınızın "Bağlantıya sahip olan herkes görebilir" olarak paylaşıldığından emin olun.',
+            },
+            { status: 400 }
+          )
+        }
+
+        const arrayBuf = await fileRes.arrayBuffer()
+        fileBase64 = Buffer.from(arrayBuf).toString('base64')
+        fetchedFileSize = arrayBuf.byteLength
+        mimeType = fileRes.headers.get('content-type') || 'application/pdf'
+        if (!mimeType.includes('pdf') && !mimeType.includes('image')) {
+          mimeType = 'application/pdf'
+        }
+
+        const disposition = fileRes.headers.get('content-disposition') || ''
+        const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)["']?/i)
+        fetchedFileName = filenameMatch ? decodeURIComponent(filenameMatch[1]) : 'Google_Drive_CV.pdf'
+      } catch (fetchErr) {
+        console.error('[Parse-CV] URL fetch error:', fetchErr)
+        return NextResponse.json(
+          {
+            error: 'FETCH_FAILED',
+            message:
+              'Bağlantıya ulaşılamadı. Lütfen geçerli ve herkese açık bir Google Drive veya PDF linki girdiğinizden emin olun.',
+          },
+          { status: 400 }
+        )
+      }
+    }
+
     if (!fileBase64 && (!rawText || !rawText.trim())) {
       return NextResponse.json(
         {
           error: 'EMPTY_CONTENT',
-          message: 'Lütfen bir CV dosyası seçin veya CV metnini yapıştırın.',
+          message: 'Lütfen bir CV dosyası seçin, Drive linki girin veya CV metnini yapıştırın.',
         },
         { status: 400 }
       )
@@ -258,7 +323,19 @@ DÖNÜŞ FORMATI: Yalnızca geçerli JSON formatında yanıt ver.`
     }
 
     const parsedJson = extractJsonFromResponse(rawResponseText)
-    return NextResponse.json({ success: true, data: parsedJson })
+    return NextResponse.json({
+      success: true,
+      data: parsedJson,
+      fileData: fileBase64
+        ? {
+            base64: fileBase64,
+            mimeType: normalizeMimeType(mimeType),
+            name: fetchedFileName || 'CV_Dosyasi.pdf',
+            size: fetchedFileSize || 0,
+            directDownloadUrl,
+          }
+        : undefined,
+    })
   } catch (error) {
     console.error('Parse CV error:', error)
     return NextResponse.json(
