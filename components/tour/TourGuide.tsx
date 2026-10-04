@@ -67,14 +67,11 @@ export function TourGuide() {
       if (rect.width > 0 && rect.height > 0) {
         const isInsideHeader = Boolean(element.closest('header'))
 
-        // Smoothly scroll into view with top clearance so target never sits behind the navbar
+        // Smoothly scroll into view with top clearance so target always sits cleanly below the navbar
         if (shouldScroll && !isInsideHeader) {
           const elementDocTop = window.scrollY + rect.top
           const targetScrollY = Math.max(0, elementDocTop - NAVBAR_CLEARANCE - 16)
-          const isTopComfortablyVisible =
-            rect.top >= NAVBAR_CLEARANCE + 12 && rect.top <= window.innerHeight - 100
-
-          if (!isTopComfortablyVisible) {
+          if (Math.abs(rect.top - (NAVBAR_CLEARANCE + 16)) > 20) {
             window.scrollTo({
               top: targetScrollY,
               behavior: 'smooth',

@@ -492,6 +492,9 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                     Kaydet
                   </Button>
                 </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Google Gemini API, kişisel limitlerinizde tamamen <strong className="text-foreground font-semibold">ücretsizdir</strong> ve CV ayrıştırmada kesintisiz yüksek hız sağlar.
+                </p>
               </div>
             )}
 
