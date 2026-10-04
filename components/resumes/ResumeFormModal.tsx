@@ -88,7 +88,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false)
-  const [coverLetterLang, setCoverLetterLang] = useState<'tr' | 'en'>('tr')
+  const [coverLetterLang, setCoverLetterLang] = useState<'tr' | 'en'>('en')
   const [apiKey, setApiKey] = useState('')
   const [tempApiKey, setTempApiKey] = useState('')
   const [showKeyInput, setShowKeyInput] = useState(false)
@@ -158,7 +158,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     if (!rawTextValue && !selectedFilePreview?.base64) {
       toast({
         title: 'CV Bilgisi Gerekli',
-        description: 'Ön yazı oluşturmak için lütfen bir CV dosyası seçin veya CV metnini girin.',
+        description: 'Cover Letter oluşturmak için lütfen bir CV dosyası seçin veya CV metnini girin.',
         variant: 'destructive',
       })
       return
@@ -181,15 +181,15 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       if (res.ok && json.coverLetter) {
         if (targetLang === 'en') {
           setValue('coverLetterEn', json.coverLetter, { shouldValidate: true, shouldDirty: true })
-          toast({ title: '✨ İngilizce Cover Letter Oluşturuldu!' })
+          toast({ title: 'İngilizce Cover Letter Oluşturuldu' })
         } else {
           setValue('coverLetter', json.coverLetter, { shouldValidate: true, shouldDirty: true })
-          toast({ title: '✨ Türkçe Cover Letter Oluşturuldu!' })
+          toast({ title: 'Türkçe Cover Letter Oluşturuldu' })
         }
       } else {
         toast({
           title: 'Hata',
-          description: json.message || 'Ön yazı oluşturulamadı.',
+          description: json.message || 'Cover Letter oluşturulamadı.',
           variant: 'destructive',
         })
       }
@@ -205,7 +205,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
     const activeText = coverLetterLang === 'en' ? watch('coverLetterEn') : watch('coverLetter')
     if (activeText) {
       await navigator.clipboard.writeText(activeText)
-      toast({ title: `${coverLetterLang === 'en' ? 'İngilizce' : 'Türkçe'} Cover Letter Panoya Kopyalandı ✓` })
+      toast({ title: `${coverLetterLang === 'en' ? 'İngilizce' : 'Türkçe'} Cover Letter Panoya Kopyalandı` })
     }
   }
 
@@ -313,7 +313,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
       if (data.extractedText) setValue('rawText', data.extractedText, { shouldValidate: true, shouldDirty: true })
 
       toast({
-        title: '✨ CV Başarıyla Analiz Edildi!',
+        title: 'CV Başarıyla Analiz Edildi',
         description: 'Dosya adı, hedef pozisyon ve Cover Letter dolduruldu.',
       })
     } catch (err) {
@@ -745,13 +745,13 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
               )}
             </div>
 
-            {/* Cover Letter (Ön Yazı - Türkçe & İngilizce) */}
+            {/* Cover Letter */}
             <div className="space-y-2.5 bg-muted/20 border border-border/70 rounded-xl p-3.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5 text-primary" />
-                    Ön Yazı (Cover Letter)
+                    Cover Letter
                   </label>
 
                   {/* Language Toggle Pills */}
@@ -767,7 +767,6 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                       )}
                     >
                       <span>TR</span>
-                      {Boolean(watch('coverLetter')) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                     </button>
                     <button
                       type="button"
@@ -780,7 +779,6 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                       )}
                     >
                       <span>EN</span>
-                      {Boolean(watch('coverLetterEn')) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                     </button>
                   </div>
                 </div>
@@ -833,7 +831,7 @@ export function ResumeFormModal({ resumes }: ResumeFormModalProps) {
                   {...register('coverLetter')}
                   rows={5}
                   className="w-full px-3 py-2.5 rounded-lg bg-background border border-border/80 text-xs focus:outline-none focus:ring-1 focus:ring-ring resize-y leading-relaxed text-foreground placeholder:text-muted-foreground/60"
-                  placeholder="Bu alana CV'nize ve hedef pozisyonunuza uygun etkileyici bir Türkçe Cover Letter (Ön Yazı) yazabilir veya 'Türkçe Oluştur' butonuna basarak yapay zekaya ürettirebilirsiniz..."
+                  placeholder="Bu alana CV'nize ve hedef pozisyonunuza uygun etkileyici bir Türkçe Cover Letter yazabilir veya 'Türkçe Oluştur' butonuna basarak yapay zekaya ürettirebilirsiniz..."
                 />
               ) : (
                 <textarea

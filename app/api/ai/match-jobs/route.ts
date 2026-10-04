@@ -104,7 +104,7 @@ ${resumes
     (r, idx) => `
 CV #${idx + 1}: ${r.name} (Kategori: ${r.category}, Hedef Rol: ${r.targetRole || 'Belirtilmemiş'})
 Yetenekler: ${(r.skills || []).join(', ')}
-Ön Yazı: ${r.coverLetter || ''}
+Cover Letter: ${r.coverLetter || ''}
 Özet: ${r.summary || ''}
 Metin: ${r.rawText ? r.rawText.slice(0, 500) : ''}
 `

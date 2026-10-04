@@ -46,13 +46,13 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'resume-pool-page',
     targetSelector: '[data-tour="resume-pool-section"]',
     targetView: 'resumes',
-    title: 'CV Havuzum: Kartlar ve Ön Yazı (Cover Letter)',
+    title: 'CV Havuzum: Kartlar ve Cover Letter',
     badge: 'Sayfa İçi Alan',
     description:
       'Sayfadaki CV kartları üzerinden tüm CV versiyonlarınızı ve performanslarını yönetin.',
     bulletPoints: [
       'PDF yüklediğinizde yapay zekâ teknik yeteneklerinizi ve özetinizi otomatik ayrıştırır.',
-      'Her CV için özel Türkçe ve İngilizce Ön Yazı (Cover Letter) üretilir ve tek tıkla kopyalanır.',
+      'Her CV için özel Türkçe ve İngilizce Cover Letter üretilir ve tek tıkla kopyalanır.',
       'Her versiyonun kaç başvuru aldığını ve başarı oranını (%0-100) kart üzerinden takip edin.',
     ],
     position: 'bottom',

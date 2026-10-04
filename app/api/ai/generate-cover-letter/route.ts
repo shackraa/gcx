@@ -152,7 +152,7 @@ Lütfen bu bilgilere göre en yüksek dönüş sağlayacak profesyonel Ön Yazı
 
     if (!generatedText) {
       return NextResponse.json(
-        { error: 'GEMINI_ERROR', message: `Ön yazı oluşturulamadı: ${lastError}` },
+        { error: 'GEMINI_ERROR', message: `Cover Letter oluşturulamadı: ${lastError}` },
         { status: 500 }
       )
     }
@@ -163,7 +163,7 @@ Lütfen bu bilgilere göre en yüksek dönüş sağlayacak profesyonel Ön Yazı
     return NextResponse.json(
       {
         error: 'SERVER_ERROR',
-        message: error instanceof Error ? error.message : 'Ön yazı oluşturulurken bir hata meydana geldi.',
+        message: error instanceof Error ? error.message : 'Cover Letter oluşturulurken bir hata meydana geldi.',
       },
       { status: 500 }
     )

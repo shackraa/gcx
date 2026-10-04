@@ -110,7 +110,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
           <div className="max-w-md">
             <h3 className="text-sm font-bold text-foreground">Henüz CV Eklenmemiş</h3>
             <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
-              Farklı pozisyonlar için hazırladığın PDF formatındaki CV&apos;lerini buraya yükle. Yapay zekâ yeteneklerini ve ön yazını otomatik oluştursun.
+              Farklı pozisyonlar için hazırladığın PDF formatındaki CV&apos;lerini buraya yükle. Yapay zekâ yeteneklerini ve Cover Letter&apos;ını otomatik oluştursun.
             </p>
           </div>
           <Button onClick={() => openResumeModal()} size="sm" className="gap-1.5 text-xs">
@@ -184,9 +184,9 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                     </button>
                   </div>
 
-                  {/* Cover Letter (Ön Yazı - Türkçe & İngilizce) */}
+                  {/* Cover Letter */}
                   {(() => {
-                    const activeLang = selectedLangMap['demo-resume-1'] || 'tr'
+                    const activeLang = selectedLangMap['demo-resume-1'] || 'en'
                     const currentLetterText = activeLang === 'en' ? DEMO_RESUME.coverLetterEn : DEMO_RESUME.coverLetter
 
                     return (
@@ -195,7 +195,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                           <div className="flex items-center gap-2">
                             <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
                               <Sparkles className="h-3.5 w-3.5 text-primary" />
-                              Ön Yazı (Cover Letter)
+                              Cover Letter
                             </span>
 
                             <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-md border border-border/60">
@@ -203,27 +203,25 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                                 type="button"
                                 onClick={() => setSelectedLangMap((prev) => ({ ...prev, 'demo-resume-1': 'tr' }))}
                                 className={cn(
-                                  'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
+                                  'flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
                                   activeLang === 'tr'
                                     ? 'bg-primary text-primary-foreground shadow-xs'
                                     : 'text-muted-foreground hover:text-foreground'
                                 )}
                               >
                                 <span>TR</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setSelectedLangMap((prev) => ({ ...prev, 'demo-resume-1': 'en' }))}
                                 className={cn(
-                                  'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
+                                  'flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
                                   activeLang === 'en'
                                     ? 'bg-primary text-primary-foreground shadow-xs'
                                     : 'text-muted-foreground hover:text-foreground'
                                 )}
                               >
                                 <span>EN</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />
                               </button>
                             </div>
                           </div>
@@ -421,9 +419,9 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                   </div>
                 )}
 
-                {/* Cover Letter (Ön Yazı - Türkçe & İngilizce) */}
+                {/* Cover Letter */}
                 {(() => {
-                  const activeLang = selectedLangMap[resume._id] || 'tr'
+                  const activeLang = selectedLangMap[resume._id] || 'en'
                   const currentLetterText = activeLang === 'en' ? resume.coverLetterEn : resume.coverLetter
 
                   return (
@@ -432,7 +430,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
                             <Sparkles className="h-3.5 w-3.5 text-primary" />
-                            Ön Yazı
+                            Cover Letter
                           </span>
 
                           {/* Language Switcher Pills */}
@@ -441,27 +439,25 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                               type="button"
                               onClick={() => setSelectedLangMap((prev) => ({ ...prev, [resume._id]: 'tr' }))}
                               className={cn(
-                                'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
+                                'flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
                                 activeLang === 'tr'
                                   ? 'bg-primary text-primary-foreground shadow-xs'
                                   : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
                               )}
                             >
                               <span>TR</span>
-                              {Boolean(resume.coverLetter) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                             </button>
                             <button
                               type="button"
                               onClick={() => setSelectedLangMap((prev) => ({ ...prev, [resume._id]: 'en' }))}
                               className={cn(
-                                'flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
+                                'flex items-center gap-1 px-2.5 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer',
                                 activeLang === 'en'
                                   ? 'bg-primary text-primary-foreground shadow-xs'
                                   : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
                               )}
                             >
                               <span>EN</span>
-                              {Boolean(resume.coverLetterEn) && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-green-400 inline-block" />}
                             </button>
                           </div>
                         </div>
@@ -506,7 +502,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
                       ) : (
                         <div className="flex items-center justify-between p-2 rounded-lg bg-muted/15 border border-dashed border-border/60 text-xs text-muted-foreground">
                           <span className="text-[11px] flex items-center gap-1 italic">
-                            {activeLang === 'tr' ? 'Türkçe ön yazı henüz oluşturulmamış' : 'İngilizce ön yazı henüz oluşturulmamış'}
+                            {activeLang === 'tr' ? 'Türkçe Cover Letter henüz oluşturulmamış' : 'İngilizce Cover Letter henüz oluşturulmamış'}
                           </span>
                           <button
                             type="button"

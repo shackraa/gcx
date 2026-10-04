@@ -152,7 +152,7 @@ export function GuideModal() {
                     </div>
                     <h4 className="text-sm font-bold text-foreground">CV Versiyonlarınızı Ekleyin</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Frontend, Backend veya farklı uzmanlıklarınız için CV&apos;lerinizi yükleyin. Yapay zekâ yeteneklerinizi ve TR/EN ön yazılarınızı otomatik çıkarsın.
+                      Frontend, Backend veya farklı uzmanlıklarınız için CV&apos;lerinizi yükleyin. Yapay zekâ yeteneklerinizi ve TR/EN Cover Letter&apos;larınızı otomatik çıkarsın.
                     </p>
                   </div>
                   <Button
@@ -217,7 +217,7 @@ export function GuideModal() {
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  CV Havuzu & Akıllı Ön Yazı (Cover Letter)
+                  CV Havuzu & Akıllı Cover Letter
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Farklı sektör ve roller için özelleştirilmiş CV versiyonlarınızı yönetin.
@@ -238,10 +238,10 @@ export function GuideModal() {
                 <div className="bg-card border border-border rounded-xl p-4 space-y-2.5">
                   <div className="flex items-center gap-2 text-primary font-semibold text-xs">
                     <Copy className="h-4 w-4" />
-                    <span>Türkçe & İngilizce Ön Yazı (Cover Letter)</span>
+                    <span>Türkçe & İngilizce Cover Letter</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Her CV için profesyonel Türkçe ve İngilizce ön yazılar üretilir. Başvuru yaparken tek tıkla panoya kopyalayabilir veya özelleştirebilirsiniz.
+                    Her CV için profesyonel Türkçe ve İngilizce Cover Letter üretilir. Başvuru yaparken tek tıkla panoya kopyalayabilir veya özelleştirebilirsiniz.
                   </p>
                 </div>
 
