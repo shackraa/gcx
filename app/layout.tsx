@@ -1,15 +1,13 @@
 import type { Metadata } from 'next'
-import { Manrope, Geist } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { cn } from '@/lib/utils'
 import { ConvexAuthNextjsServerProvider } from '@convex-dev/auth/nextjs/server'
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-sans' })
-
-const manrope = Manrope({
-  subsets: ['latin'],
-  variable: '--font-manrope',
+const inter = Inter({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-sans',
   display: 'swap',
 })
 
@@ -31,8 +29,8 @@ export default function RootLayout({
 }) {
   return (
     <ConvexAuthNextjsServerProvider>
-      <html lang="tr" suppressHydrationWarning className={cn('font-sans', geist.variable)}>
-        <body className={`${manrope.variable} font-manrope antialiased`}>
+      <html lang="tr" suppressHydrationWarning className={cn('font-sans', inter.variable)}>
+        <body className="font-sans antialiased bg-background text-foreground selection:bg-primary/20">
           <Providers>{children}</Providers>
         </body>
       </html>

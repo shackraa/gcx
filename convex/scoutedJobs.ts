@@ -175,7 +175,7 @@ export const convertToApplication = mutation({
       cvVersion: job.recommendedResumeName,
       cvLink,
       jobLink: job.url || undefined,
-      note: `Uyumluluk Skoru: %${job.matchScore}.\n${job.reason}`,
+      note: `Uyumluluk: %${job.matchScore}`,
       hrContacted: false,
     })
 

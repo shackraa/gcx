@@ -15,9 +15,20 @@ import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useUIStore } from '@/lib/store/ui'
 import { cn } from '@/lib/utils'
-import { ExternalLink, FileText, Copy, CheckCircle2, Calendar, ChevronDown, ArrowRight } from 'lucide-react'
+import { ExternalLink, FileText, Copy, CheckCircle2, Calendar, ChevronDown, ArrowRight, Sparkles } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import type { Id } from '@/convex/_generated/dataModel'
+
+function humanizeCvName(raw?: string): string {
+  if (!raw) return ''
+  return raw
+    .replace(/\.pdf$/i, '')
+    .replace(/_CV$/i, '')
+    .replace(/_cv$/i, '')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 interface ApplicationCardProps {
   app: Application
@@ -33,6 +44,27 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
   const days = daysSinceApplied(app)
   const cvUrl = safeUrl(app.cvLink)
   const jobUrl = safeUrl(app.jobLink)
+
+  // Relative human time text
+  const daysText = days === 0 ? 'Bugün' : days === 1 ? 'Dün' : `${days}g önce`
+
+  // Extract match score and filter out repetitive boilerplate from note
+  const matchScoreMatch = app.note?.match(/Uyumluluk(?: Skoru)?:\s*%?(\d+)/i)
+  const matchScore = matchScoreMatch ? matchScoreMatch[1] : null
+
+  let cleanNote = app.note || ''
+  if (matchScore) {
+    const lines = cleanNote.split(/[\r\n]+/)
+    const nonBoilerplate = lines.filter(
+      (l) =>
+        !l.toLowerCase().includes('uyumluluk') &&
+        !l.toLowerCase().includes('doğrudan örtüşmektedir') &&
+        !l.toLowerCase().includes('güçlü bir teknik sinerji') &&
+        !l.toLowerCase().includes('kariyer adımıdır') &&
+        !l.toLowerCase().includes('pozisyonu sql, python')
+    )
+    cleanNote = nonBoilerplate.join(' ').trim()
+  }
 
   async function handleStatusChange(newStatus: ApplicationStatus) {
     if (newStatus === app.status) return
@@ -102,7 +134,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
                 overdue ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
               )}
             >
-              {days}g önce
+              {daysText}
             </span>
           )}
           {!app.appliedAt && (
@@ -160,11 +192,22 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           </span>
         )}
 
+        {/* Match score badge (extracted from note if present) */}
+        {matchScore && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-800/60 px-2 py-0.5 rounded-full">
+            <Sparkles className="h-3 w-3 opacity-80" />
+            %{matchScore} Uyum
+          </span>
+        )}
+
         {/* CV version / Resume badge */}
         {app.cvVersion && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50 border border-blue-200 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900/60 px-2 py-0.5 rounded-full font-medium">
-            <FileText className="h-3 w-3" />
-            {app.cvVersion}
+          <span
+            title={app.cvVersion}
+            className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-blue-50/80 border border-blue-200/80 dark:text-blue-400 dark:bg-blue-950/40 dark:border-blue-900/60 px-2 py-0.5 rounded-full font-medium max-w-[200px]"
+          >
+            <FileText className="h-3 w-3 shrink-0 opacity-70" />
+            <span className="truncate">{humanizeCvName(app.cvVersion)}</span>
           </span>
         )}
 
@@ -188,10 +231,10 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
         )}
       </div>
 
-      {/* Note */}
-      {app.note && (
-        <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2">
-          {app.note}
+      {/* Note (only real user note, no repetitive boilerplate) */}
+      {cleanNote && cleanNote.length > 0 && (
+        <p className="text-xs text-muted-foreground mt-2 leading-relaxed line-clamp-2 bg-muted/30 px-2.5 py-1.5 rounded-lg border border-border/40 font-normal">
+          {cleanNote}
         </p>
       )}
 
