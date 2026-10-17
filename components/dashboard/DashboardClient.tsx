@@ -11,6 +11,7 @@ import { ApplicationList } from '@/components/applications/ApplicationList'
 import { KanbanBoard } from '@/components/applications/KanbanBoard'
 import { AnalyticsView } from '@/components/analytics/AnalyticsView'
 import { JobRadarView } from '@/components/jobs/JobRadarView'
+import { CorporateProgramsView } from '@/components/programs/CorporateProgramsView'
 import { CVStudioView } from '@/components/studio/CVStudioView'
 import { ApplicationFormModal } from '@/components/applications/ApplicationFormModal'
 import { ResumeList } from '@/components/resumes/ResumeList'
@@ -113,6 +114,11 @@ export function DashboardClient() {
         {view === 'jobs' && (
           <JobRadarView
             resumes={resumes ?? []}
+            applications={applications}
+          />
+        )}
+        {view === 'programs' && (
+          <CorporateProgramsView
             applications={applications}
           />
         )}

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/lib/store/ui'
 import { useTourStore } from '@/lib/store/tour'
 import { useState, useRef, useEffect } from 'react'
-import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle, FileSpreadsheet, Sheet, Sparkles } from 'lucide-react'
+import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle, FileSpreadsheet, Sheet, Sparkles, GraduationCap } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { exportToStyledExcel, exportToGoogleSheetsCsv, exportBackup } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
@@ -128,7 +128,7 @@ export function AppHeader() {
               onClick={() => setView('list')}
               data-tour="nav-applications"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 isApplicationsView
                   ? 'bg-background text-foreground shadow-sm font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -142,7 +142,7 @@ export function AppHeader() {
               onClick={() => setView('resumes')}
               data-tour="nav-resumes"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'resumes'
                   ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -156,7 +156,7 @@ export function AppHeader() {
               onClick={() => setView('studio')}
               data-tour="nav-studio"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'studio'
                   ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -170,7 +170,7 @@ export function AppHeader() {
               onClick={() => setView('jobs')}
               data-tour="nav-jobs"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'jobs'
                   ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
@@ -181,10 +181,24 @@ export function AppHeader() {
             </button>
 
             <button
+              onClick={() => setView('programs')}
+              data-tour="nav-programs"
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                view === 'programs'
+                  ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <GraduationCap className="h-3.5 w-3.5 text-primary" />
+              Staj & Kurumsal
+            </button>
+
+            <button
               onClick={() => setView('analytics')}
               data-tour="nav-analytics"
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'analytics'
                   ? 'bg-background text-foreground shadow-sm font-semibold'
                   : 'text-muted-foreground hover:text-foreground'

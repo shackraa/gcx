@@ -117,8 +117,26 @@ export type FilterKey =
   | 'offer'
   | 'rejected'
 
-// View mode - list, kanban, resumes, studio (CV Oluşturucu & Hafıza), analytics, jobs (Radar)
-export type ViewMode = 'list' | 'kanban' | 'resumes' | 'studio' | 'analytics' | 'jobs'
+// View mode - list, kanban, resumes, studio (CV Oluşturucu & Hafıza), analytics, jobs (Radar), programs (Staj & Kurumsal İlanlar)
+export type ViewMode = 'list' | 'kanban' | 'resumes' | 'studio' | 'analytics' | 'jobs' | 'programs'
+
+export type ProgramSource = 'youthall' | 'anbean' | 'techcareer' | 'toptalent' | 'university'
+export type ProgramCategory = 'intern' | 'new_grad' | 'talent_program' | 'bootcamp' | 'corporate'
+
+export interface CorporateProgramItem {
+  id: string
+  title: string
+  company: string
+  companyLogo?: string
+  coverImage?: string
+  description: string
+  category: ProgramCategory
+  badgeLabel: string
+  source: ProgramSource
+  location: string
+  deadline?: string
+  url: string
+}
 
 // Career Memory Source Type
 export type CareerSourceType =

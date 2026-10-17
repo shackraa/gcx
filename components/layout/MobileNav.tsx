@@ -1,7 +1,7 @@
 'use client'
 
 import { useUIStore } from '@/lib/store/ui'
-import { LayoutList, FileText, Briefcase, BarChart2, Plus, Sparkles } from 'lucide-react'
+import { LayoutList, FileText, Briefcase, BarChart2, Plus, Sparkles, GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function MobileNav() {
@@ -12,7 +12,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Mobil Navigasyon"
-      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden bg-background/95 backdrop-blur-xl border-t border-border/80 px-1.5 pt-1 pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-lg transition-transform"
+      className="fixed bottom-0 left-0 right-0 z-50 sm:hidden bg-background/95 backdrop-blur-xl border-t border-border/80 px-1 pt-1 pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-lg transition-transform"
     >
       <div className="flex items-center justify-around max-w-md mx-auto relative">
         {/* 1. Başvurularım */}
@@ -21,7 +21,7 @@ export function MobileNav() {
           data-tour="nav-applications"
           onClick={() => setView('list')}
           className={cn(
-            'flex flex-col items-center justify-center py-1 px-1.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
+            'flex flex-col items-center justify-center py-1 px-1 rounded-lg text-[9.5px] font-medium transition-all active:scale-95 cursor-pointer relative',
             isApplicationsView
               ? 'text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
@@ -33,7 +33,7 @@ export function MobileNav() {
               <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
             )}
           </div>
-          <span className="mt-0.5">Başvurular</span>
+          <span className="mt-0.5">Başvuru</span>
         </button>
 
         {/* 2. CV Havuzu */}
@@ -42,7 +42,7 @@ export function MobileNav() {
           data-tour="nav-resumes"
           onClick={() => setView('resumes')}
           className={cn(
-            'flex flex-col items-center justify-center py-1 px-1.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
+            'flex flex-col items-center justify-center py-1 px-1 rounded-lg text-[9.5px] font-medium transition-all active:scale-95 cursor-pointer relative',
             view === 'resumes'
               ? 'text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
@@ -63,7 +63,7 @@ export function MobileNav() {
           data-tour="nav-studio"
           onClick={() => setView('studio')}
           className={cn(
-            'flex flex-col items-center justify-center py-1 px-1.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
+            'flex flex-col items-center justify-center py-1 px-1 rounded-lg text-[9.5px] font-medium transition-all active:scale-95 cursor-pointer relative',
             view === 'studio'
               ? 'text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
@@ -96,7 +96,7 @@ export function MobileNav() {
           data-tour="nav-jobs"
           onClick={() => setView('jobs')}
           className={cn(
-            'flex flex-col items-center justify-center py-1 px-1.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
+            'flex flex-col items-center justify-center py-1 px-1 rounded-lg text-[9.5px] font-medium transition-all active:scale-95 cursor-pointer relative',
             view === 'jobs'
               ? 'text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
@@ -108,16 +108,37 @@ export function MobileNav() {
               <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
             )}
           </div>
-          <span className="mt-0.5">İlan Radarı</span>
+          <span className="mt-0.5">Radar</span>
         </button>
 
-        {/* 6. Analiz */}
+        {/* 6. Staj & Kurumsal */}
+        <button
+          type="button"
+          data-tour="nav-programs"
+          onClick={() => setView('programs')}
+          className={cn(
+            'flex flex-col items-center justify-center py-1 px-1 rounded-lg text-[9.5px] font-medium transition-all active:scale-95 cursor-pointer relative',
+            view === 'programs'
+              ? 'text-primary font-bold'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <div className="relative">
+            <GraduationCap className="h-4 w-4" />
+            {view === 'programs' && (
+              <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary" />
+            )}
+          </div>
+          <span className="mt-0.5">Kurumsal</span>
+        </button>
+
+        {/* 7. Analiz */}
         <button
           type="button"
           data-tour="nav-analytics"
           onClick={() => setView('analytics')}
           className={cn(
-            'flex flex-col items-center justify-center py-1 px-1.5 rounded-lg text-[10px] font-medium transition-all active:scale-95 cursor-pointer relative',
+            'flex flex-col items-center justify-center py-1 px-1 rounded-lg text-[9.5px] font-medium transition-all active:scale-95 cursor-pointer relative',
             view === 'analytics'
               ? 'text-primary font-bold'
               : 'text-muted-foreground hover:text-foreground'
