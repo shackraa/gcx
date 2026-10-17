@@ -9,11 +9,67 @@ const BROWSER_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
 }
 
-function classifyProgramCategory(title: string, badgeOrTag: string, description: string): {
+function slugifyMicrofon(text: string): string {
+  const trMap: Record<string, string> = {
+    ç: 'c',
+    Ç: 'c',
+    ğ: 'g',
+    Ğ: 'g',
+    ı: 'i',
+    İ: 'i',
+    ö: 'o',
+    Ö: 'o',
+    ş: 's',
+    Ş: 's',
+    ü: 'u',
+    Ü: 'u',
+  }
+  return text
+    .split('')
+    .map((ch) => trMap[ch] || ch)
+    .join('')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
+function classifyProgramCategory(
+  title: string,
+  badgeOrTag: string,
+  description: string
+): {
   category: ProgramCategory
   badgeLabel: string
 } {
   const combined = `${title} ${badgeOrTag} ${description}`.toLowerCase()
+
+  if (
+    combined.includes('burs') ||
+    combined.includes('scholarship') ||
+    combined.includes('finansman')
+  ) {
+    return {
+      category: 'scholarship',
+      badgeLabel: badgeOrTag || 'Burs & Destek',
+    }
+  }
+
+  if (
+    combined.includes('fellowship') ||
+    combined.includes('fellow') ||
+    combined.includes('liderlik') ||
+    combined.includes('geleceğin kadın liderleri') ||
+    combined.includes('kıvılcımlar') ||
+    combined.includes('lead21') ||
+    combined.includes('yenibirlider')
+  ) {
+    return {
+      category: 'fellowship',
+      badgeLabel: badgeOrTag || 'Fellowship & Liderlik',
+    }
+  }
 
   if (
     combined.includes('bootcamp') ||
@@ -24,11 +80,17 @@ function classifyProgramCategory(title: string, badgeOrTag: string, description:
     combined.includes('yarışma') ||
     combined.includes('summit') ||
     combined.includes('zirve') ||
-    combined.includes('workshop')
+    combined.includes('workshop') ||
+    combined.includes('akademi') ||
+    combined.includes('academy') ||
+    combined.includes('eğitim') ||
+    combined.includes('webinar') ||
+    combined.includes('pusulası') ||
+    combined.includes('101')
   ) {
     return {
       category: 'bootcamp',
-      badgeLabel: badgeOrTag || 'Bootcamp & Etkinlik',
+      badgeLabel: badgeOrTag || 'Eğitim, Akademi & Bootcamp',
     }
   }
 
@@ -44,6 +106,7 @@ function classifyProgramCategory(title: string, badgeOrTag: string, description:
     combined.includes('student') ||
     combined.includes('working student') ||
     combined.includes('project intern') ||
+    combined.includes('aday mühendis') ||
     combined.includes('summer')
   ) {
     return {
@@ -60,7 +123,6 @@ function classifyProgramCategory(title: string, badgeOrTag: string, description:
     combined.includes('genç yetenek') ||
     combined.includes('young talent') ||
     combined.includes('graduate program') ||
-    combined.includes('fellowship') ||
     combined.includes('future') ||
     combined.includes('next gen') ||
     combined.includes('discover') ||
@@ -90,6 +152,17 @@ function classifyProgramCategory(title: string, badgeOrTag: string, description:
     }
   }
 
+  if (
+    combined.includes('indirim') ||
+    combined.includes('fırsat') ||
+    combined.includes('ayrıcalık')
+  ) {
+    return {
+      category: 'opportunity',
+      badgeLabel: badgeOrTag || 'Öğrenci Fırsatı',
+    }
+  }
+
   return {
     category: 'corporate',
     badgeLabel: badgeOrTag || 'Kurumsal İlan',
@@ -115,7 +188,302 @@ async function fetchHtmlWithTimeout(url: string, timeoutMs = 4500): Promise<stri
 }
 
 /**
- * 1. Youthall Scraper (Jobs + Talent Programs)
+ * 1. Microfon.co Scraper (Programlar & Fellowship, Burslar, Fırsatlar)
+ * Extracts SSR JSON (`ssrHihglights` + `ssrAds`) from:
+ * - https://microfon.co/program
+ * - https://microfon.co/scholarship
+ * - https://microfon.co/opportunity
+ */
+async function scrapeMicrofon(): Promise<CorporateProgramItem[]> {
+  const [programHtml, scholarshipHtml, opportunityHtml] = await Promise.all([
+    fetchHtmlWithTimeout('https://microfon.co/program', 4800),
+    fetchHtmlWithTimeout('https://microfon.co/scholarship', 4800),
+    fetchHtmlWithTimeout('https://microfon.co/opportunity', 4800),
+  ])
+
+  const items: CorporateProgramItem[] = []
+  const seenIds = new Set<string>()
+
+  // Helper to collect exact DOM href map keyed by formIdentityNumber
+  const extractHrefMap = ($: cheerio.CheerioAPI, prefix: string): Record<string, string> => {
+    const map: Record<string, string> = {}
+    $(`a[href^="/${prefix}/"]`).each((_, aEl) => {
+      const href = $(aEl).attr('href') || ''
+      const match = href.match(/-(\d+)$/)
+      if (match) {
+        map[match[1]] = `https://microfon.co${href}`
+      }
+    })
+    return map
+  }
+
+  // A. Parse /program (Fellowship, Akademi, Eğitim, Yarışma, Kariyer Programları)
+  if (programHtml) {
+    try {
+      const $ = cheerio.load(programHtml)
+      const hrefMap = extractHrefMap($, 'program')
+      const nextDataRaw = $('#__NEXT_DATA__').html()
+      if (nextDataRaw) {
+        const pageProps = JSON.parse(nextDataRaw)?.props?.pageProps || {}
+        const allPrograms = [
+          ...(Array.isArray(pageProps.ssrHihglights) ? pageProps.ssrHihglights : []),
+          ...(Array.isArray(pageProps.ssrAds) ? pageProps.ssrAds : []),
+        ]
+
+        for (const p of allPrograms) {
+          const idKey = p?.formIdentityNumber || p?.formId || p?.title
+          if (!idKey || !p?.title || seenIds.has(`prog-${idKey}`)) continue
+          seenIds.add(`prog-${idKey}`)
+
+          const title = String(p.title).trim()
+          const company = String(p.company || 'Microfon Topluluğu').trim()
+          const explanation = String(
+            p.explanation ||
+              `${company} tarafından Microfon üzerinden sunulan ${title} programı.`
+          ).trim()
+
+          const formNum = String(p.formIdentityNumber || '')
+          const url =
+            (formNum && hrefMap[formNum]) ||
+            (formNum
+              ? `https://microfon.co/program/${slugifyMicrofon(title)}-${formNum}`
+              : 'https://microfon.co/program')
+
+          const dueDateStr = p.dueDate
+            ? new Date(p.dueDate).toLocaleDateString('tr-TR')
+            : undefined
+          const isOpen = p.isOpen !== false
+          const tags: string[] = Array.isArray(p.tags) ? p.tags : []
+          const locationTag = tags.includes('Online')
+            ? 'Online / Türkiye Geneli'
+            : tags.join(' • ') || 'Türkiye Geneli'
+
+          // Classify whether it's a Fellowship, Internship/New-grad, or Education/Bootcamp
+          const lowerTitle = `${title} ${explanation}`.toLowerCase()
+          let category: ProgramCategory = 'bootcamp'
+          let badgeLabel = p.isFree ? 'Ücretsiz Eğitim & Akademi' : 'Eğitim & Program'
+
+          if (
+            lowerTitle.includes('fellowship') ||
+            lowerTitle.includes('fellow') ||
+            lowerTitle.includes('lider') ||
+            lowerTitle.includes('kıvılcımlar') ||
+            lowerTitle.includes('lead21')
+          ) {
+            category = 'fellowship'
+            badgeLabel = 'Fellowship & Liderlik'
+          } else if (
+            lowerTitle.includes('staj') ||
+            lowerTitle.includes('aday')
+          ) {
+            category = 'intern'
+            badgeLabel = 'Staj & Kariyer Programı'
+          } else if (
+            lowerTitle.includes('uzman yardımcısı') ||
+            lowerTitle.includes('yeni mezun')
+          ) {
+            category = 'new_grad'
+            badgeLabel = 'Yeni Mezun Programı'
+          } else if (
+            lowerTitle.includes('ödül') ||
+            lowerTitle.includes('yarışma') ||
+            lowerTitle.includes('award')
+          ) {
+            category = 'bootcamp'
+            badgeLabel = 'Ödül & Yarışma'
+          }
+
+          items.push({
+            id: `microfon-prog-${idKey}`,
+            title,
+            company,
+            companyLogo: p.photo || undefined,
+            coverImage: p.banner || p.photo || undefined,
+            description: explanation,
+            category,
+            badgeLabel,
+            source: 'microfon',
+            location: locationTag,
+            deadline: isOpen
+              ? dueDateStr
+                ? `Son: ${dueDateStr}`
+                : 'Başvuruya Açık'
+              : dueDateStr
+                ? `Kapandı (${dueDateStr})`
+                : 'Başvurular Tamamlandı',
+            isOpen,
+            url,
+          })
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }
+
+  // B. Parse /scholarship (Eğitim Bursları, Başarı & Staj Bursları, Vakıf Bursları)
+  if (scholarshipHtml) {
+    try {
+      const $ = cheerio.load(scholarshipHtml)
+      const hrefMap = extractHrefMap($, 'scholarship')
+      const nextDataRaw = $('#__NEXT_DATA__').html()
+      if (nextDataRaw) {
+        const pageProps = JSON.parse(nextDataRaw)?.props?.pageProps || {}
+        const allScholarships = [
+          ...(Array.isArray(pageProps.ssrHihglights) ? pageProps.ssrHihglights : []),
+          ...(Array.isArray(pageProps.ssrAds) ? pageProps.ssrAds : []),
+        ]
+
+        for (const s of allScholarships) {
+          const idKey = s?.formIdentityNumber || s?.formId || s?.title
+          if (!idKey || !s?.title || seenIds.has(`sch-${idKey}`)) continue
+          seenIds.add(`sch-${idKey}`)
+
+          const title = String(s.title).trim()
+          const company = String(s.company || 'Microfon Burs Programı').trim()
+          const explanation = String(
+            s.explanation ||
+              `${company} tarafından sağlanan ${title} burs ve eğitim desteği programı.`
+          ).trim()
+
+          const formNum = String(s.formIdentityNumber || '')
+          const url =
+            (formNum && hrefMap[formNum]) ||
+            (formNum
+              ? `https://microfon.co/scholarship/${slugifyMicrofon(title)}-${formNum}`
+              : 'https://microfon.co/scholarship')
+
+          const dueDateStr = s.dueDate
+            ? new Date(s.dueDate).toLocaleDateString('tr-TR')
+            : undefined
+          const isOpen = s.isOpen !== false
+          const tags: string[] = Array.isArray(s.tags) ? s.tags : []
+          const locationTag = tags.length > 0 ? tags.join(' • ') : 'Türkiye / Üniversite'
+
+          // Format scholarship amount if available
+          let amountFormatted: string | undefined
+          if (s.amount && String(s.amount).trim() !== '0,00') {
+            const rawNum = parseFloat(String(s.amount).replace(',', '.'))
+            const curr = s.currency?.name || 'TL'
+            if (!isNaN(rawNum) && rawNum > 0) {
+              amountFormatted = `${rawNum.toLocaleString('tr-TR')} ${curr === 'TRY' ? 'TL' : curr}`
+            }
+          }
+
+          const hasStaj = title.toLowerCase().includes('staj')
+
+          items.push({
+            id: `microfon-sch-${idKey}`,
+            title,
+            company,
+            companyLogo: s.photo || undefined,
+            coverImage: s.banner || s.photo || undefined,
+            description: s.applyMounts
+              ? `${explanation} (${String(s.applyMounts).trim()})`
+              : explanation,
+            category: 'scholarship',
+            badgeLabel: amountFormatted
+              ? `Burs • ${amountFormatted}`
+              : hasStaj
+                ? 'Başarı Bursu & Staj'
+                : 'Eğitim & Başarı Bursu',
+            source: 'microfon',
+            location: locationTag,
+            deadline: isOpen
+              ? dueDateStr
+                ? `Son: ${dueDateStr}`
+                : 'Başvuruya Açık'
+              : 'Başvurular Tamamlandı',
+            amount: amountFormatted,
+            isOpen,
+            url,
+          })
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }
+
+  // C. Parse /opportunity (Öğrenci Fırsatları, Yurt Dışı Staj & Dil Eğitimi Destekleri)
+  if (opportunityHtml) {
+    try {
+      const $ = cheerio.load(opportunityHtml)
+      const nextDataRaw = $('#__NEXT_DATA__').html()
+      if (nextDataRaw) {
+        const pageProps = JSON.parse(nextDataRaw)?.props?.pageProps || {}
+        const allOpps = [
+          ...(Array.isArray(pageProps.ssrHihglights) ? pageProps.ssrHihglights : []),
+          ...(Array.isArray(pageProps.ssrAds) ? pageProps.ssrAds : []),
+        ]
+
+        for (const opp of allOpps) {
+          const idKey = opp?.id || opp?.slug || opp?.name
+          if (!idKey || !opp?.name || seenIds.has(`opp-${idKey}`)) continue
+          seenIds.add(`opp-${idKey}`)
+
+          const title = String(opp.name).trim()
+          const catName = opp?.category?.name || 'Öğrenci Fırsatı'
+          const description = String(
+            opp.description ||
+              `Microfon öğrencilerine ve genç yeteneklere özel ${title} fırsatı.`
+          ).trim()
+
+          const slug = opp.slug ? String(opp.slug) : ''
+          const url = slug
+            ? `https://microfon.co/opportunity/${slug}`
+            : 'https://microfon.co/opportunity'
+
+          const isOpen = !opp.isExpired
+          const dueDateStr = opp.dueDate
+            ? new Date(opp.dueDate).toLocaleDateString('tr-TR')
+            : undefined
+
+          // Prioritize education, language, and internship opportunities first
+          const isEduOrIntern =
+            title.toLowerCase().includes('staj') ||
+            title.toLowerCase().includes('eğitim') ||
+            title.toLowerCase().includes('ingilizce') ||
+            title.toLowerCase().includes('almanca') ||
+            title.toLowerCase().includes('ielts')
+
+          items.push({
+            id: `microfon-opp-${idKey}`,
+            title,
+            company: `Microfon • ${catName}`,
+            companyLogo: opp.photo || undefined,
+            coverImage: opp.photo || undefined,
+            description,
+            category: 'opportunity',
+            badgeLabel: isEduOrIntern ? `Eğitim & Staj Fırsatı` : `Fırsat • ${catName}`,
+            source: 'microfon',
+            location: 'Türkiye Geneli / Online',
+            deadline: isOpen
+              ? dueDateStr
+                ? `Son: ${dueDateStr}`
+                : 'Aktif Fırsat'
+              : 'Süresi Doldu',
+            isOpen,
+            url,
+          })
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }
+
+  // Sort Microfon items so active/open fellowships, scholarships, and education programs appear first
+  return items.sort((a, b) => {
+    const aOpen = a.isOpen !== false ? 1 : 0
+    const bOpen = b.isOpen !== false ? 1 : 0
+    if (aOpen !== bOpen) return bOpen - aOpen
+    return 0
+  })
+}
+
+/**
+ * 2. Youthall Scraper (Jobs + Talent Programs)
  * Extracts full 16:9 cover images (`cdn.youthall.com/media/images/...`), company logos, tags, deadlines, and descriptions.
  */
 async function scrapeYouthallPage(
@@ -189,6 +557,7 @@ async function scrapeYouthallPage(
       source: 'youthall',
       location: locationTag,
       deadline: deadlineTag,
+      isOpen: true,
       url,
     })
   })
@@ -245,6 +614,7 @@ async function scrapeYouthallPage(
       source: 'youthall',
       location: locationTag,
       deadline: deadlineTag,
+      isOpen: true,
       url,
     })
   })
@@ -253,7 +623,7 @@ async function scrapeYouthallPage(
 }
 
 /**
- * 2. Anbean Kampüs Scraper (İlanlar & Etkinlikler)
+ * 3. Anbean Kampüs Scraper (İlanlar & Etkinlikler)
  */
 async function scrapeAnbean(): Promise<CorporateProgramItem[]> {
   const [ilanlarHtml, etkinliklerHtml] = await Promise.all([
@@ -270,7 +640,6 @@ async function scrapeAnbean(): Promise<CorporateProgramItem[]> {
     $('h6').each((idx, h6El) => {
       const title = $(h6El).text().replace(/\s+/g, ' ').trim()
       if (!title || title.length < 4) return
-      // Skip generic footer/modal titles
       if (
         title.toLowerCase().includes('bülten') ||
         title.toLowerCase().includes('iletişim') ||
@@ -298,7 +667,6 @@ async function scrapeAnbean(): Promise<CorporateProgramItem[]> {
         href = `https://anbeankampus.co${href.startsWith('/') ? '' : '/'}${href}`
       }
 
-      // Look for cover image in the card container
       let coverImage: string | undefined
       parentBox.find('img').each((_, imgEl) => {
         const src =
@@ -327,7 +695,6 @@ async function scrapeAnbean(): Promise<CorporateProgramItem[]> {
           .trim() ||
         `${title} — Anbean Kampüs üzerinden yayınlanan genç yetenek, staj ve kariyer fırsatı.`
 
-      // Extract company name from title if separated by dash or colon, or first brand word
       let company = 'Anbean Kampüs Partneri'
       if (title.includes(' - ')) {
         company = title.split(' - ')[0].trim()
@@ -352,6 +719,7 @@ async function scrapeAnbean(): Promise<CorporateProgramItem[]> {
         badgeLabel,
         source: 'anbean',
         location: 'Türkiye Geneli / Hibrit',
+        isOpen: true,
         url: href,
       })
     })
@@ -364,7 +732,7 @@ async function scrapeAnbean(): Promise<CorporateProgramItem[]> {
 }
 
 /**
- * 3. Techcareer.net Scraper (Jobs + Bootcamps via __NEXT_DATA__)
+ * 4. Techcareer.net Scraper (Jobs + Bootcamps via __NEXT_DATA__)
  */
 async function scrapeTechcareer(): Promise<CorporateProgramItem[]> {
   const [jobsHtml, bootcampHtml] = await Promise.all([
@@ -429,6 +797,7 @@ async function scrapeTechcareer(): Promise<CorporateProgramItem[]> {
             source: 'techcareer',
             location: `${cityTitle} (${wpType})`,
             deadline: endDateRaw ? `Son: ${endDateRaw}` : undefined,
+            isOpen: true,
             url,
           })
         }
@@ -484,6 +853,7 @@ async function scrapeTechcareer(): Promise<CorporateProgramItem[]> {
               deadline: ev?.lastApplyDate
                 ? new Date(ev.lastApplyDate).toLocaleDateString('tr-TR')
                 : undefined,
+              isOpen: true,
               url,
             })
           }
@@ -498,7 +868,7 @@ async function scrapeTechcareer(): Promise<CorporateProgramItem[]> {
 }
 
 /**
- * 4. Toptalent.co Scraper (İş İlanları & Yetenek Programları)
+ * 5. Toptalent.co Scraper (İş İlanları & Yetenek Programları)
  */
 async function scrapeToptalent(): Promise<CorporateProgramItem[]> {
   const html = await fetchHtmlWithTimeout('https://toptalent.co/is-ilanlari', 4500)
@@ -547,6 +917,7 @@ async function scrapeToptalent(): Promise<CorporateProgramItem[]> {
       source: 'toptalent',
       location,
       deadline: deadline || undefined,
+      isOpen: true,
       url,
     })
   })
@@ -555,9 +926,7 @@ async function scrapeToptalent(): Promise<CorporateProgramItem[]> {
 }
 
 /**
- * 5. Curated Flagship Corporate, Internship & University Career Programs
- * Provides reliable, official corporate talent & university career portal programs with rich visual covers
- * so every platform & category tab always has high-impact cards even if a third-party site rate-limits.
+ * 6. Curated Flagship Corporate, Internship & University Career Programs
  */
 const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
   {
@@ -574,6 +943,7 @@ const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
     source: 'university',
     location: 'Türkiye Geneli (81 İl)',
     deadline: 'Sürekli Açık',
+    isOpen: true,
     url: 'https://www.yetenekkapisi.org/',
   },
   {
@@ -584,11 +954,12 @@ const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
       'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=900&q=80',
     description:
       'Lisans öğrencilerinin TÜBİTAK merkez ve enstitülerinde veya desteklenen Ar-Ge projelerinde burslu stajyer araştırmacı olarak görev almasını sağlayan prestijli program.',
-    category: 'intern',
+    category: 'scholarship',
     badgeLabel: 'Ar-Ge Burslu Staj',
     source: 'university',
     location: 'Ankara / Kocaeli / Türkiye',
     deadline: 'Dönemsel Çağrı',
+    isOpen: true,
     url: 'https://star.tubitak.gov.tr/',
   },
   {
@@ -604,6 +975,7 @@ const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
     source: 'university',
     location: 'Ankara / İstanbul',
     deadline: 'Aktif Başvuru',
+    isOpen: true,
     url: 'https://www.aselsan.com/tr/kariyer/aday-muhendislik',
   },
   {
@@ -619,6 +991,7 @@ const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
     source: 'university',
     location: 'Ankara / İstanbul / Teknoparklar',
     deadline: 'Aktif Program',
+    isOpen: true,
     url: 'https://kariyer.tusas.com/',
   },
   {
@@ -634,6 +1007,7 @@ const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
     source: 'university',
     location: 'İstanbul',
     deadline: 'Başvuruya Açık',
+    isOpen: true,
     url: 'https://careers.turkishairlines.com/',
   },
   {
@@ -649,58 +1023,37 @@ const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
     source: 'university',
     location: 'İstanbul / Ankara / İzmir / Kocaeli',
     deadline: 'Sürekli Güncel',
+    isOpen: true,
     url: 'https://www.kockariyerim.com/',
-  },
-  {
-    id: 'anbean-curated-1',
-    title: 'Anbean Kampüs — Güncel Şirket Stajları, MT İlanları ve Vaka Yarışmaları',
-    company: 'Anbean Kampüs',
-    coverImage:
-      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=900&q=80',
-    description:
-      'FMCG, Bankacılık, Teknoloji ve Danışmanlık firmalarının üniversite öğrencileri ve yeni mezunlar için açtığı en güncel staj, ideathon ve MT başvuruları.',
-    category: 'talent_program',
-    badgeLabel: 'Kampüs & MT İlanları',
-    source: 'anbean',
-    location: 'Türkiye Geneli',
-    deadline: 'Güncel İlanlar',
-    url: 'https://anbeankampus.co/ilanlar/',
-  },
-  {
-    id: 'techcareer-curated-bootcamp',
-    title: 'Techcareer.net — Ücretsiz Yazılım, Veri Bilimi & AI Bootcamp Programları',
-    company: 'Techcareer.net',
-    coverImage:
-      'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=900&q=80',
-    description:
-      'Yeni mezunlar ve son sınıf öğrencileri için düzenlenen, sonunda sertifika ve anlaşmalı teknoloji şirketlerinde doğrudan mülakat/işe alım fırsatı sunan Bootcamp ve Hackathonlar.',
-    category: 'bootcamp',
-    badgeLabel: 'Ücretsiz Bootcamp',
-    source: 'techcareer',
-    location: 'Online & Hibrit',
-    deadline: 'Kayıtlar Açık',
-    url: 'https://www.techcareer.net/bootcamp',
   },
 ]
 
 export async function GET() {
   try {
-    const [youthallJobs, youthallTalent, anbeanItems, techcareerItems, toptalentItems] =
-      await Promise.all([
-        scrapeYouthallPage('https://www.youthall.com/tr/jobs/', 'Staj & Yeni Mezun', 'jobs'),
-        scrapeYouthallPage(
-          'https://www.youthall.com/tr/talent-programs/?order=6',
-          'Yetenek Programı',
-          'talent'
-        ),
-        scrapeAnbean(),
-        scrapeTechcareer(),
-        scrapeToptalent(),
-      ])
+    const [
+      microfonItems,
+      youthallJobs,
+      youthallTalent,
+      anbeanItems,
+      techcareerItems,
+      toptalentItems,
+    ] = await Promise.all([
+      scrapeMicrofon(),
+      scrapeYouthallPage('https://www.youthall.com/tr/jobs/', 'Staj & Yeni Mezun', 'jobs'),
+      scrapeYouthallPage(
+        'https://www.youthall.com/tr/talent-programs/?order=6',
+        'Yetenek Programı',
+        'talent'
+      ),
+      scrapeAnbean(),
+      scrapeTechcareer(),
+      scrapeToptalent(),
+    ])
 
-    // Combine and deduplicate by URL or Title+Company
+    // Combine and deduplicate by Title+Company
     const combined: CorporateProgramItem[] = [
       ...youthallTalent,
+      ...microfonItems,
       ...youthallJobs,
       ...anbeanItems,
       ...techcareerItems,
@@ -723,6 +1076,7 @@ export async function GET() {
       counts: {
         total: deduplicated.length,
         youthall: deduplicated.filter((p) => p.source === 'youthall').length,
+        microfon: deduplicated.filter((p) => p.source === 'microfon').length,
         anbean: deduplicated.filter((p) => p.source === 'anbean').length,
         techcareer: deduplicated.filter((p) => p.source === 'techcareer').length,
         toptalent: deduplicated.filter((p) => p.source === 'toptalent').length,
@@ -737,10 +1091,11 @@ export async function GET() {
       counts: {
         total: FLAGSHIP_CORPORATE_PROGRAMS.length,
         youthall: 0,
-        anbean: 1,
-        techcareer: 1,
+        microfon: 0,
+        anbean: 0,
+        techcareer: 0,
         toptalent: 0,
-        university: 6,
+        university: FLAGSHIP_CORPORATE_PROGRAMS.length,
       },
       fetchedAt: new Date().toISOString(),
     })

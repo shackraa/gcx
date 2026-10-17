@@ -120,8 +120,16 @@ export type FilterKey =
 // View mode - list, kanban, resumes, studio (CV Oluşturucu & Hafıza), analytics, jobs (Radar), programs (Staj & Kurumsal İlanlar)
 export type ViewMode = 'list' | 'kanban' | 'resumes' | 'studio' | 'analytics' | 'jobs' | 'programs'
 
-export type ProgramSource = 'youthall' | 'anbean' | 'techcareer' | 'toptalent' | 'university'
-export type ProgramCategory = 'intern' | 'new_grad' | 'talent_program' | 'bootcamp' | 'corporate'
+export type ProgramSource = 'youthall' | 'microfon' | 'anbean' | 'techcareer' | 'toptalent' | 'university'
+export type ProgramCategory =
+  | 'intern'
+  | 'fellowship'
+  | 'scholarship'
+  | 'talent_program'
+  | 'bootcamp'
+  | 'new_grad'
+  | 'opportunity'
+  | 'corporate'
 
 export interface CorporateProgramItem {
   id: string
@@ -135,6 +143,8 @@ export interface CorporateProgramItem {
   source: ProgramSource
   location: string
   deadline?: string
+  amount?: string
+  isOpen?: boolean
   url: string
 }
 

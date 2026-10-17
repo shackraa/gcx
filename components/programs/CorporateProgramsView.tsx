@@ -14,7 +14,6 @@ import type {
   ProgramSource,
 } from '@/types'
 import {
-  Building2,
   Calendar,
   CheckCircle2,
   ExternalLink,
@@ -29,6 +28,9 @@ import {
   Rocket,
   Compass,
   Briefcase,
+  Coins,
+  Gift,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -54,6 +56,15 @@ const SOURCE_META: Record<
     bannerGradient:
       'from-indigo-600 via-violet-600 to-purple-700',
     portalUrl: 'https://www.youthall.com/tr/jobs/',
+  },
+  microfon: {
+    label: 'Microfon.co',
+    shortLabel: 'Microfon',
+    badgeClass:
+      'bg-fuchsia-600/95 text-white border-fuchsia-400/30 shadow-xs',
+    bannerGradient:
+      'from-fuchsia-600 via-purple-600 to-indigo-700',
+    portalUrl: 'https://microfon.co/program',
   },
   anbean: {
     label: 'anbean Kampüs',
@@ -101,7 +112,7 @@ const CATEGORY_META: Record<
   }
 > = {
   all: {
-    label: 'Tüm Programlar',
+    label: 'Tüm İlanlar',
     pillClass: 'bg-muted text-foreground',
   },
   intern: {
@@ -109,20 +120,35 @@ const CATEGORY_META: Record<
     pillClass:
       'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
   },
+  fellowship: {
+    label: 'Fellowship & Liderlik',
+    pillClass:
+      'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300 border-fuchsia-500/30',
+  },
+  scholarship: {
+    label: 'Burs & Eğitim Desteği',
+    pillClass:
+      'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30',
+  },
   talent_program: {
     label: 'Genç Yetenek & MT',
     pillClass:
       'bg-violet-500/15 text-violet-700 dark:text-violet-300 border-violet-500/30',
+  },
+  bootcamp: {
+    label: 'Eğitim, Akademi & Bootcamp',
+    pillClass:
+      'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
   },
   new_grad: {
     label: 'Yeni Mezun & Junior',
     pillClass:
       'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30',
   },
-  bootcamp: {
-    label: 'Bootcamp & Yarışma',
+  opportunity: {
+    label: 'Öğrenci Fırsatları',
     pillClass:
-      'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+      'bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-500/30',
   },
   corporate: {
     label: 'Kurumsal İlanlar',
@@ -136,6 +162,11 @@ const UNIVERSITY_CAREER_CENTERS = [
     name: 'Yetenek Kapısı (Ulusal Staj)',
     tag: 'Cumhurbaşkanlığı & Tüm Üni.',
     url: 'https://www.yetenekkapisi.org/',
+  },
+  {
+    name: 'Microfon Burs & Fellowship',
+    tag: 'Microfon.co',
+    url: 'https://microfon.co/scholarship',
   },
   {
     name: 'İTÜ Kariyer ve Staj Merkezi',
@@ -167,11 +198,6 @@ const UNIVERSITY_CAREER_CENTERS = [
     tag: 'Bilkent KM',
     url: 'https://kariyer.bilkent.edu.tr/',
   },
-  {
-    name: 'YTÜ Kariyer & Staj',
-    tag: 'Yıldız Kariyer',
-    url: 'https://kariyer.yildiz.edu.tr/',
-  },
 ]
 
 export function CorporateProgramsView({ applications }: CorporateProgramsViewProps) {
@@ -179,6 +205,7 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   const [loading, setLoading] = useState(true)
   const [sourceFilter, setSourceFilter] = useState<ProgramSource | 'all'>('all')
   const [categoryFilter, setCategoryFilter] = useState<ProgramCategory | 'all'>('all')
+  const [onlyOpen, setOnlyOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [failedImages, setFailedImages] = useState<Record<string, boolean>>({})
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({})
@@ -198,8 +225,8 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
         setPrograms(data.programs)
         if (showToast) {
           toast({
-            title: 'Güncel İlanlar Yenilendi ✓',
-            description: `Youthall, Anbean Kampüs, Techcareer.net, Toptalent ve Üniversite portallarından ${data.programs.length} güncel ilan listelendi.`,
+            title: 'Güncel İlanlar & Burslar Yenilendi ✓',
+            description: `Youthall, Microfon.co, Anbean Kampüs, Techcareer.net, Toptalent ve Üniversite portallarından ${data.programs.length} ilan listelendi.`,
           })
         }
       }
@@ -219,42 +246,52 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   }, [])
 
   const sourceCounts = useMemo(() => {
+    const base = onlyOpen ? programs.filter((p) => p.isOpen !== false) : programs
     const counts: Record<string, number> = {
-      all: programs.length,
+      all: base.length,
       youthall: 0,
+      microfon: 0,
       anbean: 0,
       techcareer: 0,
       toptalent: 0,
       university: 0,
     }
-    for (const p of programs) {
+    for (const p of base) {
       counts[p.source] = (counts[p.source] || 0) + 1
     }
     return counts
-  }, [programs])
+  }, [programs, onlyOpen])
 
   const categoryCounts = useMemo(() => {
-    const baseList =
+    let baseList =
       sourceFilter === 'all'
         ? programs
         : programs.filter((p) => p.source === sourceFilter)
 
+    if (onlyOpen) {
+      baseList = baseList.filter((p) => p.isOpen !== false)
+    }
+
     const counts: Record<string, number> = {
       all: baseList.length,
       intern: 0,
+      fellowship: 0,
+      scholarship: 0,
       talent_program: 0,
-      new_grad: 0,
       bootcamp: 0,
+      new_grad: 0,
+      opportunity: 0,
       corporate: 0,
     }
     for (const p of baseList) {
       counts[p.category] = (counts[p.category] || 0) + 1
     }
     return counts
-  }, [programs, sourceFilter])
+  }, [programs, sourceFilter, onlyOpen])
 
   const filteredPrograms = useMemo(() => {
     return programs.filter((item) => {
+      if (onlyOpen && item.isOpen === false) return false
       if (sourceFilter !== 'all' && item.source !== sourceFilter) return false
       if (categoryFilter !== 'all' && item.category !== categoryFilter) return false
       if (searchQuery.trim()) {
@@ -265,7 +302,7 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
       }
       return true
     })
-  }, [programs, sourceFilter, categoryFilter, searchQuery])
+  }, [programs, sourceFilter, categoryFilter, onlyOpen, searchQuery])
 
   function isAlreadyTracked(item: CorporateProgramItem) {
     return applications.some(
@@ -288,6 +325,7 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
         appliedAt: today,
         channel: 'online',
         jobLink: item.url,
+        salary: item.amount,
         hrContacted: false,
         note: `[${SOURCE_META[item.source].label} - ${item.badgeLabel}] ${item.deadline ? `Son Başvuru: ${item.deadline}. ` : ''}${item.description}`,
       })
@@ -309,24 +347,25 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   return (
     <div className="space-y-5 pb-16">
       {/* Top Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-indigo-950/90 via-slate-900 to-violet-950/90 text-white p-5 sm:p-6 shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-indigo-950/90 via-slate-900 to-fuchsia-950/90 text-white p-5 sm:p-6 shadow-lg">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold tracking-wide text-indigo-200">
               <GraduationCap className="h-3.5 w-3.5 text-indigo-300" />
-              <span>CANLI GENÇ YETENEK, STAJ & KURUMSAL İLAN VİTRİNİ</span>
+              <span>STAJ, FELLOWSHIP, BURS, EĞİTİM & KURUMSAL İLAN MERKEZİ</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Stajyer, Yeni Mezun, MT & Kurumsal Firma Programları
+              Stajyer, Yeni Mezun, Fellowship, Burs & Kurumsal Programlar
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               <strong className="text-white">Youthall</strong>,{' '}
+              <strong className="text-white">Microfon.co</strong>,{' '}
               <strong className="text-white">anbean Kampüs</strong>,{' '}
               <strong className="text-white">Techcareer.net</strong>,{' '}
               <strong className="text-white">Toptalent.co</strong> ve{' '}
               <strong className="text-white">Üniversite Kariyer Merkezleri</strong> üzerinde
-              yayınlanan en güncel staj, part-time öğrenci, Management Trainee (MT), Bootcamp ve
-              kurumsal firma ilanları afişleriyle birlikte tek ekranda.
+              yayınlanan tüm staj, part-time, Management Trainee (MT), Fellowship, eğitim bursları
+              ve öğrenci fırsatları afişleriyle birlikte tek ekranda.
             </p>
           </div>
 
@@ -376,11 +415,11 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
           <div className="flex items-center gap-2">
             <Compass className="h-4 w-4 text-primary" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
-              Üniversite Kariyer Merkezleri & Ulusal Staj Portalları
+              Üniversite Kariyer Merkezleri & Ulusal Staj / Burs Portalları
             </h2>
           </div>
           <span className="text-[11px] text-muted-foreground hidden sm:inline">
-            Doğrudan resmi kariyer merkezlerine hızlı geçiş
+            Doğrudan resmi kariyer ve burs merkezlerine hızlı geçiş
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
@@ -408,9 +447,9 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
 
       {/* Filters & Search Bar */}
       <div className="rounded-xl border border-border bg-card p-3.5 sm:p-4 space-y-3 shadow-2xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
           {/* Source Platform Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 xl:pb-0 no-scrollbar">
             <button
               type="button"
               onClick={() => setSourceFilter('all')}
@@ -456,25 +495,50 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
             })}
           </div>
 
-          {/* Search Input */}
-          <div className="relative w-full lg:w-72 shrink-0">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Şirket, staj, MT, bootcamp veya şehir ara..."
-              className="h-8 pl-8 text-xs"
-            />
+          {/* Search Input & Active Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setOnlyOpen((prev) => !prev)}
+              className={cn(
+                'h-8 px-2.5 rounded-lg border text-[11px] font-semibold transition-colors shrink-0 cursor-pointer',
+                onlyOpen
+                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-background border-border text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {onlyOpen ? '✓ Sadece Başvuruya Açık' : 'Sadece Açık İlanlar'}
+            </button>
+
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Burs, fellowship, staj, şirket ara..."
+                className="h-8 pl-8 text-xs"
+              />
+            </div>
           </div>
         </div>
 
         {/* Category Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-border/60 no-scrollbar">
           <span className="text-[11px] font-medium text-muted-foreground mr-1 shrink-0">
-            Program Türü:
+            Kategori:
           </span>
           {(
-            ['all', 'intern', 'talent_program', 'new_grad', 'bootcamp', 'corporate'] as const
+            [
+              'all',
+              'intern',
+              'fellowship',
+              'scholarship',
+              'talent_program',
+              'bootcamp',
+              'new_grad',
+              'opportunity',
+              'corporate',
+            ] as const
           ).map((catKey) => {
             const meta = CATEGORY_META[catKey]
             const active = categoryFilter === catKey
@@ -491,9 +555,12 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
                 )}
               >
                 {catKey === 'intern' && <GraduationCap className="h-3 w-3" />}
+                {catKey === 'fellowship' && <Sparkles className="h-3 w-3" />}
+                {catKey === 'scholarship' && <Coins className="h-3 w-3" />}
                 {catKey === 'talent_program' && <Award className="h-3 w-3" />}
+                {catKey === 'bootcamp' && <BookOpen className="h-3 w-3" />}
                 {catKey === 'new_grad' && <Rocket className="h-3 w-3" />}
-                {catKey === 'bootcamp' && <Sparkles className="h-3 w-3" />}
+                {catKey === 'opportunity' && <Gift className="h-3 w-3" />}
                 {catKey === 'corporate' && <Briefcase className="h-3 w-3" />}
                 <span>{meta.label}</span>
                 <span className="text-[10px] opacity-75">
@@ -528,7 +595,7 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
           <GraduationCap className="h-10 w-10 text-muted-foreground mx-auto stroke-[1.5]" />
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-foreground">
-              Seçili filtreye uygun ilan bulunamadı
+              Seçili filtreye uygun ilan veya burs bulunamadı
             </h3>
             <p className="text-xs text-muted-foreground max-w-md mx-auto">
               Arama kelimesini temizleyebilir veya tüm platformları ve program türlerini görüntülemek için filtreleri sıfırlayabilirsiniz.
@@ -540,6 +607,7 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
             onClick={() => {
               setSourceFilter('all')
               setCategoryFilter('all')
+              setOnlyOpen(false)
               setSearchQuery('')
             }}
             className="text-xs"
@@ -556,11 +624,15 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
             const showCoverImg = item.coverImage && !failedImages[item.id]
             const showLogoImg = item.companyLogo && !failedLogos[item.id]
             const tracked = isAlreadyTracked(item)
+            const isClosed = item.isOpen === false
 
             return (
               <div
                 key={item.id}
-                className="group flex flex-col rounded-xl border border-border/80 bg-card hover:border-primary/40 hover:shadow-xl transition-all duration-200 overflow-hidden"
+                className={cn(
+                  'group flex flex-col rounded-xl border border-border/80 bg-card hover:border-primary/40 hover:shadow-xl transition-all duration-200 overflow-hidden',
+                  isClosed && 'opacity-85'
+                )}
               >
                 {/* Top Visual Cover Banner (`resimleriyle birlikte`) */}
                 <div className="relative h-44 w-full overflow-hidden bg-muted shrink-0">
@@ -624,8 +696,20 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
                   {/* Deadline Badge (Top-Right) */}
                   {item.deadline && (
                     <div className="absolute top-2.5 right-2.5 z-10">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/75 text-white backdrop-blur-md text-[10px] font-semibold border border-white/15">
-                        <Calendar className="h-2.5 w-2.5 text-amber-400" />
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2 py-0.5 rounded-md backdrop-blur-md text-[10px] font-semibold border',
+                          isClosed
+                            ? 'bg-zinc-900/80 text-zinc-300 border-white/10'
+                            : 'bg-black/75 text-white border-white/15'
+                        )}
+                      >
+                        <Calendar
+                          className={cn(
+                            'h-2.5 w-2.5',
+                            isClosed ? 'text-zinc-400' : 'text-amber-400'
+                          )}
+                        />
                         {item.deadline}
                       </span>
                     </div>
