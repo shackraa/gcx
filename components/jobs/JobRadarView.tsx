@@ -120,11 +120,13 @@ function detectExperienceLevelFromResume(resume?: Resume): {
 // Client-side seniority check so existing scouted jobs also filter immediately when user switches dropdown
 function matchesClientExperienceFilter(
   jobTitle: string,
+  jobReason: string | undefined,
   resolvedLevel: 'intern' | 'junior' | 'mid' | 'senior' | 'all',
   targetRole: string
 ): boolean {
   if (resolvedLevel === 'all') return true
   const lower = (jobTitle || '').toLowerCase()
+  const combinedLower = `${lower} ${(jobReason || '').toLowerCase()}`
   const roleLower = (targetRole || '').toLowerCase()
 
   const seniorMarkers = [
@@ -149,7 +151,18 @@ function matchesClientExperienceFilter(
     'mimarı',
   ]
 
-  if (resolvedLevel === 'intern' || resolvedLevel === 'junior') {
+  if (resolvedLevel === 'intern') {
+    if (seniorMarkers.some((m) => lower.includes(m))) return false
+    // STRICT POSITIVE GATE: Even if a job has 98% CV match, if the user selected "Stajyer / Part-Time / Öğrenci",
+    // ONLY show jobs that explicitly carry an internship / part-time / student / candidate engineer marker!
+    const hasInternOrPartTimeMarker =
+      /\b(intern|internship|stajyer|staj|part-time|part time|yarı zamanlı|working student|student|öğrenci|aday mühendis|candidate engineer|trainee|co-op|uzun dönem|kısa dönem|long term|short term|harçlık|haftada\s*[234]\s*gün)\b/i.test(
+        combinedLower
+      )
+    return hasInternOrPartTimeMarker
+  }
+
+  if (resolvedLevel === 'junior') {
     if (seniorMarkers.some((m) => lower.includes(m))) return false
     if (
       (lower.includes('manager') || lower.includes('yönetici')) &&
@@ -175,6 +188,8 @@ function matchesClientExperienceFilter(
 
   return true
 }
+
+const EXCLUDED_GENERIC_SKILLS = new Set(['sql', 'python', 'excel', 'ms office', 'office', 'git'])
 
 export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
@@ -218,10 +233,18 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const resolvedExperienceLevel: 'intern' | 'junior' | 'mid' | 'senior' | 'all' =
     experienceLevel === 'auto' ? detectedExp.level : experienceLevel
 
-  // Dynamic Boolean Query for Search Launchpads
-  const targetKeywords = activeResume?.skills?.slice(0, 4) || ['Yazılım', 'Developer']
+  // Dynamic Boolean Query for Search Launchpads (filtering out generic noise like sql/python)
+  const filteredActiveSkills = (activeResume?.skills || []).filter(
+    (s) => !EXCLUDED_GENERIC_SKILLS.has(s.trim().toLowerCase())
+  )
+  const targetKeywords = filteredActiveSkills.slice(0, 4).length > 0
+    ? filteredActiveSkills.slice(0, 4)
+    : ['Yazılım', 'Teknoloji']
   const roleTerm = activeResume?.targetRole || activeResume?.name?.replace(/\s*cv\s*/gi, '') || 'Developer'
-  const booleanQuery = `"${roleTerm}" AND (${targetKeywords.map((s) => `"${s}"`).join(' OR ')})`
+  const booleanQuery =
+    resolvedExperienceLevel === 'intern'
+      ? `"${roleTerm}" AND ("Intern" OR "Stajyer" OR "Part-Time" OR "Working Student")`
+      : `"${roleTerm}" AND (${targetKeywords.map((s) => `"${s}"`).join(' OR ')})`
 
   // Live 1-Click Autonomous Job Discovery
   async function handleLiveScout() {
@@ -249,10 +272,13 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
     setIsScouting(true)
 
     try {
-      const mergedSkills =
+      const rawMergedSkills =
         selectedResumeId === 'all'
-          ? Array.from(new Set(resumes.flatMap((r) => r.skills || []))).slice(0, 12)
+          ? Array.from(new Set(resumes.flatMap((r) => r.skills || [])))
           : activeResume?.skills || []
+      const mergedSkills = rawMergedSkills
+        .filter((s) => !EXCLUDED_GENERIC_SKILLS.has(s.trim().toLowerCase()))
+        .slice(0, 12)
 
       const res = await fetch('/api/jobs/scout', {
         method: 'POST',
@@ -343,8 +369,8 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   else if (datePosted === 'past_month') linkedinTPR = '&f_TPR=r2592000'
 
   let linkedinExp = ''
-  if (resolvedExperienceLevel === 'intern') linkedinExp = '&f_E=1%2C2'
-  else if (resolvedExperienceLevel === 'junior') linkedinExp = '&f_E=1%2C2%2C3'
+  if (resolvedExperienceLevel === 'intern') linkedinExp = '&f_E=1&f_JT=I%2CP'
+  else if (resolvedExperienceLevel === 'junior') linkedinExp = '&f_E=1%2C2'
   else if (resolvedExperienceLevel === 'mid') linkedinExp = '&f_E=3%2C4'
   else if (resolvedExperienceLevel === 'senior') linkedinExp = '&f_E=4%2C5'
 
@@ -356,7 +382,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   // Filter existing scoutedJobs on the client by resolvedExperienceLevel
   const allScoutedList = scoutedJobs ?? []
   const filteredScoutedJobs = allScoutedList.filter((j) =>
-    matchesClientExperienceFilter(j.title, resolvedExperienceLevel, roleTerm)
+    matchesClientExperienceFilter(j.title, j.reason, resolvedExperienceLevel, roleTerm)
   )
   const hiddenBySeniorityCount = allScoutedList.length - filteredScoutedJobs.length
 
@@ -1000,19 +1026,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                       </span>
                     )}
                   </div>
-
-                  {job.matchingSkills && job.matchingSkills.length > 0 && (
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {job.matchingSkills.slice(0, 3).map((sk: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded"
-                        >
-                          ✓ {sk}
-                        </span>
-                      ))}
-                    </div>
-                  )}
 
                   {job.reason && (
                     <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
