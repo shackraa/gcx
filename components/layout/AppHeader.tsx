@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/lib/store/ui'
 import { useTourStore } from '@/lib/store/tour'
 import { useState, useRef, useEffect } from 'react'
-import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle, FileSpreadsheet, Sheet } from 'lucide-react'
+import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle, FileSpreadsheet, Sheet, Sparkles } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { exportToStyledExcel, exportToGoogleSheetsCsv, exportBackup } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
@@ -150,6 +150,20 @@ export function AppHeader() {
             >
               <FileText className="h-3.5 w-3.5 text-primary" />
               CV Havuzum
+            </button>
+
+            <button
+              onClick={() => setView('studio')}
+              data-tour="nav-studio"
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
+                view === 'studio'
+                  ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
+              CV Stüdyosu
             </button>
 
             <button

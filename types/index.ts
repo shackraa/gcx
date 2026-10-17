@@ -117,8 +117,107 @@ export type FilterKey =
   | 'offer'
   | 'rejected'
 
-// View mode - list, kanban, resumes, analytics, jobs (Radar)
-export type ViewMode = 'list' | 'kanban' | 'resumes' | 'analytics' | 'jobs'
+// View mode - list, kanban, resumes, studio (CV Oluşturucu & Hafıza), analytics, jobs (Radar)
+export type ViewMode = 'list' | 'kanban' | 'resumes' | 'studio' | 'analytics' | 'jobs'
+
+// Career Memory Source Type
+export type CareerSourceType =
+  | 'cv'
+  | 'motivation_letter'
+  | 'fellowship'
+  | 'project_note'
+  | 'certificate'
+  | 'other'
+
+export interface CareerSource {
+  _id: string
+  _creationTime: number
+  userId: string
+  title: string
+  sourceType: CareerSourceType
+  rawContent: string
+  extractedSummary?: string
+  extractedHighlights?: string[]
+  fileName?: string
+  fileSize?: number
+  storageId?: string
+  downloadUrl?: string | null
+  createdAt: number
+}
+
+export type HarvardTemplateId = 'harvard' | 'jakes' | 'mckinsey' | 'academic'
+
+export interface HarvardCVData {
+  fullName: string
+  title?: string
+  contact: {
+    email?: string
+    phone?: string
+    location?: string
+    linkedin?: string
+    github?: string
+    portfolio?: string
+  }
+  summary?: string
+  education: Array<{
+    institution: string
+    degree: string
+    location?: string
+    date: string
+    gpaOrHonors?: string
+    details?: string[]
+  }>
+  experience: Array<{
+    company: string
+    role: string
+    location?: string
+    date: string
+    bullets: string[]
+  }>
+  projects: Array<{
+    name: string
+    roleOrTech?: string
+    link?: string
+    date?: string
+    bullets: string[]
+  }>
+  leadershipAndFellowships?: Array<{
+    organization: string
+    role: string
+    date: string
+    bullets: string[]
+  }>
+  skills: {
+    technical?: string[]
+    tools?: string[]
+    languages?: string[]
+    domains?: string[]
+  }
+  awardsAndCertifications?: string[]
+}
+
+export interface GeneratedCV {
+  _id: string
+  _creationTime: number
+  userId: string
+  targetCompany: string
+  targetRole: string
+  jobUrl?: string
+  jobDescription?: string
+  templateId: HarvardTemplateId
+  language: 'tr' | 'en'
+  atsScoreBefore: number
+  atsScoreAfter: number
+  matchedKeywords: string[]
+  selectedSources: string[]
+  cvData: HarvardCVData
+  coverLetter: string
+  fellowshipAnswers?: Array<{
+    question: string
+    answer: string
+  }>
+  createdAt: number
+}
 
 // Workplace type for job filtering (Onsite / Fiziksel, Hybrid, Remote, All)
 export type WorkplaceType = 'all' | 'onsite' | 'hybrid' | 'remote'
@@ -170,4 +269,5 @@ export interface BackupData {
   applications: Partial<Application>[]
   resumes?: Partial<Resume>[]
 }
+
 

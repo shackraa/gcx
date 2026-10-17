@@ -11,6 +11,8 @@
 import type * as aiUsage from "../aiUsage.js";
 import type * as applications from "../applications.js";
 import type * as auth from "../auth.js";
+import type * as careerSources from "../careerSources.js";
+import type * as generatedCvs from "../generatedCvs.js";
 import type * as http from "../http.js";
 import type * as resumes from "../resumes.js";
 import type * as scoutedJobs from "../scoutedJobs.js";
@@ -26,6 +28,8 @@ declare const fullApi: ApiFromModules<{
   aiUsage: typeof aiUsage;
   applications: typeof applications;
   auth: typeof auth;
+  careerSources: typeof careerSources;
+  generatedCvs: typeof generatedCvs;
   http: typeof http;
   resumes: typeof resumes;
   scoutedJobs: typeof scoutedJobs;

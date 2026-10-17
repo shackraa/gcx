@@ -20,6 +20,14 @@ interface UIState {
   resumeModalOpen: boolean
   editingResumeId: string | null
 
+  // Studio Prefill (when jumping from Job Radar to CV Studio)
+  studioPrefill: {
+    jobUrl?: string
+    company?: string
+    role?: string
+    description?: string
+  } | null
+
   // Actions
   setFilter: (filter: FilterKey) => void
   setSearch: (search: string) => void
@@ -30,6 +38,8 @@ interface UIState {
   closeModal: () => void
   openResumeModal: (id?: string) => void
   closeResumeModal: () => void
+  openStudioWithJob: (prefill: { jobUrl?: string; company?: string; role?: string; description?: string }) => void
+  clearStudioPrefill: () => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -44,6 +54,7 @@ export const useUIStore = create<UIState>()(
       editingId: null,
       resumeModalOpen: false,
       editingResumeId: null,
+      studioPrefill: null,
 
       setFilter: (filter) => set({ filter }),
       setSearch: (search) => set({ search }),
@@ -54,6 +65,8 @@ export const useUIStore = create<UIState>()(
       closeModal: () => set({ modalOpen: false, editingId: null }),
       openResumeModal: (id) => set({ resumeModalOpen: true, editingResumeId: id ?? null }),
       closeResumeModal: () => set({ resumeModalOpen: false, editingResumeId: null }),
+      openStudioWithJob: (prefill) => set({ view: 'studio', studioPrefill: prefill }),
+      clearStudioPrefill: () => set({ studioPrefill: null }),
     }),
     {
       name: 'gcx-ui',
@@ -66,3 +79,4 @@ export const useUIStore = create<UIState>()(
     }
   )
 )
+

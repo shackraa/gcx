@@ -50,7 +50,7 @@ const DATE_OPTIONS: { value: DatePosted; label: string }[] = [
 
 export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
-  const { setView, setFilter, setSearch } = useUIStore()
+  const { setView, setFilter, setSearch, openStudioWithJob } = useUIStore()
   const createApplicationMutation = useMutation(api.applications.create)
   const scoutedJobs = useQuery(api.scoutedJobs.list)
   const aiUsage = useQuery(api.aiUsage.getStatus)
@@ -768,8 +768,8 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between pt-2 border-t border-border/50 flex-wrap gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {job.url && (
                       <a
                         href={job.url}
@@ -780,6 +780,32 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                         <ExternalLink className="h-3 w-3" /> İlana Git
                       </a>
                     )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openStudioWithJob({
+                          jobUrl: job.url,
+                          company: job.company,
+                          role: job.title,
+                          description: [
+                            `${job.company} - ${job.title} (${job.location})`,
+                            job.matchingSkills?.length
+                              ? `Aranan Yetenekler: ${job.matchingSkills.join(', ')}`
+                              : '',
+                            job.missingSkills?.length
+                              ? `Geliştirilecek / Ek Yetenekler: ${job.missingSkills.join(', ')}`
+                              : '',
+                            job.reason || '',
+                          ]
+                            .filter(Boolean)
+                            .join('\n'),
+                        })
+                      }
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/25 px-2.5 py-1 rounded cursor-pointer transition-colors"
+                      title="Bu ilana özel Harvard CV & Motivasyon Mektubu üret"
+                    >
+                      <Sparkles className="h-3 w-3" /> Özel CV Üret
+                    </button>
                     <button
                       onClick={() => removeScoutedMutation({ id: job._id })}
                       className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400 p-1 cursor-pointer"

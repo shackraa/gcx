@@ -98,4 +98,57 @@ export default defineSchema({
     date: v.string(), // YYYY-MM-DD
     count: v.number(),
   }).index('by_user_date', ['userId', 'date']),
+
+  // Kariyer Hafızası Kaynak Belgeleri (CV, Motivasyon Mektubu, Fellowship, Proje, Not vb.)
+  careerSources: defineTable({
+    userId: v.string(),
+    title: v.string(),
+    sourceType: v.union(
+      v.literal('cv'),
+      v.literal('motivation_letter'),
+      v.literal('fellowship'),
+      v.literal('project_note'),
+      v.literal('certificate'),
+      v.literal('other')
+    ),
+    rawContent: v.string(),
+    extractedSummary: v.optional(v.string()),
+    extractedHighlights: v.optional(v.array(v.string())),
+    fileName: v.optional(v.string()),
+    fileSize: v.optional(v.number()),
+    storageId: v.optional(v.id('_storage')),
+    createdAt: v.number(),
+  }).index('by_user', ['userId']),
+
+  // İlana Özel Üretilen Harvard / Profesyonel CV ve Başvuru Paketleri
+  generatedCvs: defineTable({
+    userId: v.string(),
+    targetCompany: v.string(),
+    targetRole: v.string(),
+    jobUrl: v.optional(v.string()),
+    jobDescription: v.optional(v.string()),
+    templateId: v.union(
+      v.literal('harvard'),
+      v.literal('jakes'),
+      v.literal('mckinsey'),
+      v.literal('academic')
+    ),
+    language: v.union(v.literal('tr'), v.literal('en')),
+    atsScoreBefore: v.number(),
+    atsScoreAfter: v.number(),
+    matchedKeywords: v.array(v.string()),
+    selectedSources: v.array(v.string()),
+    cvData: v.any(),
+    coverLetter: v.string(),
+    fellowshipAnswers: v.optional(
+      v.array(
+        v.object({
+          question: v.string(),
+          answer: v.string(),
+        })
+      )
+    ),
+    createdAt: v.number(),
+  }).index('by_user', ['userId']),
 })
+
