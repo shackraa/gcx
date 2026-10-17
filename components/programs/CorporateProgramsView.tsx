@@ -345,7 +345,7 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   }
 
   return (
-    <div className="space-y-5 pb-16">
+    <div data-tour="programs-view-section" className="space-y-5 pb-16">
       {/* Top Hero Banner */}
       <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-indigo-950/90 via-slate-900 to-fuchsia-950/90 text-white p-5 sm:p-6 shadow-lg">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">

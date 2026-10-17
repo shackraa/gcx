@@ -640,7 +640,7 @@ export function CVStudioView({ resumes }: CVStudioViewProps) {
   const totalSourceCount = careerSources?.length || 0
 
   return (
-    <div className="space-y-6">
+    <div data-tour="cv-studio-section" className="space-y-6">
       {/* Top Banner */}
       <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
         <div className="space-y-1">

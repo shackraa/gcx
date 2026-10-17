@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useTourStore } from '@/lib/store/tour'
 import { useUIStore } from '@/lib/store/ui'
 import { Button } from '@/components/ui/button'
+import type { ViewMode } from '@/types'
 import {
   BookOpen,
   Sparkles,
@@ -14,20 +15,32 @@ import {
   HelpCircle,
   X,
   Play,
-  CheckCircle2,
   Clock,
   ArrowRight,
   Lightbulb,
   ShieldCheck,
   Send,
-  Sliders,
   Copy,
   Download,
-  Upload,
+  GraduationCap,
+  Brain,
+  Award,
+  Coins,
+  Target,
+  Zap,
+  CheckCircle2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type GuideTab = 'quickstart' | 'resumes' | 'jobs' | 'applications' | 'analytics' | 'faq'
+type GuideTab =
+  | 'quickstart'
+  | 'studio'
+  | 'programs'
+  | 'jobs'
+  | 'resumes'
+  | 'applications'
+  | 'analytics'
+  | 'faq'
 
 export function GuideModal() {
   const { isGuideModalOpen, closeGuideModal, startTour, resetTour } = useTourStore()
@@ -48,10 +61,12 @@ export function GuideModal() {
 
   const tabs: { id: GuideTab; label: string; icon: React.ElementType }[] = [
     { id: 'quickstart', label: 'Hızlı Başlangıç', icon: Sparkles },
-    { id: 'resumes', label: 'CV Havuzu & AI', icon: FileText },
-    { id: 'jobs', label: 'İlan Radarı & Eşleşme', icon: Briefcase },
+    { id: 'studio', label: 'CV Stüdyosu & Hafıza', icon: Brain },
+    { id: 'programs', label: 'Staj, Burs & Kurumsal', icon: GraduationCap },
+    { id: 'jobs', label: 'İlan Radarı & Filtreler', icon: Briefcase },
+    { id: 'resumes', label: 'CV Havuzum', icon: FileText },
     { id: 'applications', label: 'Başvuru Takibi', icon: LayoutList },
-    { id: 'analytics', label: 'Analiz & Başarı', icon: BarChart2 },
+    { id: 'analytics', label: 'Kariyer Pusulası (Analiz)', icon: BarChart2 },
     { id: 'faq', label: 'İpuçları & SSS', icon: Lightbulb },
   ]
 
@@ -60,7 +75,7 @@ export function GuideModal() {
     startTour(0)
   }
 
-  function handleNavigateView(view: 'list' | 'resumes' | 'jobs' | 'analytics') {
+  function handleNavigateView(view: ViewMode) {
     setView(view)
     closeGuideModal()
   }
@@ -73,7 +88,7 @@ export function GuideModal() {
       onClick={closeGuideModal}
     >
       <div
-        className="bg-card text-card-foreground border border-border rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-card text-card-foreground border border-border rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -87,7 +102,7 @@ export function GuideModal() {
                 GCX Kullanım Rehberi & Kılavuz
               </h2>
               <p className="text-xs text-muted-foreground">
-                Uygulamanın tüm özelliklerini keşfedin ve iş arama sürecinizi en verimli şekilde yönetin.
+                Kariyer Hafızası, Harvard CV Stüdyosu, Staj/Burs/Fellowship Vitrini ve İlan Radarı kullanım kılavuzu.
               </p>
             </div>
           </div>
@@ -135,33 +150,58 @@ export function GuideModal() {
                     Hoş Geldiniz
                   </span>
                   <h3 className="text-lg font-extrabold text-foreground">
-                    3 Kolay Adımda GCX ile İş Arama Sürecinizi Güçlendirin
+                    4 Adımda GCX ile Kariyer, Staj ve Başvuru Sürecinizi Yönetin
                   </h3>
-                  <p className="text-xs text-muted-foreground max-w-2xl leading-relaxed">
-                    GCX, başvurularınızı unutulmanızı engeller, farklı CV versiyonlarınızın hangisinin daha çok işe yaradığını gösterir ve yapay zekâ ile size zaman kazandırır.
+                  <p className="text-xs text-muted-foreground max-w-3xl leading-relaxed">
+                    GCX; geçmiş tüm belgelerinizi hafızasında tutarak saniyeler içinde ilana özel Harvard CV üretir, Youthall & Microfon.co gibi platformlardan staj/burs/fellowship fırsatlarını toplar ve başvurularınızın dönüşümünü analiz eder.
                   </p>
                 </div>
               </div>
 
-              {/* 3 Step Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 4 Step Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-card border border-border rounded-xl p-4 space-y-3 flex flex-col justify-between">
                   <div className="space-y-2">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 font-bold flex items-center justify-center text-sm">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 font-bold flex items-center justify-center text-sm">
                       1
                     </div>
-                    <h4 className="text-sm font-bold text-foreground">CV Versiyonlarınızı Ekleyin</h4>
+                    <h4 className="text-sm font-bold text-foreground">
+                      CV Stüdyosu & Kariyer Hafızası
+                    </h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Frontend, Backend veya farklı uzmanlıklarınız için CV&apos;lerinizi yükleyin. Yapay zekâ yeteneklerinizi ve TR/EN Cover Letter&apos;larınızı otomatik çıkarsın.
+                      Eski CV&apos;lerinizi, motivasyon mektuplarınızı ve fellowship başvurularınızı kaynak dosyası gibi sürükleyip bırakın. Herhangi bir LinkedIn ilan linkini yapıştırarak o ilana özel <strong>Harvard, Jake&apos;s veya McKinsey</strong> şablonunda CV ve motivasyon mektubu üretin.
                     </p>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleNavigateView('resumes')}
+                    onClick={() => handleNavigateView('studio')}
                     className="text-xs gap-1 self-start"
                   >
-                    <span>CV Havuzuna Git</span>
+                    <span>CV Stüdyosuna Git</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-3 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="w-8 h-8 rounded-lg bg-fuchsia-500/10 text-fuchsia-500 font-bold flex items-center justify-center text-sm">
+                      2
+                    </div>
+                    <h4 className="text-sm font-bold text-foreground">
+                      Staj, Fellowship, Burs & Kurumsal Vitrini
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong>Youthall</strong>, <strong>Microfon.co</strong>, <strong>anbean Kampüs</strong>, <strong>Techcareer.net</strong>, <strong>Toptalent.co</strong> ve <strong>Üniversite Kariyer Merkezleri</strong> üzerindeki güncel staj, MT, fellowship, eğitim bursu ve bootcamp ilanlarını afişleriyle keşfedin.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleNavigateView('programs')}
+                    className="text-xs gap-1 self-start"
+                  >
+                    <span>Staj & Kurumsal Vitrine Git</span>
                     <ArrowRight className="h-3 w-3" />
                   </Button>
                 </div>
@@ -169,11 +209,13 @@ export function GuideModal() {
                 <div className="bg-card border border-border rounded-xl p-4 space-y-3 flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 font-bold flex items-center justify-center text-sm">
-                      2
+                      3
                     </div>
-                    <h4 className="text-sm font-bold text-foreground">İlan Radarı ile Keşfedin</h4>
+                    <h4 className="text-sm font-bold text-foreground">
+                      İlan Radarı (Kesin Stajyer & Tecrübe Filtreli)
+                    </h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      CV&apos;nize göre piyasadaki canlı ilanları tarayın, eşleşme skorunuzu (%0-100) görün ve eksik yeteneklerinizi öğrenerek başvurun.
+                      İlanların sadece başlığına değil <strong>tam açıklamasına</strong> bakan akıllı radar! Stajyer/Part-Time seçtiğinizde 5+ yıl tecrübe isteyen veya başvurusu kapanmış ilanları otomatik eler.
                     </p>
                   </div>
                   <Button
@@ -189,21 +231,23 @@ export function GuideModal() {
 
                 <div className="bg-card border border-border rounded-xl p-4 space-y-3 flex flex-col justify-between">
                   <div className="space-y-2">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/10 text-green-500 font-bold flex items-center justify-center text-sm">
-                      3
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 font-bold flex items-center justify-center text-sm">
+                      4
                     </div>
-                    <h4 className="text-sm font-bold text-foreground">Başvuru & Takip Süreci</h4>
+                    <h4 className="text-sm font-bold text-foreground">
+                      Kanban Takibi & Akıllı Kariyer Pusulası
+                    </h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Hangi CV ile başvurduğunuzu kaydedin. 14+ gün sessiz kalan başvurular için tek tıkla takip e-postası şablonu kopyalayın.
+                      Başvurularınızı sürükle-bırak Kanban panosunda yönetin. Yenilenen <strong>Analiz</strong> sekmesinde 4 adımlı Dönüşüm Huninizi, Kariyer Momentum Skorunuzu ve İK iletişim etkisini inceleyin.
                     </p>
                   </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleNavigateView('list')}
+                    onClick={() => handleNavigateView('analytics')}
                     className="text-xs gap-1 self-start"
                   >
-                    <span>Başvurularıma Git</span>
+                    <span>Kariyer Pusulasına Git</span>
                     <ArrowRight className="h-3 w-3" />
                   </Button>
                 </div>
@@ -211,13 +255,201 @@ export function GuideModal() {
             </div>
           )}
 
-          {/* TAB 2: RESUMES */}
+          {/* TAB 2: CV STUDIO & CAREER MEMORY */}
+          {activeTab === 'studio' && (
+            <div className="space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-primary" />
+                    Kariyer Hafızası & Harvard CV Stüdyosu
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Tüm geçmiş belgelerinizi bir kez yükleyin; her ilana özel en iyi bilgileri seçen akıllı CV üreticiyi kullanın.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleNavigateView('studio')}
+                  className="text-xs gap-1.5 self-start"
+                >
+                  <span>CV Stüdyosunu Aç</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-primary font-semibold text-xs">
+                    <Sparkles className="h-4 w-4" />
+                    <span>1. Tak-Tak-Tak Kaynak Belge Kasası (Kariyer Hafızası)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Şimdiye kadar yazdığınız tüm <strong>motivasyon mektuplarını</strong>, <strong>fellowship başvurularını</strong>, <strong>eski CV&apos;lerinizi</strong>, proje notlarınızı ve sertifikalarınızı sürükleyip bırakın. Sistem her belgeyi ayrıştırıp kalıcı Kariyer Hafızanıza kaydeder.
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-primary font-semibold text-xs">
+                    <Target className="h-4 w-4" />
+                    <span>2. LinkedIn İlanından Otomatik Terzi (Tailoring)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Başvurmak istediğiniz ilanın linkini veya metnini yapıştırın. Yapay zekâ, hafızanızdaki tüm belgeleri tarayarak <strong>o ilanla en çok örtüşen projelerinizi, deneyimlerinizi ve başarılarınızı</strong> seçip öne çıkarır.
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-primary font-semibold text-xs">
+                    <FileText className="h-4 w-4" />
+                    <span>3. Harvard, Jake&apos;s, McKinsey & Akademik Şablonlar</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Dünyanın en yüksek ATS geçiş oranına sahip <strong>Harvard Kariyer Merkezi</strong>, <strong>Jake&apos;s Resume (Yazılım/Teknoloji)</strong>, <strong>McKinsey Executive</strong> ve <strong>Akademik CV</strong> şablonları arasında anında geçiş yapın ve kusursuz A4 PDF çıktısı alın.
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-primary font-semibold text-xs">
+                    <Award className="h-4 w-4" />
+                    <span>4. Özel Motivasyon Mektubu & Fellowship Cevapları</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Üretilen her CV ile birlikte o şirkete özel <strong>Motivasyon Mektubu (Cover Letter)</strong> ve başvurularınızda sıkça sorulan <strong>Fellowship Mülakat / Başvuru Soruları</strong> için hazır yanıtlar oluşturulur.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: STAJ, BURS & KURUMSAL */}
+          {activeTab === 'programs' && (
+            <div className="space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-primary" />
+                    Staj, Yeni Mezun, Fellowship, Burs & Kurumsal Vitrini
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    6 büyük platformdaki güncel staj, MT, fellowship, burs ve eğitim fırsatları afişleriyle tek sekmede.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleNavigateView('programs')}
+                  className="text-xs gap-1.5 self-start"
+                >
+                  <span>Staj & Kurumsal Sekmesini Aç</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Award className="h-4 w-4 text-indigo-500" />
+                    Youthall & anbean Kampüs & Toptalent
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Kurumsal firmaların açtığı uzun dönem staj, yaz stajı, part-time öğrenci, Management Trainee (MT) ve genç yetenek programları şirket logoları ve kapak afişleriyle listelenir.
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Coins className="h-4 w-4 text-fuchsia-500" />
+                    Microfon.co Fellowship, Burs & Fırsatlar
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    <strong>Microfon.co</strong> üzerindeki güncel üniversite/vakıf eğitim bursları (burs tutarlarıyla birlikte), liderlik fellowship programları, akademiler ve öğrenci indirim/fırsatları canlı olarak çekilir.
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-emerald-500" />
+                    Techcareer.net & Üniversite Kariyer Merkezleri
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Ücretsiz yazılım/veri/AI Bootcamp programları ve <strong>Yetenek Kapısı, İTÜ, ODTÜ, Boğaziçi, Koç, Sabancı, Bilkent</strong> kariyer merkezlerine doğrudan erişim barı yer alır.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-muted/30 border border-border/70 rounded-xl p-4 text-xs text-muted-foreground flex items-start gap-2.5">
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-foreground">Tek Tıkla Özel CV Üretimi:</strong> Vitrin üzerindeki herhangi bir staj, burs veya fellowship kartında bulunan <strong>&quot;Özel CV Üret&quot;</strong> butonuna bastığınızda programın tüm detayları otomatik olarak CV Stüdyosu&apos;na aktarılır.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: JOB RADAR */}
+          {activeTab === 'jobs' && (
+            <div className="space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-primary" />
+                    İlan Radarı & Kesin Tecrübe Filtreleme Sistemi
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    İlan açıklamalarının tamamını okuyan, kapanmış veya tecrübe seviyenize uymayan ilanları eleyen akıllı radar.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleNavigateView('jobs')}
+                  className="text-xs gap-1.5 self-start"
+                >
+                  <span>İlan Radarına Git</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">1</span>
+                    Kesin Stajyer / Part-Time & Tecrübe Seviyesi Koruması
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    <strong>&quot;Stajyer / Part-Time / Öğrenci&quot;</strong> filtresini seçtiğinizde sistem yalnızca başlığında veya açıklamasında açıkça stajyer, part-time, aday mühendis veya öğrenci arayan ilanları gösterir. CV uyum skoru %98 olsa bile stajyer/part-time olmayan veya 3-5+ yıl tecrübe isteyen ilanları kesin olarak eler.
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">2</span>
+                    Kapanmış İlanları Otomatik Eleme
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    LinkedIn üzerinde <em>&quot;Artık başvuru kabul etmiyor&quot;</em> (No longer accepting applications) durumuna düşmüş eski ilanlar tarama sırasında otomatik olarak tespit edilip listeden çıkarılır.
+                  </p>
+                </div>
+
+                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
+                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">3</span>
+                    Uyum Skoru (%0 - %100) ve Eksik Yetenek Analizi
+                  </h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Her ilanın tam metni okunarak CV&apos;nizde eşleşen yetenekler (yeşil) ve ilanda aranan ek yetenekler (kırmızı) listelenir. Beğendiğiniz ilanı tek tıkla <strong>Başvurulara Ekle</strong> veya <strong>Bu İlana Özel CV Üret</strong> diyerek değerlendirebilirsiniz.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: RESUMES */}
           {activeTab === 'resumes' && (
             <div className="space-y-5">
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary" />
-                  CV Havuzu & Akıllı Cover Letter
+                  CV Havuzum & Çoklu Özgeçmiş Yönetimi
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Farklı sektör ve roller için özelleştirilmiş CV versiyonlarınızı yönetin.
@@ -231,7 +463,7 @@ export function GuideModal() {
                     <span>Yapay Zekâ ile PDF Ayrıştırma</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    CV PDF dosyanızı yüklediğinizde veya metnini yapıştırdığınızda yapay zekâ teknik yeteneklerinizi, hedef rolünüzü ve profesyonel özetinizi otomatik olarak ayrıştırır.
+                    CV PDF dosyanızı yüklediğinizde yapay zekâ teknik yeteneklerinizi, hedef rolünüzü ve profesyonel özetinizi otomatik olarak ayrıştırır.
                   </p>
                 </div>
 
@@ -251,80 +483,33 @@ export function GuideModal() {
                     <span>Hangi CV Daha Başarılı?</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Her CV versiyonunun kaç başvuru aldığını, kaç mülakat getirdiğini ve geri dönüş oranını (%) anlık olarak karşılaştırarak en güçlü CV versiyonunuzu keşfedebilirsiniz.
+                    Her CV versiyonunun kaç başvuru aldığını, kaç mülakat getirdiğini ve geri dönüş oranını (%) anlık olarak karşılaştırabilirsiniz.
                   </p>
                 </div>
 
                 <div className="bg-card border border-border rounded-xl p-4 space-y-2.5">
                   <div className="flex items-center gap-2 text-primary font-semibold text-xs">
                     <Download className="h-4 w-4" />
-                    <span>Doğrudan İndirme & Bağlantı</span>
+                    <span>Kariyer Hafızası ile Senkronizasyon</span>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Yüklediğiniz PDF dosyalarını veya linklerini istediğiniz an tek tıkla indirebilir ve başvurularda kolayca kullanabilirsiniz.
+                    CV Havuzunuzdaki özgeçmişleri tek tıkla CV Stüdyosu&apos;ndaki Kariyer Hafızasına eşitleyebilir veya Stüdyo&apos;da ürettiğiniz yeni CV&apos;yi doğrudan havuza kaydedebilirsiniz.
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 3: JOB RADAR */}
-          {activeTab === 'jobs' && (
-            <div className="space-y-5">
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Briefcase className="h-4 w-4 text-primary" />
-                  İlan Radarı & Yapay Zekâ Eşleşme Analizi
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Canlı web taraması ile CV&apos;nize en uygun iş ilanlarını keşfedin.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">1</span>
-                    1-Tıkla Canlı İlan Tarama (Scout)
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Seçtiğiniz CV&apos;deki yetenekleri baz alarak web üzerindeki güncel iş ilanlarını otonom olarak tarar ve CV&apos;nizle eşleştirir.
-                  </p>
-                </div>
-
-                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">2</span>
-                    Eşleşme Skoru (%0 - %100) ve Eksik Yetenekler
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Yapay zekâ; ilanın gereksinimleriyle sizin CV&apos;nizi karşılaştırır. Eşleşen yeteneklerinizi (yeşil) ve ilanda istenen ancak CV&apos;nizde bulunmayan eksik yetenekleri (kırmızı) listeler.
-                  </p>
-                </div>
-
-                <div className="bg-card border border-border rounded-xl p-4 space-y-2">
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs">3</span>
-                    Tek Tıkla Başvuruya Dönüştürme
-                  </h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Beğendiğiniz bir ilanı &quot;Başvuruya Ekle&quot; butonuyla doğrudan Başvuru Listenize aktarabilir ve takibini başlatabilirsiniz.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: APPLICATIONS */}
+          {/* TAB 6: APPLICATIONS */}
           {activeTab === 'applications' && (
             <div className="space-y-5">
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-foreground flex items-center gap-2">
                   <LayoutList className="h-4 w-4 text-primary" />
-                  Başvuru & Süreç Yönetimi
+                  Başvuru & Süreç Yönetimi (Liste ve Kanban)
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Başvurularınızın hangi aşamada olduğunu kolayca yönetin.
+                  Başvurularınızın hangi aşamada olduğunu Liste veya sürükle-bırak Kanban panosunda yönetin.
                 </p>
               </div>
 
@@ -336,10 +521,10 @@ export function GuideModal() {
                   </h4>
                   <ul className="text-xs text-muted-foreground space-y-1">
                     <li>• <strong>Hazırlanıyor:</strong> İlan bulundu, CV düzenleniyor.</li>
-                    <li>• <strong>Beklemede:</strong> Başvuru yapıldı, yanıt bekleniyor.</li>
-                    <li>• <strong>Dönüş Yapıldı:</strong> İK sizinle iletişime geçti.</li>
-                    <li>• <strong>Mülakatta:</strong> Teknik veya İK mülakatı planlandı.</li>
-                    <li>• <strong>Teklif:</strong> Tebrikler, teklif aldınız!</li>
+                    <li>• <strong>Bekleniyor:</strong> Başvuru yapıldı, yanıt bekleniyor.</li>
+                    <li>• <strong>Dönüş Aldı:</strong> İK sizinle iletişime geçti.</li>
+                    <li>• <strong>Mülakat:</strong> Teknik veya İK mülakatı planlandı.</li>
+                    <li>• <strong>Teklif:</strong> Tebrikler, iş teklifi aldınız!</li>
                   </ul>
                 </div>
 
@@ -356,58 +541,83 @@ export function GuideModal() {
             </div>
           )}
 
-          {/* TAB 5: ANALYTICS */}
+          {/* TAB 7: ANALYTICS */}
           {activeTab === 'analytics' && (
             <div className="space-y-5">
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                  <BarChart2 className="h-4 w-4 text-primary" />
-                  Analiz & İstatistikler
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Veriye dayalı kararlar alarak iş bulma sürenizi kısaltın.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <BarChart2 className="h-4 w-4 text-primary" />
+                    Akıllı Kariyer Pusulası & Performans Koçu
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Klasik grafikler yerine interaktif başvuru hunisi, momentum skoru ve aksiyon tavsiyeleri.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleNavigateView('analytics')}
+                  className="text-xs gap-1.5 self-start"
+                >
+                  <span>Analiz Sekmesini Aç</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
               </div>
 
-              <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                  <div className="p-3 bg-muted/40 rounded-lg">
-                    <div className="text-sm font-bold text-primary">Geri Dönüş Oranı</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Yaptığınız başvurulardan yüzde kaçının size geri döndüğünü ölçün.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 bg-card border border-border rounded-xl space-y-1.5">
+                  <div className="text-xs font-bold text-primary flex items-center gap-1.5">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                    Kariyer Momentum Skoru (0-100)
                   </div>
-                  <div className="p-3 bg-muted/40 rounded-lg">
-                    <div className="text-sm font-bold text-green-500">CV Performansı</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Hangi CV tasarım veya uzmanlığınızın daha çok mülakat getirdiğini görün.</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Başvuru aktifliğiniz, İK iletişiminiz, mülakat dönüşümünüz ve sessiz başvuru takibinize göre hesaplanan genel kariyer ivmeniz.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-card border border-border rounded-xl space-y-1.5">
+                  <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <Target className="h-4 w-4" />
+                    4 Adımlı Dönüşüm Hunisi
                   </div>
-                  <div className="p-3 bg-muted/40 rounded-lg">
-                    <div className="text-sm font-bold text-blue-500">Haftalık Trend</div>
-                    <p className="text-[11px] text-muted-foreground mt-1">Haftalık başvuru hızınızı ve hedef gerçekleşme yüzdenizi takip edin.</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Toplam Başvuru ➔ Olumlu Dönüş ➔ Mülakat ➔ İş Teklifi adımlarındaki dönüşüm oranlarınızı görün; herhangi bir adıma tıklayarak o başvuruları filtreleyin.
+                  </p>
+                </div>
+
+                <div className="p-4 bg-card border border-border rounded-xl space-y-1.5">
+                  <div className="text-xs font-bold text-violet-600 dark:text-violet-400 flex items-center gap-1.5">
+                    <Award className="h-4 w-4" />
+                    İK İletişim Etkisi & CV Lideri
                   </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    İK ile doğrudan iletişime geçtiğiniz başvuruların olumlu dönüş yüzdesini, sadece online başvurularla kıyaslayın ve #1 numaralı CV versiyonunuzu görün.
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 6: FAQ & TIPS */}
+          {/* TAB 8: FAQ & TIPS */}
           {activeTab === 'faq' && (
             <div className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-4 space-y-1.5">
                 <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <ShieldCheck className="h-3.5 w-3.5 text-green-500" />
-                  Verilerim Güvende mi?
+                  Hesabım ve Verilerim Bana Özel mi?
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Evet! Verileriniz güvenli Convex bulut veritabanında saklanır. Ayrıca dilediğiniz zaman üst menüdeki <strong>Dışa Aktar (Excel, E-Tablolar, JSON)</strong> menüsüyle verilerinizin tam kopyasını bilgisayarınıza kaydedebilirsiniz.
+                  Evet! Her kullanıcının hesabı, CV&apos;leri, Kariyer Hafızası belgeleri ve başvuruları tamamen kendi hesabına izoledir; başka hiçbir kullanıcı sizin verilerinizi göremez. Dilediğiniz zaman üst menüdeki <strong>Dışa Aktar (Excel, E-Tablolar, JSON)</strong> menüsüyle verilerinizin tam yedeğini bilgisayarınıza indirebilirsiniz.
                 </p>
               </div>
 
               <div className="bg-card border border-border rounded-xl p-4 space-y-1.5">
                 <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  Yapay Zeka Özellikleri Ücretsiz mi?
+                  Kariyer Hafızasına Hangi Belgeleri Yükleyebilirim?
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Evet! GCX; akıllı CV ayrıştırma, ön yazı (Cover Letter) üretimi ve İlan Radarı eşleştirme özelliklerini günlük <strong className="text-foreground font-semibold">50 işleme kadar tamamen ücretsiz</strong> sunar. Herhangi bir teknik kurulum veya API anahtarı girmenize gerek yoktur.
+                  Eski CV&apos;lerinizi (PDF/DOCX/TXT), daha önce yazdığınız tüm motivasyon mektuplarını, fellowship başvuru sorularına verdiğiniz yanıtları, proje özetlerinizi ve sertifikalarınızı sürükleyip bırakabilirsiniz. CV Stüdyosu yeni bir ilana CV hazırlarken tüm bu kaynakları tarayıp en güçlü cümlelerinizi seçer.
                 </p>
               </div>
 
@@ -417,7 +627,7 @@ export function GuideModal() {
                   Turu Sıfırlamak veya Tekrar İzlemek İstersem?
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  İstediğiniz an aşağıdaki <strong>&quot;Turu Sıfırla ve Başlat&quot;</strong> butonuna veya üst menüdeki <strong>Rehber</strong> butonuna basarak rehberi tekrar izleyebilirsiniz.
+                  İstediğiniz an aşağıdaki <strong>&quot;Canlı Turu Başlat&quot;</strong> butonuna veya üst menüdeki <strong>Rehber</strong> butonuna basarak interaktif tanıtım turunu baştan izleyebilirsiniz.
                 </p>
               </div>
             </div>

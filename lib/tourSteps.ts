@@ -17,15 +17,15 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       id: 'welcome',
       targetSelector: '[data-tour="stats-cards"]',
       targetView: 'list',
-      title: 'GCX Kariyer ve Başvuru Takip Merkezi',
+      title: 'GCX Kariyer, CV Stüdyosu & Başvuru Merkezi',
       badge: 'Genel Bakış',
       description:
-        'GCX; tüm iş başvurularınızı düzenli tutmak, farklı CV versiyonlarınızın başarısını ölçmek ve süreci yapay zekâ ile hızlandırmak için tasarlandı.',
+        'GCX; kariyer belgelerinizi hafızasında tutarak ilana özel Harvard CV üretmek, güncel staj/fellowship/burs ilanlarını keşfetmek ve tüm başvurularınızı takip etmek için tasarlandı.',
       bulletPoints: [
-        'Hangi şirkete hangi CV ile başvurduğunuzu kaydedin.',
-        'Sessiz kalan başvuruları tespit edip hazır takip şablonuyla yanıt alın.',
+        'Kariyer Hafızası ile geçmiş CV, motivasyon mektubu ve fellowship yazılarınızı tek yerde toplayın.',
+        'Youthall, Microfon.co, Anbean Kampüs, Techcareer.net ve Toptalent ilanlarını afişleriyle keşfedin.',
         isMobile
-          ? 'Şimdi sekmeleri sırayla inceleyelim: Önce ekranın altındaki menüdeki yerini, ardından sayfa içi kullanımını göreceksiniz.'
+          ? 'Şimdi sekmeleri sırayla inceleyelim: Önce ekranın altındaki barda yerini, ardından sayfa içi kullanımını göreceksiniz.'
           : 'Şimdi sekmeleri sırayla inceleyelim: Önce üst menüdeki yerini, ardından sayfa içi kullanımını göreceksiniz.',
       ],
       position: 'bottom',
@@ -43,8 +43,8 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
         isMobile
           ? 'Bu sekmeye dokunduğunuzda CV Havuzu yönetim sayfası açılır.'
           : 'Bu sekmeye tıkladığınızda CV Havuzu yönetim sayfası açılır.',
-        'Tek bir CV yerine Frontend, Backend veya Ürün gibi farklı CV versiyonlarınızı sisteme yükleyebilirsiniz.',
-        'Şimdi aşağıdaki CV kartlarını ve yönetim alanını inceleyelim.',
+        'Tek bir CV yerine Frontend, Veri Analitiği, Ürün veya Staj gibi farklı CV versiyonlarınızı yükleyebilirsiniz.',
+        'Şimdi sayfadaki CV kartlarını inceleyelim.',
       ],
       position: isMobile ? 'top' : 'bottom',
     },
@@ -52,10 +52,10 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       id: 'resume-pool-page',
       targetSelector: '[data-tour="resume-pool-section"]',
       targetView: 'resumes',
-      title: 'CV Havuzum: Kartlar ve Cover Letter',
+      title: 'CV Havuzum: PDF Ayrıştırma ve Cover Letter',
       badge: 'Sayfa İçi Alan',
       description:
-        'Sayfadaki CV kartları üzerinden tüm CV versiyonlarınızı ve performanslarını yönetin.',
+        'Sayfadaki CV kartları üzerinden tüm özgeçmiş versiyonlarınızı ve dönüşüm oranlarını yönetin.',
       bulletPoints: [
         'PDF yüklediğinizde yapay zekâ teknik yeteneklerinizi ve özetinizi otomatik ayrıştırır.',
         'Her CV için özel Türkçe ve İngilizce Cover Letter üretilir ve tek tıkla kopyalanır.',
@@ -64,17 +64,47 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       position: 'bottom',
     },
     {
+      id: 'nav-studio',
+      targetSelector: '[data-tour="nav-studio"]',
+      targetView: 'studio',
+      title: isMobile ? '2. Sekme: Alt Menüde "Stüdyo"' : '2. Sekme: Üst Menüde "CV Stüdyosu"',
+      badge: isMobile ? 'Alt Menü Butonu' : 'Üst Menü Butonu',
+      description: isMobile
+        ? 'Kariyer Hafızası ve Harvard CV Oluşturucu ekranına alt menüdeki "Stüdyo" butonundan ulaşırsınız.'
+        : 'Kariyer Hafızası ve Harvard CV Oluşturucu ekranına üst menüdeki "CV Stüdyosu" sekmesinden ulaşırsınız.',
+      bulletPoints: [
+        'Geçmiş tüm belgelerinizi kaynak dosyası gibi yükleyip her ilana özel CV üreteceğiniz merkez burasıdır.',
+        'Şimdi CV Stüdyosu ve Kariyer Hafızası özelliklerini inceleyelim.',
+      ],
+      position: isMobile ? 'top' : 'bottom',
+    },
+    {
+      id: 'cv-studio-page',
+      targetSelector: '[data-tour="cv-studio-section"]',
+      targetView: 'studio',
+      title: 'Kariyer Hafızası & Harvard CV Stüdyosu',
+      badge: 'Yapay Zekâ Stüdyosu',
+      description:
+        'Eski CV’lerinizi, motivasyon mektuplarınızı ve fellowship başvurularınızı sürükleyip bırakın; sistem hafızasında tutsun.',
+      bulletPoints: [
+        'Tak-Tak-Tak Belge Yükleme: PDF, Word, metin veya görsel belgelerinizi topluca sürükleyip hafızaya ekleyin.',
+        'LinkedIn İlanından Üretim: İlan linkini veya açıklamasını yapıştırın; sistem hafızanızdaki en uygun başarıları seçip ilana özel CV oluştursun.',
+        'Harvard, Jake’s Resume, McKinsey ve Akademik şablonlar arasında tek tıkla geçiş yapıp A4 PDF olarak indirin.',
+      ],
+      position: 'bottom',
+    },
+    {
       id: 'nav-jobs',
       targetSelector: '[data-tour="nav-jobs"]',
       targetView: 'jobs',
-      title: isMobile ? '2. Sekme: Alt Menüde "İlan Radarı"' : '2. Sekme: Üst Menüde "İlan Radarı"',
+      title: isMobile ? '3. Sekme: Alt Menüde "Radar"' : '3. Sekme: Üst Menüde "İlan Radarı"',
       badge: isMobile ? 'Alt Menü Butonu' : 'Üst Menü Butonu',
       description: isMobile
-        ? 'CV yeteneklerinize göre piyasadaki güncel iş fırsatlarını aramak için alt menüdeki bu sekmeyi açarsınız.'
-        : 'CV yeteneklerinize göre piyasadaki güncel iş fırsatlarını otonom olarak aratmak için üst menüdeki bu sekmeyi açarsınız.',
+        ? 'CV yeteneklerinize ve tecrübe seviyenize göre canlı iş ilanlarını taramak için alt menüdeki bu sekmeyi açarsınız.'
+        : 'CV yeteneklerinize ve tecrübe seviyenize göre canlı iş ilanlarını taramak için üst menüdeki bu sekmeyi açarsınız.',
       bulletPoints: [
-        'Bu sekme açıldığında arka plandaki yapay zekâ filtreleri ve canlı ilan tarayıcısı devreye girer.',
-        'Şimdi sayfadaki filtreleri ve arama alanını inceleyelim.',
+        'İlan açıklamalarının tamamını okuyan ve tecrübe seviyenize uymayan ilanları eleyen akıllı radar.',
+        'Şimdi İlan Radarı filtrelerini inceleyelim.',
       ],
       position: isMobile ? 'top' : 'bottom',
     },
@@ -82,44 +112,61 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       id: 'job-radar-controls-page',
       targetSelector: '[data-tour="job-radar-controls"]',
       targetView: 'jobs',
-      title: 'İlan Radarı: Filtreler & Canlı Tarama',
+      title: 'İlan Radarı: Kesin Tecrübe & Stajyer Filtresi',
       badge: 'Sayfa İçi Alan',
       description:
-        'Çalışma modelini (Ofiste, Hibrit, Uzaktan) ve hedef lokasyonunuzu belirleyip tek tıkla arama başlatın.',
+        'Tecrübe seviyenizi (Stajyer/Part-Time, Yeni Mezun, Mid, Senior veya CV’den Otomatik) seçip canlı tarama başlatın.',
       bulletPoints: [
-        'Hedef CV versiyonunuzu seçin ve aramak istediğiniz şehri yazın.',
-        '"Tüm Uygun İlanları Tara" butonuna tıklayarak CV yeteneklerinize en uygun pozisyonları bulun.',
-        'Arka planda çalışan otonom bot komutuyla da ilanları otomatik toplayabilirsiniz.',
+        'Kesin Stajyer & Part-Time Koruması: "Stajyer / Part-Time" seçtiğinizde yalnızca açıklamasında gerçekten stajyer/part-time/öğrenci arayan ilanlar gösterilir.',
+        'Kapanmış İlan Eleme: "Artık başvuru kabul etmiyor" olan ilanlar otomatik olarak elenir.',
+        'Gerçek İlan Açıklaması Analizi: Sadece başlığa değil, ilanın içindeki "5+ yıl tecrübe" gibi gizli şartlara bakılarak uyumsuz ilanlar filtrelenir.',
       ],
       position: 'bottom',
     },
     {
-      id: 'scouted-jobs-demo-page',
-      targetSelector: '[data-tour="scouted-jobs-section"]',
-      targetView: 'jobs',
-      title: 'İlan Radarı: Uyum Skoru (%90+) ve Yetenek Analizi',
-      badge: 'Sayfa İçi Alan',
-      description:
-        'Taranan pozisyonlar sayfada en yüksek uyum skoruna göre listelenir.',
+      id: 'nav-programs',
+      targetSelector: '[data-tour="nav-programs"]',
+      targetView: 'programs',
+      title: isMobile
+        ? '4. Sekme: Alt Menüde "Kurumsal"'
+        : '4. Sekme: Üst Menüde "Staj & Kurumsal"',
+      badge: isMobile ? 'Alt Menü Butonu' : 'Üst Menü Butonu',
+      description: isMobile
+        ? 'Staj, yeni mezun, MT, fellowship ve burs ilanlarını afişleriyle görmek için alt menüdeki "Kurumsal" sekmesini açarsınız.'
+        : 'Staj, yeni mezun, MT, fellowship ve burs ilanlarını afişleriyle görmek için üst menüdeki "Staj & Kurumsal" sekmesini açarsınız.',
       bulletPoints: [
-        'Uyum Skoru: %80 ve üzeri pozisyonlar yeşil etiketle (%94, %88 gibi) öne çıkarılır.',
-        "Yetenek Kıyaslaması: CV'nizde olanlar yeşil, eksik yetenekler ise kırmızı etiketlenir.",
-        '"Başvurulara Ekle" butonu ile beğendiğiniz ilanı tek tıkla takip listenize aktarabilirsiniz.',
+        'Youthall, Microfon.co, anbean Kampüs, Techcareer.net, Toptalent.co ve Üniversite Kariyer Merkezleri tek ekranda.',
+        'Şimdi görsel ilan ve burs vitrinini inceleyelim.',
       ],
-      position: 'top',
+      position: isMobile ? 'top' : 'bottom',
+    },
+    {
+      id: 'programs-view-page',
+      targetSelector: '[data-tour="programs-view-section"]',
+      targetView: 'programs',
+      title: 'Staj, Fellowship, Burs & Kurumsal İlan Vitrini',
+      badge: 'Canlı Görsel Vitrin',
+      description:
+        'Türkiye’nin önde gelen genç yetenek, burs ve kariyer platformlarındaki güncel fırsatları afişleriyle inceleyin.',
+      bulletPoints: [
+        'Microfon.co & Youthall & Anbean & Techcareer: Staj, Management Trainee (MT), Fellowship, Eğitim Bursları ve Bootcamp ilanlarını kategoriye göre filtreleyin.',
+        'Üniversite Kariyer Merkezleri: Yetenek Kapısı, İTÜ, ODTÜ, Boğaziçi, Koç, Sabancı ve Bilkent kariyer merkezlerine hızlı geçiş yapın.',
+        '"Özel CV Üret" butonuyla beğendiğiniz staj veya fellowship ilanını doğrudan CV Stüdyosu’na aktarıp özel CV oluşturun.',
+      ],
+      position: 'bottom',
     },
     {
       id: 'nav-applications',
       targetSelector: '[data-tour="nav-applications"]',
       targetView: 'kanban',
-      title: isMobile ? '3. Sekme: Alt Menüde "Başvurular"' : '3. Sekme: Üst Menüde "Başvurularım"',
+      title: isMobile ? '5. Sekme: Alt Menüde "Başvuru"' : '5. Sekme: Üst Menüde "Başvurularım"',
       badge: isMobile ? 'Alt Menü Butonu' : 'Üst Menü Butonu',
       description: isMobile
-        ? 'Tüm aktif ve geçmiş iş başvurularınızı organize etmek için alt menüdeki bu sekmeyi kullanırsınız.'
-        : 'Tüm aktif ve geçmiş iş başvurularınızı organize etmek için üst menüdeki bu sekmeyi kullanırsınız.',
+        ? 'Tüm aktif ve geçmiş başvurularınızı organize etmek için alt menüdeki bu sekmeyi kullanırsınız.'
+        : 'Tüm aktif ve geçmiş başvurularınızı organize etmek için üst menüdeki bu sekmeyi kullanırsınız.',
       bulletPoints: [
         'Başvurular sekmesi hem sürükle-bırak Kanban panosunu hem de detaylı Liste görünümünü içerir.',
-        'Şimdi sayfadaki panoyu ve liste özelliklerini inceleyelim.',
+        'Şimdi Kanban panosu ve sessiz başvuru takibini inceleyelim.',
       ],
       position: isMobile ? 'top' : 'bottom',
     },
@@ -127,29 +174,13 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       id: 'kanban-board-page',
       targetSelector: '[data-tour="kanban-board-section"]',
       targetView: 'kanban',
-      title: 'Başvurularım: Sürükle-Bırak Kanban Panosu',
+      title: 'Başvurularım: Sürükle-Bırak Kanban & Takip',
       badge: 'Sayfa İçi Alan',
       description:
-        'Başvurularınızı sürükle-bırak Kanban panosunda adım adım görsel olarak yönetin.',
+        'Başvurularınızı sürükle-bırak Kanban panosunda veya Liste görünümünde adım adım yönetin.',
       bulletPoints: [
-        'Aşamalar: Hazırlanıyor ➔ Beklemede ➔ Mülakatta ➔ Teklif.',
-        'Kartları tutup bir sonraki aşama sütununa bırakarak durumunu anında güncelleyin.',
-        'Mülakat tarihleri ve sessiz başvuru uyarıları kartların üzerinde canlı görünür.',
-      ],
-      position: 'bottom',
-    },
-    {
-      id: 'applications-list-page',
-      targetSelector: '[data-tour="applications-list-section"]',
-      targetView: 'list',
-      title: 'Başvurularım: Sessiz Başvuru & İK Takip Şablonu',
-      badge: 'Sayfa İçi Alan',
-      description:
-        '14 gün boyunca yanıt alamadığınız başvuruları tespit edin ve profesyonel takip e-postasıyla hatırlatın.',
-      bulletPoints: [
-        '14 gün boyunca dönüş yapılmayan başvurular kırmızı "Sessiz" etiketiyle otomatik vurgulanır.',
-        'Kart üzerindeki "Şablonu Kopyala" ile İK yetkilisine özel hazırlanmış profesyonel takip e-postası metni alın.',
-        'Arama çubuğu ve filtreler sayesinde şirket veya pozisyona göre anında filtreleme yapın.',
+        'Aşamalar: Hazırlanıyor ➔ Bekleniyor ➔ Dönüş Aldı ➔ Mülakat ➔ Teklif.',
+        '14 gün boyunca dönüş yapılmayan başvurular "Sessiz" olarak vurgulanır ve hazır İK takip şablonu sunar.',
       ],
       position: 'bottom',
     },
@@ -157,14 +188,14 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       id: 'nav-analytics',
       targetSelector: '[data-tour="nav-analytics"]',
       targetView: 'analytics',
-      title: isMobile ? '4. Sekme: Alt Menüde "Analiz"' : '4. Sekme: Üst Menüde "Analiz"',
+      title: isMobile ? '6. Sekme: Alt Menüde "Analiz"' : '6. Sekme: Üst Menüde "Analiz"',
       badge: isMobile ? 'Alt Menü Butonu' : 'Üst Menü Butonu',
       description: isMobile
-        ? 'Başvuru sürecinizin geri dönüş ve başarı istatistiklerini görmek için alt menüdeki Analiz sekmesini açarsınız.'
-        : 'Başvuru sürecinizin geri dönüş ve başarı istatistiklerini görmek için üst menüdeki Analiz sekmesini açarsınız.',
+        ? 'Yenilenen Akıllı Kariyer Pusulası ve dönüşüm hunisini görmek için alt menüdeki Analiz sekmesini açarsınız.'
+        : 'Yenilenen Akıllı Kariyer Pusulası ve dönüşüm hunisini görmek için üst menüdeki Analiz sekmesini açarsınız.',
       bulletPoints: [
-        'Bu buton sizi başvuru performansı, dönüş oranları ve CV başarı grafiklerine götürür.',
-        'Şimdi sayfadaki grafikleri inceleyelim.',
+        'Kariyer Momentum Skoru, 4 adımlı Başvuru Yolculuğu Hunisi ve İK iletişim çarpanı burada yer alır.',
+        'Şimdi yeni Analiz ekranını inceleyelim.',
       ],
       position: isMobile ? 'top' : 'bottom',
     },
@@ -172,14 +203,14 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       id: 'analytics-view-page',
       targetSelector: '[data-tour="analytics-view-section"]',
       targetView: 'analytics',
-      title: 'Analiz: Başarı Oranları ve CV Grafikleri',
-      badge: 'Sayfa İçi Alan',
+      title: 'Akıllı Kariyer Pusulası & Performans Koçu',
+      badge: 'İnteraktif Analiz',
       description:
-        'Sayfadaki interaktif grafiklerle iş arama sürecinizin verimliliğini somut metriklerle inceleyin.',
+        'Klasik grafikler yerine size yol gösteren interaktif dönüşüm hunisi ve karşılaştırmalı içgörüler.',
       bulletPoints: [
-        'Geri dönüş oranınızı (%), ortalama yanıt sürelerini ve mülakat sayılarını tek bakışta görün.',
-        'Hangi CV versiyonunuzun en çok mülakat getirdiğini karşılaştırmalı grafiklerden tespit edin.',
-        'Hangi başvuru kanalının (LinkedIn, Kariyer.net vb.) daha etkili olduğunu analiz edin.',
+        'Kariyer Momentum Skoru (0-100): Başvuru aktifliğiniz, İK iletişiminiz ve mülakat dönüşümünüze göre hesaplanan sağlık puanınız.',
+        'Tıklanabilir Dönüşüm Hunisi: Toplam Başvuru ➔ Olumlu Dönüş ➔ Mülakat ➔ İş Teklifi adımlarına tıklayarak ilgili başvuruları anında filtreleyin.',
+        'İK İletişim Etkisi & CV Liderlik Tablosu: İK’ya yazmanın dönüş şansınızı ne kadar artırdığını ve hangi CV’nizin #1 sırada olduğunu görün.',
       ],
       position: 'bottom',
     },
@@ -190,12 +221,12 @@ export function getTourSteps(isMobile: boolean = false): TourStep[] {
       title: 'Rehber Her Zaman Yanınızda',
       badge: 'Tamamlandı',
       description: isMobile
-        ? 'Tebrikler! Hem alt menüdeki sekmeleri hem de sayfadaki tüm özellikleri sırasıyla öğrendiniz.'
-        : 'Tebrikler! Hem üst menüdeki sekmeleri hem de sayfadaki tüm özellikleri sırasıyla öğrendiniz.',
+        ? 'Tebrikler! Hem alt menüdeki sekmeleri hem de yeni eklenen tüm kariyer araçlarını sırasıyla öğrendiniz.'
+        : 'Tebrikler! Hem üst menüdeki sekmeleri hem de yeni eklenen tüm kariyer araçlarını sırasıyla öğrendiniz.',
       bulletPoints: [
         isMobile
-          ? 'Ekranın üstündeki "Rehber" veya sağ alttaki yardım butonuna dilediğiniz zaman dokunarak bu tura veya detaylı kullanım kılavuzuna ulaşabilirsiniz.'
-          : 'Üst menüdeki "Rehber" butonuna dilediğiniz zaman tıklayarak bu tura veya detaylı kullanım kılavuzuna ulaşabilirsiniz.',
+          ? 'Ekranın üstündeki "Rehber" veya sağ alttaki yardım butonuna dilediğiniz zaman dokunarak bu tura veya detaylı kılavuza ulaşabilirsiniz.'
+          : 'Üst menüdeki "Rehber" butonuna dilediğiniz zaman tıklayarak bu tura veya detaylı kılavuza ulaşabilirsiniz.',
         'Excel, Google E-Tablolar ve JSON dışa aktarma menüsünden verilerinizi dilediğiniz formatta kaydedebilirsiniz.',
       ],
       position: 'bottom',

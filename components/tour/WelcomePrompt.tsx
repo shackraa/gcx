@@ -76,7 +76,7 @@ export function WelcomePrompt() {
       </div>
 
       <p className="text-xs text-muted-foreground/90 leading-relaxed mb-3.5">
-        Çoklu CV yönetimi, yapay zekâlı ilan radarı ve sessiz başvuru takibi özelliklerini keşfetmek için 1 dakikalık hızlı turu başlatın.
+        Kariyer Hafızası & Harvard CV Stüdyosu, canlı Staj/Fellowship/Burs vitrini, akıllı İlan Radarı ve Kariyer Pusulası özelliklerini keşfetmek için hızlı turu başlatın.
       </p>
 
       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
