@@ -221,6 +221,86 @@ function extractSearchPhrases(role: string, skills: string[], experienceLevel = 
   return Array.from(phrases).slice(0, 4)
 }
 
+// Extract required minimum years of experience from Turkish & English job description text
+function extractRequiredYearsFromDescription(text: string): number | null {
+  if (!text) return null
+  const lower = text.toLowerCase()
+
+  const patterns: RegExp[] = [
+    // Turkish: "en az 5 yıl", "minimum 4 yıl", "min 3 yıl", "min. 5 yıllık"
+    /\b(?:en\s+az|minimum|min\.?|asgari)\s*(\d{1,2})\s*(?:\+|\s*-\s*\d{1,2})?\s*yıl/gi,
+    // Turkish: "5+ yıl deneyim", "3-5 yıl tecrübe", "5 yıl ve üzeri deneyim", "4 yıllık iş deneyimi"
+    /\b(\d{1,2})\s*(?:\+|\s*-\s*\d{1,2}|\s*ve\s*üzeri)?\s*yıl(?:lık)?\s+(?:[a-zçğıöşü]+\s+){0,3}(?:deneyim|tecrübe)/gi,
+    // Turkish: "5+ yıl" standalone in bullet points
+    /\b([3-9]|1[0-5])\s*\+\s*yıl\b/gi,
+    // English: "minimum 5 years", "at least 4 years", "min 3 years"
+    /\b(?:minimum|at\s+least|min\.?)\s+(?:of\s+)?(\d{1,2})\s*\+?\s*years?/gi,
+    // English: "5+ years of experience", "3-5 years of professional experience", "4 years experience"
+    /\b(\d{1,2})\s*(?:\+|\s*-\s*\d{1,2})?\s*(?:years?|yrs?)\s+(?:of\s+)?(?:[a-z-]+\s+){0,3}(?:experience|exp\b|background|track\s+record)/gi,
+    // English: "5+ years in software/product/AI/development"
+    /\b([3-9]|1[0-5])\s*\+\s*(?:years?|yrs?)\b/gi,
+  ]
+
+  let maxMinYears: number | null = null
+
+  for (const regex of patterns) {
+    let match: RegExpExecArray | null
+    while ((match = regex.exec(lower)) !== null) {
+      const yrs = parseInt(match[1], 10)
+      // Ignore unrealistic numbers (like "20 yıl geçmişi olan şirketimiz" -> usually > 12 is company age)
+      if (!isNaN(yrs) && yrs >= 1 && yrs <= 12) {
+        if (maxMinYears === null || yrs > maxMinYears) {
+          maxMinYears = yrs
+        }
+      }
+    }
+  }
+
+  return maxMinYears
+}
+
+// Check if the full job description or LinkedIn criteria conflicts with the user's selected experienceLevel
+function isDescriptionSeniorityMismatch(
+  descriptionText: string,
+  criteriaText: string,
+  experienceLevel: string
+): boolean {
+  if (!experienceLevel || experienceLevel === 'all') return false
+
+  const reqYears = extractRequiredYearsFromDescription(descriptionText)
+  const criteriaLower = (criteriaText || '').toLowerCase()
+  const descLower = (descriptionText || '').toLowerCase()
+
+  if (experienceLevel === 'intern') {
+    // Interns/Part-time should not see jobs demanding 2+ years of experience
+    if (reqYears !== null && reqYears >= 2) return true
+    if (
+      criteriaLower.includes('orta-üst') ||
+      criteriaLower.includes('mid-senior') ||
+      criteriaLower.includes('director') ||
+      criteriaLower.includes('direktör')
+    ) {
+      return true
+    }
+    if (/\b(senior|lead|principal|kıdemli)\s+(developer|engineer|product|manager|uzman)/i.test(descLower)) {
+      return true
+    }
+  }
+
+  if (experienceLevel === 'junior') {
+    // New Grad & Junior (0-2 years) should NEVER see jobs demanding 3+ years (e.g. 3, 4, 5, 7, 10 years)
+    if (reqYears !== null && reqYears >= 3) return true
+    if (criteriaLower.includes('director') || criteriaLower.includes('direktör')) return true
+  }
+
+  if (experienceLevel === 'mid') {
+    // Mid-level (2-5 years) should not see jobs demanding 6+ years
+    if (reqYears !== null && reqYears >= 6) return true
+  }
+
+  return false
+}
+
 // Scrape LinkedIn Guest API for a single query across multiple pages
 async function fetchLinkedInGuestJobs(
   searchQuery: string,
@@ -228,7 +308,7 @@ async function fetchLinkedInGuestJobs(
   workplace: string,
   experienceLevel: string,
   targetRole: string,
-  maxPages = 3
+  maxPages = 2
 ) {
   const encodedKw = encodeURIComponent(searchQuery)
   const encodedLoc = encodeURIComponent(location || 'Turkey')
@@ -252,20 +332,20 @@ async function fetchLinkedInGuestJobs(
   }
 
   const jobs: Array<{
+    jobId?: string
     title: string
     company: string
     location: string
     workplaceType: string
     url: string
     source: string
+    descriptionSnippet?: string
   }> = []
 
   const requests = []
   for (let p = 0; p < maxPages; p++) {
     const start = p * 25
-    // Page 0 and 1 use LinkedIn's f_E filter when applicable; Page 2 also scans unfiltered (since many Turkish HR posts omit f_E metadata) and relies on our strict title filter
-    const expParam = p < 2 ? f_e : ''
-    const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}${expParam}&start=${start}`
+    const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}${f_e}&start=${start}`
     requests.push(
       fetch(url, { headers, next: { revalidate: 30 } })
         .then(async (res) => (res.ok ? await res.text() : ''))
@@ -284,11 +364,13 @@ async function fetchLinkedInGuestJobs(
       const companyElem = $(el).find('h4.base-search-card__subtitle')
       const locElem = $(el).find('span.job-search-card__location')
       const linkElem = $(el).find('a.base-card__full-link')
+      const cardElem = $(el).find('[data-entity-urn]')
 
       const title = titleElem.text().trim()
       const company = companyElem.text().trim()
       const loc = locElem.text().trim() || location
       const link = linkElem.attr('href') || ''
+      const urn = cardElem.attr('data-entity-urn') || $(el).attr('data-entity-urn') || ''
 
       if (title && company) {
         const lowerTitle = title.toLowerCase()
@@ -297,10 +379,12 @@ async function fetchLinkedInGuestJobs(
         const isExcluded = NON_TECH_EXCLUSIONS.some((ex) => lowerTitle.includes(ex))
         if (isExcluded) return
 
-        // Filter out seniority mismatches
+        // Filter out seniority mismatches in title
         if (isSeniorityMismatch(title, experienceLevel, targetRole)) return
 
         const cleanUrl = link.split('?')[0] || `https://www.linkedin.com/jobs/search/?keywords=${encodedKw}`
+        const urnMatch = urn.match(/jobPosting:(\d+)/) || cleanUrl.match(/-(\d{7,12})(?:\/|$)/)
+        const jobId = urnMatch ? urnMatch[1] : undefined
 
         let derivedWorkplace = workplace
         if (workplace === 'all') {
@@ -310,6 +394,7 @@ async function fetchLinkedInGuestJobs(
         }
 
         jobs.push({
+          jobId,
           title,
           company,
           location: loc,
@@ -322,6 +407,71 @@ async function fetchLinkedInGuestJobs(
   }
 
   return jobs
+}
+
+// Fetch actual LinkedIn job descriptions in parallel and filter out jobs requiring excessive years of experience
+async function enrichAndFilterJobsByDescription(
+  jobs: Array<{
+    jobId?: string
+    title: string
+    company: string
+    location: string
+    workplaceType: string
+    url: string
+    source: string
+    descriptionSnippet?: string
+  }>,
+  experienceLevel: string
+) {
+  const candidates = jobs.slice(0, 22)
+  const headers = {
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+  }
+
+  const results = await Promise.all(
+    candidates.map(async (job) => {
+      if (!job.jobId) return job
+      try {
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 3200)
+        const res = await fetch(
+          `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${job.jobId}`,
+          { headers, signal: controller.signal }
+        )
+        clearTimeout(timer)
+        if (!res.ok) return job
+
+        const html = await res.text()
+        const $ = cheerio.load(html)
+        const descText = $('.show-more-less-html__markup, .description__text')
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim()
+        const criteriaText = $('.description__job-criteria-text')
+          .text()
+          .replace(/\s+/g, ' ')
+          .trim()
+
+        if (descText) {
+          // Check if description demands 3+ / 5+ years of experience!
+          if (isDescriptionSeniorityMismatch(descText, criteriaText, experienceLevel)) {
+            return null
+          }
+          return {
+            ...job,
+            descriptionSnippet: descText.slice(0, 500),
+          }
+        }
+        return job
+      } catch {
+        return job
+      }
+    })
+  )
+
+  return results.filter((j): j is NonNullable<typeof j> => j !== null)
 }
 
 // Domain skill pools for intelligent alignment
@@ -425,7 +575,15 @@ function generateCareerReason(
 
 // Smart heuristic job evaluator when AI is unavailable
 function evaluateJobHeuristic(
-  job: { title: string; company: string; location: string; workplaceType: string; url: string; source: string },
+  job: {
+    title: string
+    company: string
+    location: string
+    workplaceType: string
+    url: string
+    source: string
+    descriptionSnippet?: string
+  },
   cvRole: string,
   cvSkills: string[],
   idx: number,
@@ -434,15 +592,17 @@ function evaluateJobHeuristic(
   experienceLevel = 'all'
 ) {
   const titleLower = job.title.toLowerCase()
+  const descLower = (job.descriptionSnippet || '').toLowerCase()
+  const combinedText = `${titleLower} ${descLower}`
   const cvRoleLower = cvRole.toLowerCase()
   const domain = detectJobDomain(job.title, cvRole)
   const domainKeywords = DOMAIN_SKILL_MAP[domain] || []
 
-  // Match skills that actually relate to this specific job and domain
+  // Match skills that actually relate to this specific job title, description, and domain
   const matchedSkills: string[] = []
   for (const s of cvSkills) {
     const sLower = s.toLowerCase()
-    if (titleLower.includes(sLower) || domainKeywords.some((k) => sLower.includes(k) || k.includes(sLower))) {
+    if (combinedText.includes(sLower) || domainKeywords.some((k) => sLower.includes(k) || k.includes(sLower))) {
       matchedSkills.push(s)
     }
   }
@@ -465,12 +625,12 @@ function evaluateJobHeuristic(
   if (experienceLevel === 'senior' && (titleLower.includes('senior') || cvRoleLower.includes('senior'))) score += 5
   if (
     (experienceLevel === 'intern' || experienceLevel === 'junior') &&
-    (titleLower.includes('intern') ||
-      titleLower.includes('staj') ||
-      titleLower.includes('junior') ||
-      titleLower.includes('associate') ||
-      titleLower.includes('part-time') ||
-      titleLower.includes('yeni mezun'))
+    (combinedText.includes('intern') ||
+      combinedText.includes('staj') ||
+      combinedText.includes('junior') ||
+      combinedText.includes('associate') ||
+      combinedText.includes('part-time') ||
+      combinedText.includes('yeni mezun'))
   ) {
     score += 6
   }
@@ -494,7 +654,15 @@ function evaluateJobHeuristic(
 
 // Evaluate jobs using Gemini API (with batching)
 async function evaluateJobsWithAI(
-  jobs: Array<{ title: string; company: string; location: string; workplaceType: string; url: string; source: string }>,
+  jobs: Array<{
+    title: string
+    company: string
+    location: string
+    workplaceType: string
+    url: string
+    source: string
+    descriptionSnippet?: string
+  }>,
   cvRole: string,
   cvSkills: string[],
   cvSummary: string,
@@ -527,19 +695,30 @@ Kullanıcı CV Profili:
 - Kullanıcının Yetenekleri: ${cvSkills.join(', ')}
 - CV Özeti: ${cvSummary || 'Teknik ve profesyonel profil'}
 
-Aşağıda taranan ${jobs.length} adet iş ilanı bulunmaktadır. Her ilan için:
+Aşağıda taranan ${jobs.length} adet iş ilanı (başlık ve ilan açıklama özeti ile birlikte) bulunmaktadır. Her ilan için:
 1. matchScore: Bu ilanın kullanıcının CV'si ve tecrübe seviyesi (${expLabelMap[experienceLevel] || 'Genel'}) ile GERÇEK uyum yüzdesi (0-100).
+   - ÇOK ÖNEMLİ KURAL: İlan açıklamasını ("description") dikkatle oku! Eğer kullanıcı "Stajyer" veya "Yeni Mezun / Junior (0-2 Yıl)" ise ve ilan açıklamasında 3+, 4+, 5+ yıl gibi yüksek tecrübe şartı aranıyorsa matchScore değerini KESİNLİKLE 40'ın altında (<40) ver ki elensin!
    - Eğer pozisyon doğrudan CV'nin uzmanlık alanındaysa ve tecrübe seviyesine uygunsa: %82 - %98 ver.
    - Eğer kısmen ilgiliyse: %70 - %81 ver.
-   - Eğer tamamen alakasız sektörse veya adayın tecrübe seviyesinin çok üzerindeyse: <%50 ver.
+   - Eğer tamamen alakasız sektörse veya adayın tecrübe seviyesinin üzerindeyse: <%50 ver.
 2. matchingSkills: İlanda aranan ve kullanıcının CV'sinde OLAN yetenekler (En fazla 3 adet).
 3. missingSkills: İlanda gerekebilecek ama CV'de öne çıkmayan yetenekler (En fazla 2 adet).
 4. reason: Her ilana ve şirkete ÖZEL 1-2 cümlelik Türkçe profesyonel kariyer değerlendirmesi.
-   - KESİNLİKLE DİKKAT: Standart, tekrarlayan veya robotik şablonlar ASLA kullanma (örneğin tüm ilanlara "sql python yetkinlikleriniz örtüşmektedir" veya "profiliniz uygundur" gibi klişeleri asla tekrar etme).
-   - Pozisyonun uzmanlık alanına (${cvRole}), şirketin çalışma vizyonuna ve adayın gerçek eşleşen becerilerine değinen özgün ve şirkete özel bir gerekçe oluştur.
+   - KESİNLİKLE DİKKAT: Standart, tekrarlayan veya robotik şablonlar ASLA kullanma.
+   - Pozisyonun uzmanlık alanına (${cvRole}), ilan açıklamasına ve adayın gerçek eşleşen becerilerine değinen özgün bir gerekçe oluştur.
 
 İlan Listesi:
-${JSON.stringify(jobs.map((j, i) => ({ index: i, title: j.title, company: j.company, location: j.location })), null, 2)}
+${JSON.stringify(
+  jobs.map((j, i) => ({
+    index: i,
+    title: j.title,
+    company: j.company,
+    location: j.location,
+    description: j.descriptionSnippet || '',
+  })),
+  null,
+  2
+)}
 
 SADECE geçerli bir JSON dizisi formatında yanıt ver:
 [
@@ -632,30 +811,35 @@ export async function POST(req: NextRequest) {
 
     // 2. Fetch jobs across all search phrases in parallel
     const crawlPromises = searchPhrases.map((phrase) =>
-      fetchLinkedInGuestJobs(phrase, location, workplaceType, experienceLevel, role, 3)
+      fetchLinkedInGuestJobs(phrase, location, workplaceType, experienceLevel, role, 2)
     )
 
     const results = await Promise.all(crawlPromises)
 
     // 3. Deduplicate by clean URL
     const seenUrls = new Set<string>()
-    const allDiscoveredJobs: Array<{
+    const rawDiscoveredJobs: Array<{
+      jobId?: string
       title: string
       company: string
       location: string
       workplaceType: string
       url: string
       source: string
+      descriptionSnippet?: string
     }> = []
 
     for (const jobBatch of results) {
       for (const job of jobBatch) {
         if (!seenUrls.has(job.url)) {
           seenUrls.add(job.url)
-          allDiscoveredJobs.push(job)
+          rawDiscoveredJobs.push(job)
         }
       }
     }
+
+    // 3.5. Deep-read actual job descriptions in parallel and eliminate postings demanding excessive years of experience (e.g. "5+ years" when user selected Intern/Junior)
+    const allDiscoveredJobs = await enrichAndFilterJobsByDescription(rawDiscoveredJobs, experienceLevel)
 
     // 4. Fallback recommendations if zero hits (tailored to experienceLevel)
     if (allDiscoveredJobs.length === 0) {
@@ -702,7 +886,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 5. Individual job-by-job AI evaluation
+    // 5. Individual job-by-job AI evaluation (now with real job descriptions!)
     const scoutedJobs = await evaluateJobsWithAI(
       allDiscoveredJobs,
       role,
