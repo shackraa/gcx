@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
 
+interface ScoutResumeOption {
+  id: string
+  name: string
+  targetRole?: string
+  skills?: string[]
+}
+
 interface ScoutRequestBody {
   role?: string
   skills?: string[]
   workplaceType?: 'all' | 'onsite' | 'hybrid' | 'remote'
   experienceLevel?: 'intern' | 'junior' | 'mid' | 'senior' | 'all'
+  customKeywords?: string
   location?: string
   resumeId?: string
   resumeName?: string
   resumeSummary?: string
+  allResumes?: ScoutResumeOption[]
   apiKey?: string
 }
 
@@ -98,7 +107,6 @@ function isSeniorityMismatch(
 
   if (experienceLevel === 'intern' || experienceLevel === 'junior') {
     if (seniorMarkers.some((m) => lower.includes(m))) return true
-    // Also exclude general "Manager" unless it's Product/Project Manager and the user is targeting Product/Project
     if (
       (lower.includes('manager') || lower.includes('yönetici')) &&
       !roleLower.includes('product') &&
@@ -143,20 +151,36 @@ function isSeniorityMismatch(
   return false
 }
 
-// Extract clean, multi-angle search queries from CV target role, skills, and experience level
-function extractSearchPhrases(role: string, skills: string[], experienceLevel = 'all'): string[] {
+// Extract clean, multi-angle bilingual (TR + EN) search queries from CV target role, skills, customKeywords, and experience level
+function extractSearchPhrases(
+  role: string,
+  skills: string[],
+  experienceLevel = 'all',
+  customKeywords = '',
+  allResumes: ScoutResumeOption[] = []
+): string[] {
   let cleaned = role
     .replace(/\s*cv\s*/gi, ' ')
     .replace(/[()[\]{}]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 
-  // Strip seniority words from base role if user is intern/junior so we don't accidentally search "Senior"
   if (experienceLevel === 'intern' || experienceLevel === 'junior') {
     cleaned = cleaned.replace(/\b(senior|sr\.?|lead|principal|kıdemli)\b/gi, '').replace(/\s+/g, ' ').trim()
   }
 
   const phrases = new Set<string>()
+
+  // 1. User's explicit custom keywords / focus roles take top priority
+  if (customKeywords && customKeywords.trim()) {
+    const customParts = customKeywords
+      .split(/[,;/|]/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 1)
+    for (const cp of customParts) {
+      phrases.add(cp)
+    }
+  }
 
   if (cleaned && cleaned.toLowerCase() !== 'all') {
     phrases.add(cleaned)
@@ -169,33 +193,40 @@ function extractSearchPhrases(role: string, skills: string[], experienceLevel = 
       }
     }
 
-    // Common role expansions
-    const lower = cleaned.toLowerCase()
-    if (lower.includes('product') && lower.includes('ai')) {
-      phrases.add('AI Engineer')
+    // Bilingual (EN + TR) & Domain Role Expansions so we never miss Turkish or English job titles
+    const lower = `${cleaned} ${customKeywords}`.toLowerCase()
+    if (lower.includes('product') || lower.includes('ürün')) {
       phrases.add(experienceLevel === 'intern' || experienceLevel === 'junior' ? 'Associate Product Manager' : 'Product Manager')
       phrases.add('Product Specialist')
-    } else if (lower.includes('product')) {
-      phrases.add(experienceLevel === 'intern' || experienceLevel === 'junior' ? 'Associate Product Manager' : 'Product Manager')
-      phrases.add('Product Specialist')
-    } else if (lower.includes('ai') || lower.includes('yapay zeka')) {
+      phrases.add('Ürün Uzmanı')
+      if (experienceLevel === 'intern' || experienceLevel === 'junior') {
+        phrases.add('Ürün Yönetimi')
+      }
+    }
+    if (lower.includes('ai') || lower.includes('yapay zeka') || lower.includes('llm') || lower.includes('machine learning')) {
       phrases.add('AI Engineer')
+      phrases.add('Yapay Zeka')
       phrases.add('Machine Learning Engineer')
-    } else if (lower.includes('frontend')) {
+    }
+    if (lower.includes('frontend') || lower.includes('react') || lower.includes('ön yüz')) {
       phrases.add('Frontend Developer')
       phrases.add('React Developer')
-    } else if (lower.includes('backend')) {
+    }
+    if (lower.includes('backend') || lower.includes('python') || lower.includes('node')) {
       phrases.add('Backend Developer')
       phrases.add('Python Developer')
-    } else if (lower.includes('data')) {
+    }
+    if (lower.includes('data') || lower.includes('veri') || lower.includes('analist') || lower.includes('analyst')) {
       phrases.add('Data Analyst')
-      phrases.add('Data Scientist')
+      phrases.add('Veri Analisti')
+      phrases.add('Business Analyst')
     }
 
     // Add level-targeted search phrase so entry-level/intern postings are actively surfaced
     const baseRole = Array.from(phrases)[0] || 'Software Developer'
     if (experienceLevel === 'intern') {
       phrases.add(`${baseRole} Intern`)
+      phrases.add('Stajyer')
     } else if (experienceLevel === 'junior') {
       phrases.add(`Junior ${baseRole}`)
     } else if (experienceLevel === 'senior') {
@@ -203,9 +234,17 @@ function extractSearchPhrases(role: string, skills: string[], experienceLevel = 
     }
   }
 
+  // Include secondary CV roles if user selected "All CVs"
+  for (const r of allResumes) {
+    const rRole = (r.targetRole || r.name || '').replace(/\s*cv\s*/gi, '').trim()
+    if (rRole && rRole.length > 2 && phrases.size < 7) {
+      phrases.add(rRole)
+    }
+  }
+
   // Add top skill combinations
   const validSkills = skills.filter((s) => s && s.trim().length > 1)
-  if (validSkills.length > 0 && phrases.size < 4) {
+  if (validSkills.length > 0 && phrases.size < 6) {
     if (cleaned && cleaned.length > 2) {
       phrases.add(`${validSkills[0]} ${cleaned}`)
     } else {
@@ -218,7 +257,7 @@ function extractSearchPhrases(role: string, skills: string[], experienceLevel = 
     phrases.add('Software Engineer')
   }
 
-  return Array.from(phrases).slice(0, 4)
+  return Array.from(phrases).slice(0, 7)
 }
 
 // Extract required minimum years of experience from Turkish & English job description text
@@ -301,6 +340,25 @@ function isDescriptionSeniorityMismatch(
   return false
 }
 
+// Check if a LinkedIn job detail page indicates the posting is closed ("Artık başvuru kabul edilmiyor" / "No longer accepting applications")
+function isJobClosed(fullPageText: string, $: cheerio.CheerioAPI): boolean {
+  if ($('.closed-job, .closed-job__flavor--closed').length > 0) return true
+  const lower = fullPageText.toLowerCase()
+  const closedPhrases = [
+    'artık başvuru kabul edilmiyor',
+    'artık başvuru kabul etmiyor',
+    'başvuru kabul edilmemektedir',
+    'başvurular kapandı',
+    'bu ilan kapandı',
+    'ilan yayından kaldırıldı',
+    'no longer accepting applications',
+    'applications are closed',
+    'this job is no longer available',
+    'job is closed',
+  ]
+  return closedPhrases.some((p) => lower.includes(p))
+}
+
 // Scrape LinkedIn Guest API for a single query across multiple pages
 async function fetchLinkedInGuestJobs(
   searchQuery: string,
@@ -325,6 +383,9 @@ async function fetchLinkedInGuestJobs(
   else if (experienceLevel === 'mid') f_e = '&f_E=3%2C4'
   else if (experienceLevel === 'senior') f_e = '&f_E=4%2C5'
 
+  // Always enforce f_TPR=r2592000 (past 30 days) so ancient closed zombie jobs never enter search results
+  const f_tpr = '&f_TPR=r2592000'
+
   const headers = {
     'User-Agent':
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -339,13 +400,14 @@ async function fetchLinkedInGuestJobs(
     workplaceType: string
     url: string
     source: string
+    postedAgo?: string
     descriptionSnippet?: string
   }> = []
 
   const requests = []
   for (let p = 0; p < maxPages; p++) {
     const start = p * 25
-    const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}${f_e}&start=${start}`
+    const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}${f_e}${f_tpr}&start=${start}`
     requests.push(
       fetch(url, { headers, next: { revalidate: 30 } })
         .then(async (res) => (res.ok ? await res.text() : ''))
@@ -364,13 +426,24 @@ async function fetchLinkedInGuestJobs(
       const companyElem = $(el).find('h4.base-search-card__subtitle')
       const locElem = $(el).find('span.job-search-card__location')
       const linkElem = $(el).find('a.base-card__full-link')
+      const timeElem = $(el).find('time.job-search-card__listdate, time.job-search-card__listdate--new')
       const cardElem = $(el).find('[data-entity-urn]')
 
       const title = titleElem.text().trim()
       const company = companyElem.text().trim()
       const loc = locElem.text().trim() || location
       const link = linkElem.attr('href') || ''
+      const postedAgo = timeElem.text().trim() || undefined
+      const dateTimeAttr = timeElem.attr('datetime') || ''
       const urn = cardElem.attr('data-entity-urn') || $(el).attr('data-entity-urn') || ''
+
+      // Skip if datetime is older than 35 days
+      if (dateTimeAttr) {
+        const postedMs = Date.parse(dateTimeAttr)
+        if (!isNaN(postedMs) && Date.now() - postedMs > 35 * 24 * 60 * 60 * 1000) {
+          return
+        }
+      }
 
       if (title && company) {
         const lowerTitle = title.toLowerCase()
@@ -401,6 +474,7 @@ async function fetchLinkedInGuestJobs(
           workplaceType: derivedWorkplace,
           url: cleanUrl,
           source: 'linkedin',
+          postedAgo,
         })
       }
     })
@@ -409,7 +483,7 @@ async function fetchLinkedInGuestJobs(
   return jobs
 }
 
-// Fetch actual LinkedIn job descriptions in parallel and filter out jobs requiring excessive years of experience
+// Fetch actual LinkedIn job descriptions in parallel and filter out closed jobs + excessive year requirements
 async function enrichAndFilterJobsByDescription(
   jobs: Array<{
     jobId?: string
@@ -419,11 +493,12 @@ async function enrichAndFilterJobsByDescription(
     workplaceType: string
     url: string
     source: string
+    postedAgo?: string
     descriptionSnippet?: string
   }>,
   experienceLevel: string
 ) {
-  const candidates = jobs.slice(0, 22)
+  const candidates = jobs.slice(0, 26)
   const headers = {
     'User-Agent':
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -441,10 +516,19 @@ async function enrichAndFilterJobsByDescription(
           { headers, signal: controller.signal }
         )
         clearTimeout(timer)
+        // If 404 or gone, the job was taken down -> drop it!
+        if (res.status === 404 || res.status === 410) return null
         if (!res.ok) return job
 
         const html = await res.text()
         const $ = cheerio.load(html)
+        const fullPageText = $.root().text().replace(/\s+/g, ' ').trim()
+
+        // 1. Eliminate jobs that are closed ("Artık başvuru kabul edilmiyor" / "No longer accepting applications")
+        if (isJobClosed(fullPageText, $)) {
+          return null
+        }
+
         const descText = $('.show-more-less-html__markup, .description__text')
           .text()
           .replace(/\s+/g, ' ')
@@ -455,7 +539,7 @@ async function enrichAndFilterJobsByDescription(
           .trim()
 
         if (descText) {
-          // Check if description demands 3+ / 5+ years of experience!
+          // 2. Eliminate jobs demanding 3+ / 5+ years of experience when user is Intern/Junior!
           if (isDescriptionSeniorityMismatch(descText, criteriaText, experienceLevel)) {
             return null
           }
@@ -799,15 +883,17 @@ export async function POST(req: NextRequest) {
       skills = ['React', 'JavaScript', 'TypeScript'],
       workplaceType = 'all',
       experienceLevel = 'all',
+      customKeywords = '',
       location = 'Türkiye',
       resumeId,
       resumeName,
       resumeSummary = '',
+      allResumes = [],
       apiKey = '',
     } = body
 
-    // 1. Extract multiple smart search phrases from role, skills, and experienceLevel
-    const searchPhrases = extractSearchPhrases(role, skills, experienceLevel)
+    // 1. Extract up to 7 bilingual & seniority-aware search phrases from role, skills, customKeywords, and allResumes
+    const searchPhrases = extractSearchPhrases(role, skills, experienceLevel, customKeywords, allResumes)
 
     // 2. Fetch jobs across all search phrases in parallel
     const crawlPromises = searchPhrases.map((phrase) =>
@@ -826,6 +912,7 @@ export async function POST(req: NextRequest) {
       workplaceType: string
       url: string
       source: string
+      postedAgo?: string
       descriptionSnippet?: string
     }> = []
 
@@ -838,7 +925,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3.5. Deep-read actual job descriptions in parallel and eliminate postings demanding excessive years of experience (e.g. "5+ years" when user selected Intern/Junior)
+    // 3.5. Deep-read actual job descriptions in parallel and eliminate closed jobs ("Artık başvuru kabul edilmiyor") + postings demanding excessive years of experience
     const allDiscoveredJobs = await enrichAndFilterJobsByDescription(rawDiscoveredJobs, experienceLevel)
 
     // 4. Fallback recommendations if zero hits (tailored to experienceLevel)
@@ -897,6 +984,36 @@ export async function POST(req: NextRequest) {
       resumeName,
       experienceLevel
     )
+
+    // 5.5. If user has multiple CVs in pool ("Tüm CV'lerim"), pick the highest-matching CV for each job
+    if (allResumes.length > 1) {
+      for (const job of scoutedJobs) {
+        const jobText = `${job.title} ${(job as any).descriptionSnippet || ''}`.toLowerCase()
+        let bestResume = allResumes[0]
+        let bestScore = -1
+        for (const r of allResumes) {
+          let rScore = 0
+          const rRoleWords = `${r.targetRole || ''} ${r.name || ''}`
+            .toLowerCase()
+            .split(/[\s,/&()-]+/)
+            .filter((w) => w.length > 2 && w !== 'cv')
+          for (const w of rRoleWords) {
+            if (jobText.includes(w)) rScore += 3
+          }
+          for (const sk of r.skills || []) {
+            if (jobText.includes(sk.toLowerCase())) rScore += 2
+          }
+          if (rScore > bestScore) {
+            bestScore = rScore
+            bestResume = r
+          }
+        }
+        if (bestResume) {
+          job.recommendedResumeId = bestResume.id
+          job.recommendedResumeName = bestResume.name
+        }
+      }
+    }
 
     // 6. Filter: Keep ONLY jobs with matchScore >= 70
     const qualifiedJobs = scoutedJobs.filter((j) => (j.matchScore || 0) >= 70)

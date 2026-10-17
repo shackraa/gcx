@@ -194,6 +194,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('auto')
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>('all')
   const [location, setLocation] = useState<string>('Türkiye')
+  const [customKeywords, setCustomKeywords] = useState<string>('')
   const [datePosted, setDatePosted] = useState<DatePosted>('past_week')
 
   // Live Auto Scouting State
@@ -248,18 +249,33 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
     setIsScouting(true)
 
     try {
+      const mergedSkills =
+        selectedResumeId === 'all'
+          ? Array.from(new Set(resumes.flatMap((r) => r.skills || []))).slice(0, 12)
+          : activeResume?.skills || []
+
       const res = await fetch('/api/jobs/scout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           role: roleTerm,
-          skills: activeResume?.skills || [],
+          skills: mergedSkills,
           workplaceType,
           experienceLevel: resolvedExperienceLevel,
+          customKeywords: customKeywords.trim(),
           location,
           resumeId: activeResume?._id,
           resumeName: activeResume?.name,
           resumeSummary: activeResume?.summary || '',
+          allResumes:
+            selectedResumeId === 'all'
+              ? resumes.map((r) => ({
+                  id: r._id,
+                  name: r.name,
+                  targetRole: r.targetRole,
+                  skills: r.skills || [],
+                }))
+              : [],
         }),
       })
 
@@ -284,8 +300,8 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           matchScore: typeof j.matchScore === 'number' ? j.matchScore : 80,
           matchingSkills: Array.isArray(j.matchingSkills) ? j.matchingSkills.map(String) : [],
           missingSkills: Array.isArray(j.missingSkills) ? j.missingSkills.map(String) : [],
-          recommendedResumeId: activeResume?._id || undefined,
-          recommendedResumeName: activeResume?.name || undefined,
+          recommendedResumeId: (j.recommendedResumeId || activeResume?._id || undefined) as any,
+          recommendedResumeName: j.recommendedResumeName || activeResume?.name || undefined,
           reason: String(j.reason || ''),
         }))
 
@@ -641,22 +657,23 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             </div>
           </div>
 
-          {/* Date Posted */}
+          {/* Custom Focus / Extra Keywords */}
           <div>
-            <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-              İlanın Yayın Tarihi
+            <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between mb-1">
+              <span>Ek Rol / Anahtar Kelime</span>
+              <span className="text-[10px] text-muted-foreground/70 font-normal">Opsiyonel</span>
             </label>
-            <select
-              value={datePosted}
-              onChange={(e) => setDatePosted(e.target.value as DatePosted)}
-              className="w-full h-9 text-xs bg-background border border-border rounded-lg px-2.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              {DATE_OPTIONS.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                value={customKeywords}
+                onChange={(e) => setCustomKeywords(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLiveScout()}
+                placeholder="Örn: Associate, AI, Ürün..."
+                className="w-full h-9 text-xs bg-background border border-border rounded-lg px-2.5 pr-6 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <Search className="absolute right-2 top-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            </div>
           </div>
         </div>
 
@@ -665,13 +682,17 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <span>
-              Seçili CV: <strong className="text-foreground">{activeResume?.name || 'Seçilmedi'}</strong> ({roleTerm}) · Seviye:{' '}
+              Kapsam:{' '}
+              <strong className="text-foreground">
+                {selectedResumeId === 'all' ? `Tüm CV Havuzum (${resumes.length} CV)` : activeResume?.name || 'Seçilmedi'}
+              </strong>{' '}
+              · Seviye:{' '}
               <strong className="text-primary">
                 {experienceLevel === 'auto'
                   ? `Otomatik (${detectedExp.shortLabel})`
                   : EXPERIENCE_OPTIONS.find((e) => e.value === experienceLevel)?.label}
               </strong>{' '}
-              · Hedef: <strong className="text-foreground">{location}</strong>
+              · <span className="text-emerald-600 dark:text-emerald-400 font-semibold">✓ Kapanmış &amp; Aşırı Kıdemli İlanlar Otomatik Elenir</span>
             </span>
           </div>
 
@@ -968,10 +989,30 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                    <MapPin className="h-3 w-3" />
-                    {job.location} · {job.workplaceType === 'onsite' ? 'Fiziksel' : job.workplaceType === 'remote' ? 'Uzaktan' : 'Hibrit'}
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3 w-3 shrink-0" />
+                      {job.location} · {job.workplaceType === 'onsite' ? 'Fiziksel' : job.workplaceType === 'remote' ? 'Uzaktan' : 'Hibrit'}
+                    </span>
+                    {job.recommendedResumeName && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20">
+                        En Uygun: {job.recommendedResumeName}
+                      </span>
+                    )}
+                  </div>
+
+                  {job.matchingSkills && job.matchingSkills.length > 0 && (
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {job.matchingSkills.slice(0, 3).map((sk: string, idx: number) => (
+                        <span
+                          key={idx}
+                          className="text-[10px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded"
+                        >
+                          ✓ {sk}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {job.reason && (
                     <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
