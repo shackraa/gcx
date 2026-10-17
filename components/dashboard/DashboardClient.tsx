@@ -51,27 +51,31 @@ export function DashboardClient() {
     <>
       {isApplicationsView && (
         <>
-          {/* Stats */}
-          <StatsCards stats={stats} overdueDays={overdueDays} />
+          {/* Top Executive Row: Stats + Weekly Goal side-by-side on widescreen */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-3.5 mt-2 sm:mt-3 items-stretch">
+            <div className="xl:col-span-8 flex">
+              <StatsCards stats={stats} overdueDays={overdueDays} />
+            </div>
+            <div className="xl:col-span-4 flex">
+              <WeeklyGoal
+                current={thisWeekApps.length}
+                goal={weeklyGoal}
+              />
+            </div>
+          </div>
 
           {/* Upcoming interviews */}
           {upcomingInterviews.length > 0 && (
             <UpcomingInterviews interviews={upcomingInterviews} />
           )}
 
-          {/* Weekly goal */}
-          <WeeklyGoal
-            current={thisWeekApps.length}
-            goal={weeklyGoal}
-          />
-
           {/* Controls */}
-          <div className="space-y-2.5 mt-4 sm:mt-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div className="order-2 sm:order-1 overflow-hidden min-w-0">
+          <div className="space-y-2.5 mt-4 sm:mt-5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+              <div className="order-2 lg:order-1 overflow-hidden min-w-0 flex-1">
                 <FilterTabs applications={applications} overdueDays={overdueDays} />
               </div>
-              <div className="order-1 sm:order-2 flex items-center justify-between sm:justify-end gap-2 shrink-0">
+              <div className="order-1 lg:order-2 flex items-center justify-between lg:justify-end gap-2 shrink-0">
                 <SearchAndFilters />
                 <ViewToggle />
               </div>

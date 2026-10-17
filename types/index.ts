@@ -222,6 +222,9 @@ export interface GeneratedCV {
 // Workplace type for job filtering (Onsite / Fiziksel, Hybrid, Remote, All)
 export type WorkplaceType = 'all' | 'onsite' | 'hybrid' | 'remote'
 
+// Experience level filter for job radar (Auto from CV, Intern, Junior, Mid, Senior, All)
+export type ExperienceLevel = 'auto' | 'intern' | 'junior' | 'mid' | 'senior' | 'all'
+
 // Date posted filter for job radar
 export type DatePosted = 'all' | 'past_24h' | 'past_week' | 'past_month'
 

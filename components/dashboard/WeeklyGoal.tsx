@@ -37,7 +37,7 @@ export function WeeklyGoal({ current, goal }: WeeklyGoalProps) {
   return (
     <div
       data-tour="weekly-goal"
-      className="mt-3.5 bg-card border border-border/80 rounded-xl p-3.5 sm:p-4 shadow-2xs transition-all"
+      className="w-full flex flex-col justify-between bg-card border border-border/80 rounded-xl p-3.5 sm:p-4 shadow-2xs transition-all"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5">

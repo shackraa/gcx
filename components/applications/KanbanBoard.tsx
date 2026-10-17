@@ -187,7 +187,7 @@ export function KanbanBoard({ applications, search }: KanbanBoardProps) {
         onDragStart={(e) => setDraggingId(String(e.active.id))}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-3 overflow-x-auto pb-4 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scroll-smooth touch-pan-x">
+        <div className="flex xl:grid xl:grid-cols-6 gap-3.5 overflow-x-auto pb-4 pt-1 -mx-3 px-3 sm:mx-0 sm:px-0 scroll-smooth touch-pan-x">
           {COLUMNS.map((status) => {
             const colApps = filtered.filter((a) => a.status === status)
             return (
@@ -202,7 +202,7 @@ export function KanbanBoard({ applications, search }: KanbanBoardProps) {
 
         <DragOverlay>
           {draggingApp && (
-            <div className="w-52 opacity-90 rotate-1">
+            <div className="w-56 opacity-90 rotate-1">
               <KanbanCard app={draggingApp} />
             </div>
           )}
@@ -222,8 +222,8 @@ function KanbanColumn({
   const { setNodeRef, isOver } = useDroppable({ id: status })
 
   return (
-    <div className="shrink-0 w-52">
-      <div className="flex items-center justify-between mb-2">
+    <div className="shrink-0 w-56 xl:w-auto bg-muted/25 border border-border/50 rounded-xl p-2.5">
+      <div className="flex items-center justify-between mb-2.5 px-1">
         <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', STATUS_COLORS[status])}>
           {STATUS_LABELS[status]}
         </span>

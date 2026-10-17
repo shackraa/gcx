@@ -5,6 +5,7 @@ interface ScoutRequestBody {
   role?: string
   skills?: string[]
   workplaceType?: 'all' | 'onsite' | 'hybrid' | 'remote'
+  experienceLevel?: 'intern' | 'junior' | 'mid' | 'senior' | 'all'
   location?: string
   resumeId?: string
   resumeName?: string
@@ -49,14 +50,111 @@ const NON_TECH_EXCLUSIONS = [
   'havacılık mekanik',
 ]
 
-// Extract clean, multi-angle search queries from CV target role and skills
-function extractSearchPhrases(role: string, skills: string[]): string[] {
-  // Clean raw string (e.g. "Product & AI Engineer CV (Product Specialist)" -> ["Product & AI Engineer", "Product Specialist"])
+// Deterministic seniority mismatch filter so Junior/Intern candidates never get Senior/Lead/Director noise
+function isSeniorityMismatch(
+  jobTitle: string,
+  experienceLevel: string,
+  targetRole: string
+): boolean {
+  if (!experienceLevel || experienceLevel === 'all') return false
+  const lower = jobTitle.toLowerCase()
+  const roleLower = (targetRole || '').toLowerCase()
+
+  const seniorMarkers = [
+    'senior',
+    'sr.',
+    'sr ',
+    'lead',
+    'principal',
+    'staff ',
+    'director',
+    'head of',
+    'vp ',
+    'vice president',
+    'chief ',
+    'kıdemli',
+    'müdür',
+    'direktör',
+    'takım lideri',
+    'team lead',
+    'group product manager',
+    'architect',
+    'mimarı',
+  ]
+
+  const internJuniorMarkers = [
+    'intern',
+    'stajyer',
+    'staj',
+    'part-time',
+    'part time',
+    'yarı zamanlı',
+    'working student',
+    'trainee',
+    'aday mühendis',
+    'yeni mezun',
+    'new grad',
+  ]
+
+  if (experienceLevel === 'intern' || experienceLevel === 'junior') {
+    if (seniorMarkers.some((m) => lower.includes(m))) return true
+    // Also exclude general "Manager" unless it's Product/Project Manager and the user is targeting Product/Project
+    if (
+      (lower.includes('manager') || lower.includes('yönetici')) &&
+      !roleLower.includes('product') &&
+      !roleLower.includes('ürün') &&
+      !roleLower.includes('project') &&
+      !roleLower.includes('proje')
+    ) {
+      return true
+    }
+    return false
+  }
+
+  if (experienceLevel === 'mid') {
+    const midExcluded = [
+      'intern',
+      'stajyer',
+      'part-time',
+      'working student',
+      'director',
+      'head of',
+      'vp ',
+      'vice president',
+      'chief ',
+      'principal',
+      'direktör',
+    ]
+    return midExcluded.some((m) => lower.includes(m))
+  }
+
+  if (experienceLevel === 'senior') {
+    const seniorExcluded = [
+      ...internJuniorMarkers,
+      'junior',
+      'jr.',
+      'jr ',
+      'entry level',
+      'entry-level',
+    ]
+    return seniorExcluded.some((m) => lower.includes(m))
+  }
+
+  return false
+}
+
+// Extract clean, multi-angle search queries from CV target role, skills, and experience level
+function extractSearchPhrases(role: string, skills: string[], experienceLevel = 'all'): string[] {
   let cleaned = role
     .replace(/\s*cv\s*/gi, ' ')
     .replace(/[()[\]{}]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+
+  // Strip seniority words from base role if user is intern/junior so we don't accidentally search "Senior"
+  if (experienceLevel === 'intern' || experienceLevel === 'junior') {
+    cleaned = cleaned.replace(/\b(senior|sr\.?|lead|principal|kıdemli)\b/gi, '').replace(/\s+/g, ' ').trim()
+  }
 
   const phrases = new Set<string>()
 
@@ -75,11 +173,10 @@ function extractSearchPhrases(role: string, skills: string[]): string[] {
     const lower = cleaned.toLowerCase()
     if (lower.includes('product') && lower.includes('ai')) {
       phrases.add('AI Engineer')
-      phrases.add('Product Manager')
+      phrases.add(experienceLevel === 'intern' || experienceLevel === 'junior' ? 'Associate Product Manager' : 'Product Manager')
       phrases.add('Product Specialist')
-      phrases.add('AI Product')
     } else if (lower.includes('product')) {
-      phrases.add('Product Manager')
+      phrases.add(experienceLevel === 'intern' || experienceLevel === 'junior' ? 'Associate Product Manager' : 'Product Manager')
       phrases.add('Product Specialist')
     } else if (lower.includes('ai') || lower.includes('yapay zeka')) {
       phrases.add('AI Engineer')
@@ -91,8 +188,18 @@ function extractSearchPhrases(role: string, skills: string[]): string[] {
       phrases.add('Backend Developer')
       phrases.add('Python Developer')
     } else if (lower.includes('data')) {
-      phrases.add('Data Engineer')
+      phrases.add('Data Analyst')
       phrases.add('Data Scientist')
+    }
+
+    // Add level-targeted search phrase so entry-level/intern postings are actively surfaced
+    const baseRole = Array.from(phrases)[0] || 'Software Developer'
+    if (experienceLevel === 'intern') {
+      phrases.add(`${baseRole} Intern`)
+    } else if (experienceLevel === 'junior') {
+      phrases.add(`Junior ${baseRole}`)
+    } else if (experienceLevel === 'senior') {
+      phrases.add(`Senior ${baseRole}`)
     }
   }
 
@@ -115,7 +222,14 @@ function extractSearchPhrases(role: string, skills: string[]): string[] {
 }
 
 // Scrape LinkedIn Guest API for a single query across multiple pages
-async function fetchLinkedInGuestJobs(searchQuery: string, location: string, workplace: string, maxPages = 3) {
+async function fetchLinkedInGuestJobs(
+  searchQuery: string,
+  location: string,
+  workplace: string,
+  experienceLevel: string,
+  targetRole: string,
+  maxPages = 3
+) {
   const encodedKw = encodeURIComponent(searchQuery)
   const encodedLoc = encodeURIComponent(location || 'Turkey')
 
@@ -123,6 +237,13 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
   if (workplace === 'onsite') f_wt = '&f_WT=1'
   else if (workplace === 'remote') f_wt = '&f_WT=2'
   else if (workplace === 'hybrid') f_wt = '&f_WT=3'
+
+  // LinkedIn f_E codes: 1=Internship, 2=Entry level, 3=Associate, 4=Mid-Senior, 5=Director
+  let f_e = ''
+  if (experienceLevel === 'intern') f_e = '&f_E=1%2C2'
+  else if (experienceLevel === 'junior') f_e = '&f_E=1%2C2%2C3'
+  else if (experienceLevel === 'mid') f_e = '&f_E=3%2C4'
+  else if (experienceLevel === 'senior') f_e = '&f_E=4%2C5'
 
   const headers = {
     'User-Agent':
@@ -142,7 +263,9 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
   const requests = []
   for (let p = 0; p < maxPages; p++) {
     const start = p * 25
-    const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}&start=${start}`
+    // Page 0 and 1 use LinkedIn's f_E filter when applicable; Page 2 also scans unfiltered (since many Turkish HR posts omit f_E metadata) and relies on our strict title filter
+    const expParam = p < 2 ? f_e : ''
+    const url = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodedKw}&location=${encodedLoc}${f_wt}${expParam}&start=${start}`
     requests.push(
       fetch(url, { headers, next: { revalidate: 30 } })
         .then(async (res) => (res.ok ? await res.text() : ''))
@@ -173,6 +296,9 @@ async function fetchLinkedInGuestJobs(searchQuery: string, location: string, wor
         // Filter out non-tech noise
         const isExcluded = NON_TECH_EXCLUSIONS.some((ex) => lowerTitle.includes(ex))
         if (isExcluded) return
+
+        // Filter out seniority mismatches
+        if (isSeniorityMismatch(title, experienceLevel, targetRole)) return
 
         const cleanUrl = link.split('?')[0] || `https://www.linkedin.com/jobs/search/?keywords=${encodedKw}`
 
@@ -304,7 +430,8 @@ function evaluateJobHeuristic(
   cvSkills: string[],
   idx: number,
   resumeId?: string,
-  resumeName?: string
+  resumeName?: string,
+  experienceLevel = 'all'
 ) {
   const titleLower = job.title.toLowerCase()
   const cvRoleLower = cvRole.toLowerCase()
@@ -335,7 +462,18 @@ function evaluateJobHeuristic(
   // Calculate score based on domain alignment and seniority
   let score = 76
   if (domain !== 'general') score += 10
-  if (titleLower.includes('senior') && cvRoleLower.includes('senior')) score += 4
+  if (experienceLevel === 'senior' && (titleLower.includes('senior') || cvRoleLower.includes('senior'))) score += 5
+  if (
+    (experienceLevel === 'intern' || experienceLevel === 'junior') &&
+    (titleLower.includes('intern') ||
+      titleLower.includes('staj') ||
+      titleLower.includes('junior') ||
+      titleLower.includes('associate') ||
+      titleLower.includes('part-time') ||
+      titleLower.includes('yeni mezun'))
+  ) {
+    score += 6
+  }
   if (finalMatched.length >= 2) score += 6
   score = Math.min(97, Math.max(74, score + ((idx * 3) % 7)))
 
@@ -362,26 +500,38 @@ async function evaluateJobsWithAI(
   cvSummary: string,
   apiKey: string,
   resumeId?: string,
-  resumeName?: string
+  resumeName?: string,
+  experienceLevel = 'all'
 ) {
   const resolvedApiKey = apiKey || process.env.GEMINI_API_KEY || ''
 
   if (!resolvedApiKey) {
-    return jobs.map((job, idx) => evaluateJobHeuristic(job, cvRole, cvSkills, idx, resumeId, resumeName))
+    return jobs.map((job, idx) =>
+      evaluateJobHeuristic(job, cvRole, cvSkills, idx, resumeId, resumeName, experienceLevel)
+    )
+  }
+
+  const expLabelMap: Record<string, string> = {
+    intern: 'Stajyer / Part-Time / Öğrenci',
+    junior: 'Yeni Mezun / Junior (0-2 Yıl)',
+    mid: 'Mid-Level Uzman (2-5 Yıl)',
+    senior: 'Senior & Lead (5+ Yıl)',
+    all: 'Tüm Seviyeler',
   }
 
   const prompt = `Sen uzman bir Kıdemli İK Direktörü ve Teknik Kariyer Danışmanısın.
 
 Kullanıcı CV Profili:
 - Hedef Rol / Pozisyon: ${cvRole}
+- Tecrübe Seviyesi: ${expLabelMap[experienceLevel] || 'Belirtilmedi'}
 - Kullanıcının Yetenekleri: ${cvSkills.join(', ')}
 - CV Özeti: ${cvSummary || 'Teknik ve profesyonel profil'}
 
 Aşağıda taranan ${jobs.length} adet iş ilanı bulunmaktadır. Her ilan için:
-1. matchScore: Bu ilanın kullanıcının CV'si ile GERÇEK uyum yüzdesi (0-100).
-   - Eğer pozisyon doğrudan CV'nin uzmanlık alanındaysa (Oyun/Tech/SaaS/AI/Yazılım/Ürün): %82 - %98 ver.
+1. matchScore: Bu ilanın kullanıcının CV'si ve tecrübe seviyesi (${expLabelMap[experienceLevel] || 'Genel'}) ile GERÇEK uyum yüzdesi (0-100).
+   - Eğer pozisyon doğrudan CV'nin uzmanlık alanındaysa ve tecrübe seviyesine uygunsa: %82 - %98 ver.
    - Eğer kısmen ilgiliyse: %70 - %81 ver.
-   - Eğer tamamen alakasız sektörse: <%50 ver.
+   - Eğer tamamen alakasız sektörse veya adayın tecrübe seviyesinin çok üzerindeyse: <%50 ver.
 2. matchingSkills: İlanda aranan ve kullanıcının CV'sinde OLAN yetenekler (En fazla 3 adet).
 3. missingSkills: İlanda gerekebilecek ama CV'de öne çıkmayan yetenekler (En fazla 2 adet).
 4. reason: Her ilana ve şirkete ÖZEL 1-2 cümlelik Türkçe profesyonel kariyer değerlendirmesi.
@@ -457,7 +607,9 @@ SADECE geçerli bir JSON dizisi formatında yanıt ver:
   }
 
   // Safe fallback if all AI models failed
-  return jobs.map((job, idx) => evaluateJobHeuristic(job, cvRole, cvSkills, idx, resumeId, resumeName))
+  return jobs.map((job, idx) =>
+    evaluateJobHeuristic(job, cvRole, cvSkills, idx, resumeId, resumeName, experienceLevel)
+  )
 }
 
 export async function POST(req: NextRequest) {
@@ -467,6 +619,7 @@ export async function POST(req: NextRequest) {
       role = 'Software Developer',
       skills = ['React', 'JavaScript', 'TypeScript'],
       workplaceType = 'all',
+      experienceLevel = 'all',
       location = 'Türkiye',
       resumeId,
       resumeName,
@@ -474,12 +627,12 @@ export async function POST(req: NextRequest) {
       apiKey = '',
     } = body
 
-    // 1. Extract multiple smart search phrases from role and skills
-    const searchPhrases = extractSearchPhrases(role, skills)
+    // 1. Extract multiple smart search phrases from role, skills, and experienceLevel
+    const searchPhrases = extractSearchPhrases(role, skills, experienceLevel)
 
     // 2. Fetch jobs across all search phrases in parallel
     const crawlPromises = searchPhrases.map((phrase) =>
-      fetchLinkedInGuestJobs(phrase, location, workplaceType, 3)
+      fetchLinkedInGuestJobs(phrase, location, workplaceType, experienceLevel, role, 3)
     )
 
     const results = await Promise.all(crawlPromises)
@@ -504,14 +657,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Fallback recommendations if zero hits
+    // 4. Fallback recommendations if zero hits (tailored to experienceLevel)
     if (allDiscoveredJobs.length === 0) {
-      const fallbackTitles = [
+      let fallbackTitles = [
         `AI & ${role}`,
-        `Senior ${role}`,
-        `Lead ${role}`,
+        `${role}`,
+        `Associate ${role}`,
         `${role} (AI & Cloud)`,
       ]
+      if (experienceLevel === 'intern') {
+        fallbackTitles = [
+          `${role} Intern`,
+          `Part-Time ${role}`,
+          `Working Student - ${role}`,
+          `Junior ${role}`,
+        ]
+      } else if (experienceLevel === 'junior') {
+        fallbackTitles = [
+          `Junior ${role}`,
+          `Associate ${role}`,
+          `${role} (New Grad / 0-2 Yıl)`,
+          `AI & ${role}`,
+        ]
+      } else if (experienceLevel === 'senior') {
+        fallbackTitles = [
+          `Senior ${role}`,
+          `Lead ${role}`,
+          `Principal ${role}`,
+          `Senior AI & ${role}`,
+        ]
+      }
+
       const fallbackCompanies = ['Global Teknoloji', 'Örnek Yazılım Ltd.', 'Bulut Bilişim A.Ş.', 'Dijital Çözümler']
 
       allDiscoveredJobs.push(
@@ -534,7 +710,8 @@ export async function POST(req: NextRequest) {
       resumeSummary,
       apiKey,
       resumeId,
-      resumeName
+      resumeName,
+      experienceLevel
     )
 
     // 6. Filter: Keep ONLY jobs with matchScore >= 70

@@ -75,7 +75,7 @@ export function ApplicationList({ applications, overdueDays = 14 }: ApplicationL
   }
 
   return (
-    <div data-tour="applications-list-section" className="space-y-2">
+    <div data-tour="applications-list-section" className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-stretch">
       {applications.map((app) => (
         <ApplicationCard key={app._id} app={app} overdueDays={overdueDays} />
       ))}

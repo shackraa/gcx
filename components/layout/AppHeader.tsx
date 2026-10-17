@@ -101,7 +101,7 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-12 h-14 flex items-center justify-between gap-2 sm:gap-4">
         {/* Logo & Main Nav */}
         <div className="flex items-center gap-4 sm:gap-6 shrink-0">
           <Link

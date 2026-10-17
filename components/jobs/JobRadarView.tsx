@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import type { Resume, Application, WorkplaceType, DatePosted, MatchedJob } from '@/types'
+import type { Resume, Application, WorkplaceType, ExperienceLevel, DatePosted, MatchedJob } from '@/types'
 import { Button } from '@/components/ui/button'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
@@ -26,6 +26,7 @@ import {
   Trash2,
   Terminal,
   RotateCcw,
+  GraduationCap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -41,12 +42,139 @@ const WORKPLACE_OPTIONS: { value: WorkplaceType; label: string }[] = [
   { value: 'remote', label: 'Uzaktan (Remote)' },
 ]
 
+const EXPERIENCE_OPTIONS: { value: ExperienceLevel; label: string }[] = [
+  { value: 'auto', label: '✨ Otomatik (CV\'den Algıla)' },
+  { value: 'intern', label: '🎓 Stajyer / Part-Time / Öğrenci' },
+  { value: 'junior', label: '🌱 Yeni Mezun & Junior (0-2 Yıl)' },
+  { value: 'mid', label: '⚡ Mid-Level Uzman (2-5 Yıl)' },
+  { value: 'senior', label: '🏆 Senior & Lead (5+ Yıl)' },
+  { value: 'all', label: '🌐 Tüm Seviyeler (Filtresiz)' },
+]
+
 const DATE_OPTIONS: { value: DatePosted; label: string }[] = [
   { value: 'past_24h', label: 'Son 24 Saat' },
   { value: 'past_week', label: 'Son 1 Hafta' },
   { value: 'past_month', label: 'Son 1 Ay' },
   { value: 'all', label: 'Tüm Zamanlar' },
 ]
+
+// Safe, deterministic zero-error CV seniority detector
+function detectExperienceLevelFromResume(resume?: Resume): {
+  level: 'intern' | 'junior' | 'mid' | 'senior'
+  shortLabel: string
+  badgeText: string
+} {
+  if (!resume) {
+    return {
+      level: 'junior',
+      shortLabel: 'Yeni Mezun & Junior (0-2 Yıl)',
+      badgeText: 'Yeni Mezun / Junior',
+    }
+  }
+
+  const roleAndName = `${resume.targetRole || ''} ${resume.name || ''}`.toLowerCase()
+  const fullText = `${roleAndName} ${resume.summary || ''} ${resume.rawText || ''}`.toLowerCase()
+
+  // 1. Explicit Senior / Lead in target role or CV name
+  if (
+    /\b(senior|sr\.?|lead|principal|staff|kıdemli|direktör|director|head of|takım lideri|team lead)\b/i.test(
+      roleAndName
+    ) ||
+    /\b(5\+\s*yıl|6\+\s*yıl|7\+\s*yıl|8\+\s*yıl|5\+\s*years|senior\s+engineer|senior\s+developer|senior\s+product)\b/i.test(
+      fullText
+    )
+  ) {
+    return {
+      level: 'senior',
+      shortLabel: 'Senior & Lead (5+ Yıl)',
+      badgeText: 'Senior / Lead (5+ Yıl)',
+    }
+  }
+
+  // 2. Explicit Intern / Working Student in target role or CV name
+  if (/\b(intern|internship|stajyer|staj|working student|aday mühendis|part-time|part time)\b/i.test(roleAndName)) {
+    return {
+      level: 'intern',
+      shortLabel: 'Stajyer / Part-Time',
+      badgeText: 'Stajyer / Part-Time',
+    }
+  }
+
+  // 3. Explicit Mid-level signals
+  if (/\b(mid-level|mid level|3\+\s*yıl|4\+\s*yıl|3\+\s*years|4\+\s*years)\b/i.test(fullText)) {
+    return {
+      level: 'mid',
+      shortLabel: 'Mid-Level (2-5 Yıl)',
+      badgeText: 'Mid-Level (2-5 Yıl)',
+    }
+  }
+
+  // 4. Student / New Grad / Junior / Associate / Fellowship / Entry-level signals (default safe tier when not Senior/Mid)
+  return {
+    level: 'junior',
+    shortLabel: 'Yeni Mezun & Junior (0-2 Yıl)',
+    badgeText: 'Yeni Mezun / Junior & Part-Time',
+  }
+}
+
+// Client-side seniority check so existing scouted jobs also filter immediately when user switches dropdown
+function matchesClientExperienceFilter(
+  jobTitle: string,
+  resolvedLevel: 'intern' | 'junior' | 'mid' | 'senior' | 'all',
+  targetRole: string
+): boolean {
+  if (resolvedLevel === 'all') return true
+  const lower = (jobTitle || '').toLowerCase()
+  const roleLower = (targetRole || '').toLowerCase()
+
+  const seniorMarkers = [
+    'senior',
+    'sr.',
+    'sr ',
+    'lead',
+    'principal',
+    'staff ',
+    'director',
+    'head of',
+    'vp ',
+    'vice president',
+    'chief ',
+    'kıdemli',
+    'müdür',
+    'direktör',
+    'takım lideri',
+    'team lead',
+    'group product manager',
+    'architect',
+    'mimarı',
+  ]
+
+  if (resolvedLevel === 'intern' || resolvedLevel === 'junior') {
+    if (seniorMarkers.some((m) => lower.includes(m))) return false
+    if (
+      (lower.includes('manager') || lower.includes('yönetici')) &&
+      !roleLower.includes('product') &&
+      !roleLower.includes('ürün') &&
+      !roleLower.includes('project') &&
+      !roleLower.includes('proje')
+    ) {
+      return false
+    }
+    return true
+  }
+
+  if (resolvedLevel === 'mid') {
+    const midExcluded = ['intern', 'stajyer', 'director', 'head of', 'vp ', 'chief ', 'principal']
+    return !midExcluded.some((m) => lower.includes(m))
+  }
+
+  if (resolvedLevel === 'senior') {
+    const seniorExcluded = ['intern', 'stajyer', 'junior', 'jr.', 'jr ', 'yeni mezun', 'new grad', 'trainee']
+    return !seniorExcluded.some((m) => lower.includes(m))
+  }
+
+  return true
+}
 
 export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
@@ -63,6 +191,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
   // Filter States
   const [selectedResumeId, setSelectedResumeId] = useState<string>('all')
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('auto')
   const [workplaceType, setWorkplaceType] = useState<WorkplaceType>('all')
   const [location, setLocation] = useState<string>('Türkiye')
   const [datePosted, setDatePosted] = useState<DatePosted>('past_week')
@@ -82,6 +211,11 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const activeResume = selectedResumeId === 'all'
     ? resumes[0]
     : resumes.find((r) => r._id === selectedResumeId) || resumes[0]
+
+  // Auto-detect experience level from active CV
+  const detectedExp = detectExperienceLevelFromResume(activeResume)
+  const resolvedExperienceLevel: 'intern' | 'junior' | 'mid' | 'senior' | 'all' =
+    experienceLevel === 'auto' ? detectedExp.level : experienceLevel
 
   // Dynamic Boolean Query for Search Launchpads
   const targetKeywords = activeResume?.skills?.slice(0, 4) || ['Yazılım', 'Developer']
@@ -121,6 +255,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           role: roleTerm,
           skills: activeResume?.skills || [],
           workplaceType,
+          experienceLevel: resolvedExperienceLevel,
           location,
           resumeId: activeResume?._id,
           resumeName: activeResume?.name,
@@ -157,7 +292,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
         await importBulkScoutedMutation({ jobs: cleanJobs })
         toast({
           title: 'İlanlar Başarıyla Bulundu & Eşleştirildi!',
-          description: `${cleanJobs.length} adet güncel ilan radara eklendi.`,
+          description: `${cleanJobs.length} adet tecrübe seviyenize uygun güncel ilan radara eklendi.`,
         })
       } else {
         toast({
@@ -191,10 +326,23 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   else if (datePosted === 'past_week') linkedinTPR = '&f_TPR=r604800'
   else if (datePosted === 'past_month') linkedinTPR = '&f_TPR=r2592000'
 
-  const linkedinUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodedQuery}&location=${encodedLoc}${linkedinWT}${linkedinTPR}&sortBy=DD`
+  let linkedinExp = ''
+  if (resolvedExperienceLevel === 'intern') linkedinExp = '&f_E=1%2C2'
+  else if (resolvedExperienceLevel === 'junior') linkedinExp = '&f_E=1%2C2%2C3'
+  else if (resolvedExperienceLevel === 'mid') linkedinExp = '&f_E=3%2C4'
+  else if (resolvedExperienceLevel === 'senior') linkedinExp = '&f_E=4%2C5'
+
+  const linkedinUrl = `https://www.linkedin.com/jobs/search/?keywords=${encodedQuery}&location=${encodedLoc}${linkedinWT}${linkedinTPR}${linkedinExp}&sortBy=DD`
   const indeedUrl = `https://tr.indeed.com/jobs?q=${encodedQuery}&l=${encodedLoc}&sort=date`
   const kariyerUrl = `https://www.kariyer.net/is-ilanlari?kw=${encodeURIComponent(roleTerm)}`
   const googleJobsUrl = `https://www.google.com/search?q=${encodedQuery}+is+ilanlari+${encodedLoc}&ibp=htl;jobs`
+
+  // Filter existing scoutedJobs on the client by resolvedExperienceLevel
+  const allScoutedList = scoutedJobs ?? []
+  const filteredScoutedJobs = allScoutedList.filter((j) =>
+    matchesClientExperienceFilter(j.title, resolvedExperienceLevel, roleTerm)
+  )
+  const hiddenBySeniorityCount = allScoutedList.length - filteredScoutedJobs.length
 
   // Handle Instant AI Match on Pasted Job
   async function handleAnalyzeJob() {
@@ -412,7 +560,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-border/50">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-2 border-t border-border/50">
           {/* CV Selector */}
           <div>
             <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
@@ -427,6 +575,32 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
               {resumes.map((r) => (
                 <option key={r._id} value={r._id}>
                   {r.name} ({r.category})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Experience Level (Auto from CV + Manual Override) */}
+          <div>
+            <label className="text-[11px] font-semibold text-muted-foreground flex items-center justify-between mb-1">
+              <span>Tecrübe Seviyesi</span>
+              {experienceLevel === 'auto' && (
+                <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded">
+                  CV Algılandı
+                </span>
+              )}
+            </label>
+            <select
+              value={experienceLevel}
+              onChange={(e) => setExperienceLevel(e.target.value as ExperienceLevel)}
+              className="w-full h-9 text-xs bg-background border border-primary/40 rounded-lg px-2.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary font-semibold"
+            >
+              <option value="auto">
+                ✨ Otomatik (CV: {detectedExp.badgeText})
+              </option>
+              {EXPERIENCE_OPTIONS.filter((o) => o.value !== 'auto').map((exp) => (
+                <option key={exp.value} value={exp.value}>
+                  {exp.label}
                 </option>
               ))}
             </select>
@@ -488,10 +662,16 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
 
         {/* Action Button: Live Auto Scan */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/50">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             <Sparkles className="h-4 w-4 text-primary shrink-0" />
             <span>
-              Seçili CV: <strong>{activeResume?.name || 'Seçilmedi'}</strong> ({roleTerm}) · Hedef: <strong>{location}</strong> ({workplaceType === 'onsite' ? 'Fiziksel' : workplaceType === 'remote' ? 'Uzaktan' : workplaceType === 'hybrid' ? 'Hibrit' : 'Tüm Modeller'})
+              Seçili CV: <strong className="text-foreground">{activeResume?.name || 'Seçilmedi'}</strong> ({roleTerm}) · Seviye:{' '}
+              <strong className="text-primary">
+                {experienceLevel === 'auto'
+                  ? `Otomatik (${detectedExp.shortLabel})`
+                  : EXPERIENCE_OPTIONS.find((e) => e.value === experienceLevel)?.label}
+              </strong>{' '}
+              · Hedef: <strong className="text-foreground">{location}</strong>
             </span>
           </div>
 
@@ -577,11 +757,21 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Radara Takılan İlanlar {scoutedJobs && scoutedJobs.length > 0 ? `(${scoutedJobs.length} İlan)` : ''}
+                Radara Takılan İlanlar {filteredScoutedJobs.length > 0 ? `(${filteredScoutedJobs.length} İlan)` : ''}
               </h3>
+              {hiddenBySeniorityCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setExperienceLevel('all')}
+                  className="text-[11px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full hover:underline cursor-pointer"
+                  title="Gizlenen üst seviye ilanları da görmek için tıklayın"
+                >
+                  {hiddenBySeniorityCount} Senior/Lead ilan tecrübe filtresiyle gizlendi (Tümünü Gör)
+                </button>
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              CV&apos;nizle uyumluluğa sahip tüm pozisyonlar en yüksek uyum puanına göre sıralanmıştır.
+              CV&apos;nizle ve seçili tecrübe seviyenizle uyumlu pozisyonlar en yüksek uyum puanına göre sıralanmıştır.
             </p>
           </div>
 
@@ -615,16 +805,28 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
         </div>
 
         {/* Empty State / Demo Showcase */}
-        {(!scoutedJobs || scoutedJobs.length === 0) && (
+        {filteredScoutedJobs.length === 0 && (
           <div className="space-y-4">
             <div className="border border-dashed border-border/80 rounded-xl p-6 text-center space-y-3 bg-muted/20">
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-foreground">Henüz İlan Taranmadı</h4>
+                <h4 className="text-sm font-bold text-foreground">
+                  {hiddenBySeniorityCount > 0
+                    ? `Mevcut ${hiddenBySeniorityCount} İlan Tecrübe Seviyenizle Eşleşmedi`
+                    : 'Henüz İlan Taranmadı'}
+                </h4>
                 <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-                  Yukarıdaki filtreleri seçip <strong>&quot;CV&apos;me Uygun İlanları Şimdi Tara&quot;</strong> butonuna basarak web üzerindeki tüm güncel pozisyonları tek tıkla listeleyebilirsiniz.
+                  {hiddenBySeniorityCount > 0 ? (
+                    <>
+                      Listedeki ilanlar Senior/Lead seviyesinde olduğu için gizlendi. Seviyenize uygun yeni ilanlar bulmak için <strong>&quot;Hemen İlanları Tara&quot;</strong> butonuna basabilir veya tüm seviyeleri açabilirsiniz.
+                    </>
+                  ) : (
+                    <>
+                      Yukarıdaki filtreleri seçip <strong>&quot;Tüm Uygun İlanları Şimdi Tara&quot;</strong> butonuna basarak web üzerindeki güncel pozisyonları tek tıkla listeleyebilirsiniz.
+                    </>
+                  )}
                 </p>
               </div>
-              <div className="flex items-center justify-center gap-2 pt-1">
+              <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
                 <Button
                   onClick={handleLiveScout}
                   disabled={isScouting || resumes.length === 0}
@@ -634,6 +836,16 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                   {isScouting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                   <span>Hemen İlanları Tara</span>
                 </Button>
+                {hiddenBySeniorityCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExperienceLevel('all')}
+                    className="text-xs"
+                  >
+                    Gizlenen {hiddenBySeniorityCount} İlanı Göster
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -663,7 +875,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h4 className="text-sm font-bold text-foreground">Senior Frontend Developer</h4>
+                          <h4 className="text-sm font-bold text-foreground">Associate Product & AI Engineer</h4>
                           <p className="text-xs text-muted-foreground font-medium mt-0.5">Peak Games</p>
                         </div>
                         <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
@@ -677,7 +889,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                       </p>
 
                       <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
-                        CV&apos;nizdeki modern frontend teknolojileri ve React ekosistemi deneyimi pozisyon gereksinimleriyle doğrudan örtüşüyor.
+                        CV&apos;nizdeki modern yapay zeka araçları ve ürün geliştirme deneyimi pozisyon gereksinimleriyle doğrudan örtüşüyor.
                       </p>
                     </div>
 
@@ -698,7 +910,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                     <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <h4 className="text-sm font-bold text-foreground">Full Stack Engineer</h4>
+                          <h4 className="text-sm font-bold text-foreground">Junior Full Stack & AI Developer</h4>
                           <p className="text-xs text-muted-foreground font-medium mt-0.5">Dream Games</p>
                         </div>
                         <div className="text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800">
@@ -712,7 +924,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
                       </p>
 
                       <p className="text-xs text-muted-foreground/90 bg-card p-2 rounded border border-border/40 leading-relaxed">
-                        Modern web mimarisi ve backend tecrübeniz bu pozisyonun gerektirdiği temel teknik beklentileri karşılıyor.
+                        Modern web mimarisi ve proje tecrübeniz bu pozisyonun gerektirdiği temel teknik beklentileri karşılıyor.
                       </p>
                     </div>
 
@@ -735,9 +947,9 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
         )}
 
         {/* Jobs Grid */}
-        {scoutedJobs && scoutedJobs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {scoutedJobs.map((job) => (
+        {filteredScoutedJobs.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+            {filteredScoutedJobs.map((job) => (
               <div
                 key={job._id}
                 className="bg-muted/30 border border-border/70 hover:border-border rounded-xl p-4 space-y-3 flex flex-col justify-between transition-all"
