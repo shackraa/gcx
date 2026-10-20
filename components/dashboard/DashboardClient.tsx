@@ -6,6 +6,7 @@ import { useUIStore } from '@/lib/store/ui'
 import { StatsCards } from '@/components/dashboard/StatsCards'
 import { UpcomingInterviews } from '@/components/dashboard/UpcomingInterviews'
 import { WeeklyGoal } from '@/components/dashboard/WeeklyGoal'
+import { TodayExecutiveBar } from '@/components/dashboard/TodayExecutiveBar'
 import { FilterTabs } from '@/components/dashboard/FilterTabs'
 import { ApplicationList } from '@/components/applications/ApplicationList'
 import { KanbanBoard } from '@/components/applications/KanbanBoard'
@@ -52,6 +53,15 @@ export function DashboardClient() {
     <>
       {isApplicationsView && (
         <>
+          {/* Today Executive Bar */}
+          <div className="mt-2 sm:mt-3">
+            <TodayExecutiveBar
+              applications={applications}
+              overdueDays={overdueDays}
+              weeklyGoal={weeklyGoal}
+            />
+          </div>
+
           {/* Top Executive Row: Stats + Weekly Goal side-by-side on widescreen */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 sm:gap-3.5 mt-2 sm:mt-3 items-stretch">
             <div className="xl:col-span-8 flex">

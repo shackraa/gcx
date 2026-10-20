@@ -193,8 +193,7 @@ const EXCLUDED_GENERIC_SKILLS = new Set(['sql', 'python', 'excel', 'ms office', 
 
 export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
-  const { setView, setFilter, setSearch, openStudioWithJob, uiMode } = useUIStore()
-  const isAward = uiMode === 'award'
+  const { setView, setFilter, setSearch, openStudioWithJob } = useUIStore()
   const createApplicationMutation = useMutation(api.applications.create)
   const scoutedJobs = useQuery(api.scoutedJobs.list)
   const aiUsage = useQuery(api.aiUsage.getStatus)
@@ -223,8 +222,6 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   const [matchedResult, setMatchedResult] = useState<MatchedJob | null>(null)
   const [addedJobs, setAddedJobs] = useState<string[]>([])
   const [showDemoShowcase, setShowDemoShowcase] = useState(true)
-  const [showBotDrawer, setShowBotDrawer] = useState(false)
-  const [showMatcherDrawer, setShowMatcherDrawer] = useState(false)
   const jsonUploadRef = useRef<HTMLInputElement>(null)
 
   const activeResume = selectedResumeId === 'all'
@@ -580,15 +577,7 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   return (
     <div className="space-y-6">
       {/* Hero Banner & Search Controls */}
-      <div
-        data-tour="job-radar-controls"
-        className={cn(
-          'p-5 sm:p-6 space-y-4 transition-all',
-          isAward
-            ? 'bg-gradient-to-br from-primary/14 via-card to-card border border-primary/30 rounded-2xl craft-surface'
-            : 'bg-gradient-to-br from-primary/15 via-primary/5 to-card border border-primary/25 rounded-2xl shadow-sm'
-        )}
-      >
+      <div data-tour="job-radar-controls" className="bg-gradient-to-br from-primary/15 via-primary/5 to-card border border-primary/25 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
@@ -733,41 +722,11 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0 flex-wrap">
-            {isAward && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowBotDrawer(!showBotDrawer)}
-                  className={cn(
-                    'h-9 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer',
-                    showBotDrawer
-                      ? 'bg-primary/15 text-primary border-primary/40'
-                      : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/80'
-                  )}
-                >
-                  <Bot className="h-3.5 w-3.5 text-primary" />
-                  <span>Otonom Bot (jev)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowMatcherDrawer(!showMatcherDrawer)}
-                  className={cn(
-                    'h-9 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer',
-                    showMatcherDrawer
-                      ? 'bg-primary/15 text-primary border-primary/40'
-                      : 'bg-background hover:bg-muted text-muted-foreground hover:text-foreground border-border/80'
-                  )}
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-primary" />
-                  <span>İlan Metni Test Et</span>
-                </button>
-              </>
-            )}
+          <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
             <Button
               onClick={handleLiveScout}
               disabled={isScouting || resumes.length === 0}
-              className="h-10 px-5 text-xs font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all flex-1 sm:flex-initial rounded-xl"
+              className="h-10 px-5 text-xs font-bold gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all flex-1 sm:flex-initial"
             >
               {isScouting ? (
                 <>
@@ -785,9 +744,8 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
         </div>
       </div>
 
-      {/* jev-ultrafast Otonom Bot Entegrasyon Paneli (Progressive Disclosure in Award Mode) */}
-      {(!isAward || showBotDrawer) && (
-      <div className="bg-card border border-primary/20 rounded-2xl p-5 space-y-3 craft-surface bg-gradient-to-r from-card via-primary/5 to-card animate-in fade-in duration-150">
+      {/* jev-ultrafast Otonom Bot Entegrasyon Paneli */}
+      <div className="bg-card border border-primary/20 rounded-xl p-5 space-y-3 shadow-sm bg-gradient-to-r from-card via-primary/5 to-card">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/50 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -838,16 +796,9 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
           </button>
         </div>
       </div>
-      )}
 
       {/* Scouted Jobs List (Found by Live Scout or jev Bot) */}
-      <div
-        data-tour="scouted-jobs-section"
-        className={cn(
-          'bg-card border border-border p-5 space-y-4',
-          isAward ? 'rounded-2xl craft-surface' : 'rounded-xl shadow-sm'
-        )}
-      >
+      <div data-tour="scouted-jobs-section" className="bg-card border border-border rounded-xl p-5 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1048,72 +999,20 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             {filteredScoutedJobs.map((job) => (
               <div
                 key={job._id}
-                className={cn(
-                  'p-4 space-y-3 flex flex-col justify-between transition-all group',
-                  isAward
-                    ? 'bg-card border border-border/80 hover:border-primary/40 rounded-2xl craft-surface craft-surface-hover hover:-translate-y-[1px]'
-                    : 'bg-muted/30 border border-border/70 hover:border-border rounded-xl'
-                )}
+                className="bg-muted/30 border border-border/70 hover:border-border rounded-xl p-4 space-y-3 flex flex-col justify-between transition-all"
               >
-                <div className="space-y-2.5">
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="flex items-start gap-2.5 min-w-0">
-                      {isAward && (
-                        <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5 transition-transform group-hover:scale-105">
-                          {(job.company || 'GC').slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
-                          {job.title}
-                        </h4>
-                        <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">
-                          {job.company}
-                        </p>
-                      </div>
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground">{job.title}</h4>
+                      <p className="text-xs text-muted-foreground font-medium mt-0.5">{job.company}</p>
                     </div>
-                    {isAward ? (
-                      <div className="relative w-11 h-11 flex items-center justify-center shrink-0" title={`%${job.matchScore} CV Uyumluluğu`}>
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40">
-                          <circle
-                            cx="20"
-                            cy="20"
-                            r="16"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3.5"
-                            className="text-muted/70"
-                          />
-                          <circle
-                            cx="20"
-                            cy="20"
-                            r="16"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3.5"
-                            strokeLinecap="round"
-                            strokeDasharray={`${(Math.min(100, job.matchScore) / 100) * 100.5} 100.5`}
-                            className={cn(
-                              job.matchScore >= 80 ? 'text-emerald-500' : 'text-primary'
-                            )}
-                          />
-                        </svg>
-                        <span className="absolute text-[10px] font-mono font-bold text-foreground tabular-nums">
-                          %{job.matchScore}
-                        </span>
-                      </div>
-                    ) : (
-                      <div
-                        className={cn(
-                          'text-xs font-mono font-bold px-2.5 py-1 rounded-lg border text-center shrink-0 tabular-nums',
-                          job.matchScore >= 80
-                            ? 'bg-emerald-500/12 text-emerald-700 border-emerald-500/25 dark:text-emerald-400'
-                            : 'bg-primary/10 text-primary border-primary/20'
-                        )}
-                      >
-                        %{job.matchScore} Uyum
-                      </div>
-                    )}
+                    <div className={cn(
+                      'text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0',
+                      job.matchScore >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800' : 'bg-primary/10 text-primary border-primary/20'
+                    )}>
+                      %{job.matchScore} Uyum
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground">

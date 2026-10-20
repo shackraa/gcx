@@ -143,8 +143,7 @@ const DEMO_HARVARD_CV: HarvardCVData = {
 }
 
 export function CVStudioView({ resumes }: CVStudioViewProps) {
-  const { studioPrefill, clearStudioPrefill, uiMode } = useUIStore()
-  const isAward = uiMode === 'award'
+  const { studioPrefill, clearStudioPrefill } = useUIStore()
   const { toast } = useToast()
 
   // Convex queries & mutations
@@ -643,29 +642,16 @@ export function CVStudioView({ resumes }: CVStudioViewProps) {
   return (
     <div data-tour="cv-studio-section" className="space-y-6">
       {/* Top Banner */}
-      <div className={cn(
-        'bg-card border border-border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs',
-        isAward && 'craft-surface border-border/85'
-      )}>
+      <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
         <div className="space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
               <Brain className="h-4 w-4" />
             </div>
-            {isAward && (
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20">
-                AI TAILOR ENGINE
-              </span>
-            )}
             <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
-              Kariyer Hafızası &{' '}
-              {isAward ? (
-                <span className="font-serif italic font-normal text-primary">Harvard CV Stüdyosu</span>
-              ) : (
-                'Harvard CV Stüdyosu'
-              )}
+              Kariyer Hafızası & Harvard CV Stüdyosu
             </h2>
-            <span className="text-[11px] font-mono font-semibold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+            <span className="text-[11px] font-semibold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
               {totalSourceCount} Kaynak Hafızada
             </span>
           </div>

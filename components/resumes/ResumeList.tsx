@@ -33,8 +33,7 @@ interface ResumeListProps {
 }
 
 export function ResumeList({ resumes, applications }: ResumeListProps) {
-  const { openResumeModal, openModal, setResumeFilter, setView, uiMode } = useUIStore()
-  const isAward = uiMode === 'award'
+  const { openResumeModal, openModal, setResumeFilter, setView } = useUIStore()
   const { toast } = useToast()
   const resumeStats = getResumeStats(applications, resumes)
   const [selectedLangMap, setSelectedLangMap] = useState<Record<string, 'tr' | 'en'>>({})
@@ -306,36 +305,18 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
   return (
     <div data-tour="resume-pool-section" className="space-y-5">
       {/* Header Bar */}
-      <div className={cn(
-        'flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card border rounded-2xl p-4 sm:p-5',
-        isAward && 'craft-surface border-border/85'
-      )}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card border rounded-xl p-4">
         <div>
-          <div className="flex items-center gap-2">
-            {isAward && (
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20">
-                ASSET VAULT
-              </span>
-            )}
-            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" />
-              CV Havuzum ({resumes.length} Versiyon)
-            </h2>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {isAward ? (
-              <>
-                Pozisyona özel özgeçmiş versiyonların,{' '}
-                <span className="font-serif italic text-foreground">gerçek başvuru dönüşüm oranları</span>{' '}
-                ve iki dilli Cover Letter kasası
-              </>
-            ) : (
-              'Yüklediğin CV versiyonları, güncellenme tarihleri ve başvuru başarı oranları'
-            )}
+          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            CV Havuzum ({resumes.length} Versiyon)
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Yüklediğin CV versiyonları, güncellenme tarihleri ve başvuru başarı oranları
           </p>
         </div>
 
-        <Button onClick={() => openResumeModal()} size="sm" className="gap-1.5 self-start sm:self-auto rounded-xl">
+        <Button onClick={() => openResumeModal()} size="sm" className="gap-1.5 self-start sm:self-auto">
           <Plus className="h-4 w-4" />
           Yeni CV Ekle
         </Button>
@@ -350,10 +331,7 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
           return (
             <div
               key={resume._id}
-              className={cn(
-                'bg-card border border-border rounded-2xl p-5 space-y-4 hover:border-border/80 transition-all shadow-sm flex flex-col justify-between',
-                isAward && 'craft-surface craft-surface-hover border-border/85'
-              )}
+              className="bg-card border border-border rounded-xl p-5 space-y-4 hover:border-border/80 transition-all shadow-sm flex flex-col justify-between"
             >
               <div className="space-y-3">
                 {/* Title & Date */}
@@ -543,18 +521,18 @@ export function ResumeList({ resumes, applications }: ResumeListProps) {
               {/* Stats & Actions */}
               <div className="pt-3 border-t border-border/60 space-y-3">
                 {/* Performance Stats Bar */}
-                <div className="grid grid-cols-3 gap-2 bg-muted/40 p-2.5 rounded-xl border border-border/50 text-center">
+                <div className="grid grid-cols-3 gap-2 bg-muted/40 p-2.5 rounded-lg text-center">
                   <div>
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Başvuru</div>
-                    <div className="text-sm font-mono font-bold text-foreground mt-0.5 tabular-nums">{count}</div>
+                    <div className="text-xs text-muted-foreground">Başvuru</div>
+                    <div className="text-sm font-bold text-foreground mt-0.5">{count}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Dönüş</div>
-                    <div className="text-sm font-mono font-bold text-emerald-700 dark:text-green-400 mt-0.5 tabular-nums">{respondedCount}</div>
+                    <div className="text-xs text-muted-foreground">Dönüş</div>
+                    <div className="text-sm font-bold text-emerald-700 dark:text-green-400 mt-0.5">{respondedCount}</div>
                   </div>
                   <div>
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Dönüş Oranı</div>
-                    <div className="text-sm font-mono font-bold text-primary mt-0.5 tabular-nums">
+                    <div className="text-xs text-muted-foreground">Dönüş Oranı</div>
+                    <div className="text-sm font-bold text-primary mt-0.5">
                       {responseRate > 0 ? `%${responseRate}` : '—'}
                     </div>
                   </div>

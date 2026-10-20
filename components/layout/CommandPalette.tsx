@@ -50,8 +50,6 @@ export function CommandPalette() {
     setFilter,
     openModal,
     openResumeModal,
-    uiMode,
-    toggleUIMode,
     modalOpen,
     resumeModalOpen,
   } = useUIStore()
@@ -62,11 +60,6 @@ export function CommandPalette() {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // Keep <html data-ui="..."> synced with uiMode
-  useEffect(() => {
-    document.documentElement.dataset.ui = uiMode
-  }, [uiMode])
 
   // Global keyboard shortcuts (Cmd/Ctrl + K, Escape, plus quick keys when not in input)
   useEffect(() => {
@@ -99,12 +92,27 @@ export function CommandPalette() {
       if (e.key.toLowerCase() === 'n') {
         e.preventDefault()
         openModal()
+        return
+      }
+
+      // 1..6 for screen navigation
+      const keyMap: Record<string, any> = {
+        '1': 'list',
+        '2': 'resumes',
+        '3': 'studio',
+        '4': 'jobs',
+        '5': 'programs',
+        '6': 'analytics',
+      }
+      if (keyMap[e.key]) {
+        e.preventDefault()
+        setView(keyMap[e.key])
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [commandOpen, setCommandOpen, openModal, modalOpen, resumeModalOpen])
+  }, [commandOpen, setCommandOpen, openModal, setView, modalOpen, resumeModalOpen])
 
   useEffect(() => {
     if (commandOpen) {
@@ -116,32 +124,6 @@ export function CommandPalette() {
 
   const items = useMemo<CommandItem[]>(() => {
     const baseItems: CommandItem[] = [
-      {
-        id: 'toggle-ui-mode',
-        group: 'Görünüm & Tasarım Modu',
-        label:
-          uiMode === 'award'
-            ? 'Klasik UI Görünümüne Dön (Orijinal)'
-            : 'Ödüllü UI Görünümüne Geç (High-Craft)',
-        subtitle:
-          uiMode === 'award'
-            ? 'Tek tıkla önceki klasik arayüze geri dön'
-            : 'Linear / Raycast standartlarında yeni arayüzü aktif et',
-        shortcut: 'UI',
-        icon: uiMode === 'award' ? RotateCcw : Wand2,
-        badge: uiMode === 'award' ? 'Anlık Geçiş' : 'Önerilen',
-        action: () => {
-          const nextMode = uiMode === 'award' ? 'classic' : 'award'
-          toggleUIMode()
-          toast({
-            title:
-              nextMode === 'award'
-                ? '✨ Ödüllü UI Aktif Edildi'
-                : '🏛️ Klasik UI Görünümüne Dönüldü',
-            description: 'İstediğin zaman üst bardan veya ⌘K menüsünden tekrar değiştirebilirsin.',
-          })
-        },
-      },
       {
         id: 'new-app',
         group: 'Hızlı Aksiyonlar',
@@ -264,7 +246,7 @@ export function CommandPalette() {
     }))
 
     return [...baseItems, ...appItems]
-  }, [uiMode, toggleUIMode, toast, openModal, openResumeModal, setFilter, setView, theme, setTheme, applications])
+  }, [toast, openModal, openResumeModal, setFilter, setView, theme, setTheme, applications])
 
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -425,14 +407,7 @@ export function CommandPalette() {
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
               <Command className="h-3 w-3 text-primary" />
-              <strong className="font-semibold text-foreground">GCX Command</strong>
-            </span>
-            <span className="hidden sm:inline">•</span>
-            <span className="hidden sm:inline">
-              Aktif Tasarım:{' '}
-              <strong className="text-foreground">
-                {uiMode === 'award' ? '✨ Ödüllü UI' : '🏛️ Klasik UI'}
-              </strong>
+              <strong className="font-semibold text-foreground">GCX Komut Paleti</strong>
             </span>
           </div>
           <div className="flex items-center gap-2 font-mono text-[10px]">

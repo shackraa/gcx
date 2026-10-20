@@ -3,31 +3,13 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuthActions } from '@convex-dev/auth/react'
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/lib/store/ui'
 import { useTourStore } from '@/lib/store/tour'
 import { useState, useRef, useEffect } from 'react'
-import {
-  Plus,
-  Download,
-  Moon,
-  Sun,
-  LogOut,
-  FileText,
-  LayoutList,
-  BarChart2,
-  Briefcase,
-  HelpCircle,
-  FileSpreadsheet,
-  Sheet,
-  Sparkles,
-  GraduationCap,
-  Search,
-  Wand2,
-  RotateCcw,
-} from 'lucide-react'
+import { Plus, Download, Moon, Sun, LogOut, FileText, LayoutList, BarChart2, Briefcase, HelpCircle, FileSpreadsheet, Sheet, Sparkles, GraduationCap, Search } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { exportToStyledExcel, exportToGoogleSheetsCsv, exportBackup } from '@/lib/utils/backup'
 import { useToast } from '@/hooks/use-toast'
@@ -35,7 +17,7 @@ import type { Application } from '@/types'
 import { cn } from '@/lib/utils'
 
 export function AppHeader() {
-  const { openModal, openResumeModal, view, setView, uiMode, toggleUIMode, setCommandOpen } = useUIStore()
+  const { openModal, openResumeModal, view, setView, setCommandOpen } = useUIStore()
   const { openGuideModal } = useTourStore()
   const { theme, setTheme } = useTheme()
   const applications = useQuery(api.applications.list) as Application[] | undefined
@@ -44,8 +26,6 @@ export function AppHeader() {
   const router = useRouter()
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false)
   const exportMenuRef = useRef<HTMLDivElement>(null)
-
-  const isAward = uiMode === 'award'
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -94,6 +74,7 @@ export function AppHeader() {
     })
   }
 
+
   function handleExportBackupJson() {
     if (!applications || applications.length === 0) {
       toast({ title: 'Yedeklenecek başvuru bulunamadı' })
@@ -116,89 +97,44 @@ export function AppHeader() {
     }
   }
 
-  function handleToggleUIMode() {
-    const nextMode = uiMode === 'award' ? 'classic' : 'award'
-    toggleUIMode()
-    toast({
-      title:
-        nextMode === 'award'
-          ? '✨ Ödüllü UI (High-Craft) Aktif'
-          : '🏛️ Klasik UI (Orijinal) Aktif',
-      description:
-        nextMode === 'award'
-          ? 'OKLCH yüzey katmanları, Bento metrikler ve ⌘K komut paleti devrede.'
-          : 'İlk tasarım görünümüne geri dönüldü. İstediğin an tekrar değiştirebilirsin.',
-    })
-  }
-
   const isApplicationsView = view === 'list' || view === 'kanban'
 
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-50 border-b transition-colors',
-        isAward
-          ? 'border-border/70 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65'
-          : 'border-border bg-background/80 backdrop-blur-sm'
-      )}
-    >
+    <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-10 xl:px-12 h-14 flex items-center justify-between gap-2 sm:gap-4">
         {/* Logo & Main Nav */}
-        <div className="flex items-center gap-3 sm:gap-5 shrink-0">
+        <div className="flex items-center gap-4 sm:gap-6 shrink-0">
           <Link
             href="/dashboard"
             data-tour="app-logo"
             className="flex items-center gap-2.5 shrink-0 group focus:outline-none"
           >
-            <div
-              className={cn(
-                'w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-xs tracking-wider transition-all duration-200 group-hover:scale-105',
-                isAward
-                  ? 'bg-gradient-to-br from-primary via-indigo-500 to-violet-600 text-white shadow-sm ring-1 ring-white/20'
-                  : 'bg-foreground text-background shadow-2xs'
-              )}
-            >
+            <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center font-extrabold text-xs tracking-wider shadow-2xs transition-transform group-hover:scale-105">
               GCX
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold tracking-tight text-foreground leading-tight">
-                  GCX
-                </span>
-                {isAward && (
-                  <span className="hidden xl:inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold uppercase tracking-widest bg-primary/12 text-primary border border-primary/20">
-                    PRO
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] font-medium text-muted-foreground leading-tight hidden 2xl:block">
+              <span className="text-sm font-bold tracking-tight text-foreground leading-tight">
+                GCX
+              </span>
+              <span className="text-[11px] font-medium text-muted-foreground leading-tight hidden lg:block">
                 Kariyer & Başvuru Yönetimi
               </span>
             </div>
           </Link>
 
           {/* Navigation Links */}
-          <nav
-            className={cn(
-              'hidden sm:flex items-center gap-0.5 p-1 rounded-xl border transition-all',
-              isAward
-                ? 'bg-muted/50 border-border/70 shadow-2xs'
-                : 'bg-muted/60 border-transparent rounded-lg gap-1'
-            )}
-          >
+          <nav className="hidden sm:flex items-center gap-1 bg-muted/60 p-1 rounded-lg">
             <button
               onClick={() => setView('list')}
               data-tour="nav-applications"
               className={cn(
-                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.98]',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 isApplicationsView
-                  ? isAward
-                    ? 'bg-card text-foreground shadow-xs font-semibold ring-1 ring-border/80'
-                    : 'bg-background text-foreground shadow-sm font-semibold'
+                  ? 'bg-background text-foreground shadow-sm font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <LayoutList className={cn('h-3.5 w-3.5', isApplicationsView && isAward && 'text-primary')} />
+              <LayoutList className="h-3.5 w-3.5" />
               Başvurularım
             </button>
 
@@ -206,11 +142,9 @@ export function AppHeader() {
               onClick={() => setView('resumes')}
               data-tour="nav-resumes"
               className={cn(
-                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.98]',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'resumes'
-                  ? isAward
-                    ? 'bg-card text-foreground shadow-xs font-semibold ring-1 ring-border/80'
-                    : 'bg-background text-foreground shadow-sm font-semibold text-primary'
+                  ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -222,11 +156,9 @@ export function AppHeader() {
               onClick={() => setView('studio')}
               data-tour="nav-studio"
               className={cn(
-                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.98]',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'studio'
-                  ? isAward
-                    ? 'bg-card text-foreground shadow-xs font-semibold ring-1 ring-border/80'
-                    : 'bg-background text-foreground shadow-sm font-semibold text-primary'
+                  ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -238,11 +170,9 @@ export function AppHeader() {
               onClick={() => setView('jobs')}
               data-tour="nav-jobs"
               className={cn(
-                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.98]',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'jobs'
-                  ? isAward
-                    ? 'bg-card text-foreground shadow-xs font-semibold ring-1 ring-border/80'
-                    : 'bg-background text-foreground shadow-sm font-semibold text-primary'
+                  ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -254,11 +184,9 @@ export function AppHeader() {
               onClick={() => setView('programs')}
               data-tour="nav-programs"
               className={cn(
-                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.98]',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'programs'
-                  ? isAward
-                    ? 'bg-card text-foreground shadow-xs font-semibold ring-1 ring-border/80'
-                    : 'bg-background text-foreground shadow-sm font-semibold text-primary'
+                  ? 'bg-background text-foreground shadow-sm font-semibold text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
@@ -270,63 +198,30 @@ export function AppHeader() {
               onClick={() => setView('analytics')}
               data-tour="nav-analytics"
               className={cn(
-                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer active:scale-[0.98]',
+                'flex items-center gap-1.5 px-2.5 lg:px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer',
                 view === 'analytics'
-                  ? isAward
-                    ? 'bg-card text-foreground shadow-xs font-semibold ring-1 ring-border/80'
-                    : 'bg-background text-foreground shadow-sm font-semibold'
+                  ? 'bg-background text-foreground shadow-sm font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <BarChart2 className={cn('h-3.5 w-3.5', view === 'analytics' && isAward && 'text-primary')} />
+              <BarChart2 className="h-3.5 w-3.5" />
               Analiz
             </button>
           </nav>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* 1-CLICK UI MODE SWITCHER (Ödüllü UI <-> Klasik UI) */}
-          <button
-            type="button"
-            onClick={handleToggleUIMode}
-            title={
-              isAward
-                ? 'Beğenmezsen tek tıkla önceki Klasik UI görünümüne dön'
-                : 'Yeni Ödüllü UI (High-Craft) görünümüne geç'
-            }
-            className={cn(
-              'h-8 px-2.5 rounded-lg text-[11px] font-semibold inline-flex items-center gap-1.5 border transition-all cursor-pointer active:scale-95 shrink-0',
-              isAward
-                ? 'bg-primary/12 hover:bg-primary/20 text-primary border-primary/30 shadow-2xs'
-                : 'bg-amber-500/12 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/35'
-            )}
-          >
-            {isAward ? (
-              <>
-                <Wand2 className="h-3.5 w-3.5 shrink-0" />
-                <span>Ödüllü UI</span>
-                <span className="text-[9px] font-mono opacity-80 hidden lg:inline">· Klasik&apos;e Dön</span>
-              </>
-            ) : (
-              <>
-                <RotateCcw className="h-3.5 w-3.5 shrink-0" />
-                <span>Klasik UI</span>
-                <span className="text-[9px] font-mono opacity-85 hidden lg:inline">· Yeniye Geç</span>
-              </>
-            )}
-          </button>
-
-          {/* Command Palette Trigger (Cmd + K) */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Quick Command Palette Button */}
           <button
             type="button"
             onClick={() => setCommandOpen(true)}
-            title="Hızlı Komut Paleti (Ctrl+K / ⌘K)"
-            className="hidden lg:inline-flex items-center gap-2 h-8 px-2.5 rounded-lg bg-muted/60 hover:bg-muted border border-border/70 text-xs text-muted-foreground hover:text-foreground transition-all cursor-pointer active:scale-95"
+            title="Komut paleti ve arama (⌘K / Ctrl+K)"
+            className="hidden sm:inline-flex items-center gap-2 h-8 px-2.5 rounded-md border border-border/70 hover:border-border text-xs text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 transition-colors cursor-pointer"
           >
             <Search className="h-3.5 w-3.5" />
-            <span className="text-[11px]">Komut...</span>
-            <kbd className="px-1.5 py-0.2 text-[10px] font-mono font-semibold bg-background/80 text-muted-foreground rounded border border-border/80">
+            <span className="hidden md:inline">Ara...</span>
+            <kbd className="px-1.5 py-0.2 text-[10px] font-mono text-muted-foreground/80 bg-background rounded border border-border/80">
               ⌘K
             </kbd>
           </button>
@@ -337,13 +232,14 @@ export function AppHeader() {
             onClick={() => openGuideModal()}
             title="Kullanım Rehberi"
             data-tour="guide-button"
-            className="h-8 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground font-medium shrink-0"
+            className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground font-medium shrink-0"
           >
             <HelpCircle className="h-4 w-4" />
-            <span className="hidden 2xl:inline">Rehber</span>
+            <span className="hidden md:inline">Rehber</span>
           </Button>
 
           <div data-tour="header-actions" className="flex items-center gap-0.5 sm:gap-1">
+
             <Button
               variant="ghost"
               size="icon"
@@ -468,10 +364,7 @@ export function AppHeader() {
             onClick={() => openModal()}
             size="sm"
             data-tour="add-application-btn"
-            className={cn(
-              'h-8 gap-1.5 text-xs font-semibold',
-              isAward && 'shadow-sm bg-primary text-primary-foreground hover:opacity-95'
-            )}
+            className="h-8 gap-1.5 text-xs font-medium"
           >
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Başvuru ekle</span>
@@ -482,4 +375,3 @@ export function AppHeader() {
     </header>
   )
 }
-

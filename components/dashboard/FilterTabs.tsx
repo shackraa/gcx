@@ -3,7 +3,6 @@
 import { useUIStore } from '@/lib/store/ui'
 import type { Application, FilterKey } from '@/types'
 import { isOverdue, STATUS_LABELS } from '@/lib/utils/applications'
-import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 
 interface FilterTabsProps {
@@ -23,8 +22,7 @@ const TABS: { key: FilterKey; label: string; dot?: string }[] = [
 ]
 
 export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
-  const { filter, setFilter, setView, uiMode } = useUIStore()
-  const isAward = uiMode === 'award'
+  const { filter, setFilter, setView } = useUIStore()
 
   function getCount(key: FilterKey): number {
     if (key === 'all') return applications.length
@@ -50,43 +48,31 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
               setView('list')
             }}
             className={cn(
-              'relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer border shrink-0 active:scale-[0.97]',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border shrink-0',
               isActive
                 ? isOverdueTab && count > 0
-                  ? 'text-white border-transparent font-semibold'
-                  : isAward
-                    ? 'text-primary-foreground border-transparent font-semibold'
-                    : 'bg-foreground text-background border-transparent shadow-xs font-semibold'
+                  ? 'bg-red-600 dark:bg-red-700 text-white border-transparent shadow-xs font-semibold'
+                  : 'bg-foreground text-background border-transparent shadow-xs font-semibold'
                 : isOverdueTab && count > 0
-                  ? 'text-red-700 bg-red-50 hover:bg-red-100/80 border-red-200 dark:border-red-900/50 dark:text-red-400 dark:bg-red-950/40 dark:hover:bg-red-950/70'
-                  : 'text-muted-foreground bg-card/80 hover:bg-muted/70 hover:text-foreground border-border/70 hover:border-border'
+                ? 'text-red-700 bg-red-50 hover:bg-red-100/80 border-red-200 dark:border-red-900/50 dark:text-red-400 dark:bg-red-950/40 dark:hover:bg-red-950/70'
+                : 'text-muted-foreground bg-background hover:bg-muted/70 hover:text-foreground border-border/60 hover:border-border'
             )}
           >
-            {isActive && isAward && (
-              <motion.span
-                layoutId="award-filter-tab-pill"
-                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
-                className={cn(
-                  'absolute inset-0 rounded-xl shadow-xs',
-                  isOverdueTab && count > 0 ? 'bg-red-600' : 'bg-primary'
-                )}
-              />
-            )}
             {dot && (
               <span
                 className={cn(
-                  'relative z-10 w-1.5 h-1.5 rounded-full shrink-0 transition-opacity',
+                  'w-1.5 h-1.5 rounded-full shrink-0 transition-opacity',
                   dot,
-                  isActive && !isOverdueTab ? 'bg-current opacity-90' : ''
+                  isActive && !isOverdueTab ? 'bg-background' : ''
                 )}
               />
             )}
-            <span className="relative z-10">{label}</span>
+            <span>{label}</span>
             <span
               className={cn(
-                'relative z-10 px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold min-w-[18px] text-center transition-colors tabular-nums',
+                'px-1.5 py-0.5 rounded-full text-[10px] font-bold min-w-[18px] text-center transition-colors',
                 isActive
-                  ? 'bg-black/15 dark:bg-white/20 text-inherit'
+                  ? 'bg-background/20 text-inherit'
                   : 'bg-muted text-muted-foreground'
               )}
             >
