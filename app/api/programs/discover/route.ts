@@ -1028,8 +1028,28 @@ const FLAGSHIP_CORPORATE_PROGRAMS: CorporateProgramItem[] = [
   },
 ]
 
-export async function GET() {
+let memoryCache: {
+  programs: CorporateProgramItem[]
+  counts: Record<string, number>
+  fetchedAt: string
+} | null = null
+
+let memoryCacheTimestamp = 0
+const CACHE_TTL_MS = 1000 * 60 * 60 // 1 saat geçerli önbellek
+
+export async function GET(req: Request) {
   try {
+    const url = new URL(req.url)
+    const isForceRefresh = url.searchParams.get('refresh') === 'true'
+
+    // Önbellek geçerliyse ve zorla yenileme istenmediyse anında önbellekten dön
+    if (!isForceRefresh && memoryCache && Date.now() - memoryCacheTimestamp < CACHE_TTL_MS) {
+      return NextResponse.json({
+        ...memoryCache,
+        fromCache: true,
+      })
+    }
+
     const [
       microfonItems,
       youthallJobs,
@@ -1071,7 +1091,7 @@ export async function GET() {
       deduplicated.push(item)
     }
 
-    return NextResponse.json({
+    const result = {
       programs: deduplicated,
       counts: {
         total: deduplicated.length,
@@ -1083,7 +1103,12 @@ export async function GET() {
         university: deduplicated.filter((p) => p.source === 'university').length,
       },
       fetchedAt: new Date().toISOString(),
-    })
+    }
+
+    memoryCache = result
+    memoryCacheTimestamp = Date.now()
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('[PROGRAMS_DISCOVER_ERROR]', error)
     return NextResponse.json({

@@ -215,18 +215,24 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   const { openStudioWithJob } = useUIStore()
   const { toast } = useToast()
 
-  async function fetchPrograms(showToast = false) {
+  async function fetchPrograms(forceRefresh = false) {
     setLoading(true)
     try {
-      const res = await fetch('/api/programs/discover', { cache: 'no-store' })
+      const url = forceRefresh ? '/api/programs/discover?refresh=true' : '/api/programs/discover'
+      const res = await fetch(url)
       if (!res.ok) throw new Error('İlanlar alınamadı')
       const data = await res.json()
       if (Array.isArray(data.programs)) {
         setPrograms(data.programs)
-        if (showToast) {
+        try {
+          localStorage.setItem('gcx_cached_programs', JSON.stringify(data.programs))
+          localStorage.setItem('gcx_cached_programs_at', String(Date.now()))
+        } catch {}
+
+        if (forceRefresh) {
           toast({
-            title: 'Güncel İlanlar & Burslar Yenilendi ✓',
-            description: `Youthall, Microfon.co, Anbean Kampüs, Techcareer.net, Toptalent ve Üniversite portallarından ${data.programs.length} ilan listelendi.`,
+            title: 'Canlı İlanlar & Burslar Yenilendi ✓',
+            description: `Kariyer portallarından ${data.programs.length} güncel ilan başarıyla listelendi.`,
           })
         }
       }
@@ -242,7 +248,21 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   }
 
   useEffect(() => {
-    fetchPrograms(false)
+    // 1. Önce localStorage'da kayıtlı ilanlar var mı kontrol et
+    try {
+      const cached = localStorage.getItem('gcx_cached_programs')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPrograms(parsed)
+          setLoading(false)
+          return // Sekme geçişinde asla gereksiz yere tekrar tarama yapma!
+        }
+      }
+    } catch {}
+
+    // Kayıtlı yoksa ilk kez sessizce getir
+    void fetchPrograms(false)
   }, [])
 
   const sourceCounts = useMemo(() => {
