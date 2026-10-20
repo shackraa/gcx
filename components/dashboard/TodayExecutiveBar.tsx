@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { Application } from '@/types'
 import { isOverdue, getUpcomingInterviews, getThisWeekApps } from '@/lib/utils/applications'
 import { useUIStore } from '@/lib/store/ui'
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Clock, Calendar, Target, Mail, RefreshCw } from 'lucide-react'
 import { differenceInDays, formatDistanceToNow } from 'date-fns'
 import { tr } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 
 interface TodayExecutiveBarProps {
   applications: Application[]
@@ -42,12 +44,45 @@ export function TodayExecutiveBar({
     return `${weeks} hafta önce`
   }
 
-  async function handleSimulateEmailScan() {
-    await upsertSettings({ lastEmailScanAt: Date.now() })
-    toast({
-      title: 'E-postalar Tarandı ✓',
-      description: 'Gelen kutunuz taranarak yeni bir iş mülakatı veya ret bildirimi olup olmadığı kontrol edildi.',
-    })
+  const [isScanning, setIsScanning] = useState(false)
+
+  async function handleScanJobEmails() {
+    setIsScanning(true)
+    try {
+      const res = await fetch('/api/gmail/scan', { method: 'POST' })
+      const data = await res.json()
+
+      if (res.status === 401 || !data.connected) {
+        // Gmail bağlanmamış -> Google OAuth izin ekranına yönlendir
+        toast({
+          title: 'Gmail Hesabınızı Bağlayın',
+          description: 'İş başvurularınızı otonom takip etmek için Google izin penceresi açılıyor...',
+        })
+        window.location.href = '/api/gmail/connect'
+        return
+      }
+
+      await upsertSettings({ lastEmailScanAt: Date.now() })
+
+      if (data.results && data.results.length > 0) {
+        toast({
+          title: `E-postalar Tarandı (${data.updatesFound} İş Maili Bulundu) ✓`,
+          description: data.results
+            .map((r: any) => `${r.company}: ${r.detectedStatus}`)
+            .slice(0, 3)
+            .join(' • '),
+        })
+      } else {
+        toast({
+          title: 'E-postalar Tarandı ✓',
+          description: 'Gelen kutunuzda yeni bir mülakat veya başvuru güncellemesi bulunmadı.',
+        })
+      }
+    } catch {
+      toast({ title: 'E-posta taraması sırasında bağlantı hatası oluştu', variant: 'destructive' })
+    } finally {
+      setIsScanning(false)
+    }
   }
 
   // Gösterilecek bir şey yoksa yer kaplamasın
@@ -130,11 +165,12 @@ export function TodayExecutiveBar({
           </span>
           <button
             type="button"
-            onClick={handleSimulateEmailScan}
-            title="E-postaları şimdi tara"
+            onClick={handleScanJobEmails}
+            disabled={isScanning}
+            title="E-postaları şimdi tara (Gmail)"
             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
           >
-            <RefreshCw className="h-3 w-3" />
+            <RefreshCw className={cn('h-3 w-3', isScanning && 'animate-spin')} />
           </button>
         </div>
       </div>

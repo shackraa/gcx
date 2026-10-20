@@ -28,6 +28,7 @@ import {
   Users,
   Search,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
@@ -57,11 +58,52 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
     app.status === 'interview' ? 'interview' : 'followup'
   )
   const [copied, setCopied] = useState(false)
+  const [isFindingRecruiter, setIsFindingRecruiter] = useState(false)
+  const [recruiterData, setRecruiterData] = useState<{
+    likelyTitle: string
+    explanation: string
+    linkedinDirectUrl: string
+    targetName: string | null
+  } | null>(null)
 
   const overdue = isOverdue(app, overdueDays)
   const days = daysSinceApplied(app)
   const cvUrl = getDirectDownloadUrl(app.cvLink)
   const jobUrl = safeUrl(app.jobLink)
+
+  async function handleFindRecruiter() {
+    setIsFindingRecruiter(true)
+    try {
+      const res = await fetch('/api/ai/find-recruiter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company: app.company,
+          position: app.position,
+          contactName: app.contactName,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setRecruiterData({
+          likelyTitle: data.likelyTitle,
+          explanation: data.explanation,
+          linkedinDirectUrl: data.linkedinDirectUrl,
+          targetName: data.targetName,
+        })
+        toast({
+          title: 'Yetkili Profili Tespit Edildi ✓',
+          description: `${data.likelyTitle} pozisyonuna doğrudan yönlendiriliyorsunuz.`,
+        })
+        // Otomatik yeni sekmede aç
+        window.open(data.linkedinDirectUrl, '_blank')
+      }
+    } catch {
+      toast({ title: 'Yetkili profili taranırken bir hata oluştu', variant: 'destructive' })
+    } finally {
+      setIsFindingRecruiter(false)
+    }
+  }
 
   // 1. Dinamik Hazır İK Mesajları
   function generateHRMessage(type: MessageType): string {
@@ -220,18 +262,39 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
         )}
       </div>
 
-      {/* 1. Şirketin İK ve Yetkililerini Bul (İlan Radarı / jev Botu Mantığı) */}
-      <div className="p-3 bg-muted/30 border border-border/70 rounded-lg space-y-2">
+      {/* 1. Şirketin İK ve Yetkililerini Bul (Gemini + İlan Radarı / jev Botu Mantığı) */}
+      <div className="p-3 bg-muted/30 border border-border/70 rounded-lg space-y-2.5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-primary" />
             {app.company} İK & İşe Alım Ekibi
           </span>
-          <span className="text-[10px] font-mono text-muted-foreground">İlan Radarı Botu</span>
+          <span className="text-[10px] font-mono text-muted-foreground">Gemini + jev Botu</span>
         </div>
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Bu şirketteki İK uzmanlarını, yetenek yöneticilerini veya hiring manager&apos;ları doğrudan LinkedIn&apos;de listele:
-        </p>
+
+        {/* Gemini ile Doğru Kişiyi Bul ve Mesaj Kutusuna Yönlendir */}
+        <div className="bg-background border border-border/80 rounded-md p-2.5 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-xs">
+              <span className="font-semibold text-foreground">Doğru İK Yetkilisini Doğrula:</span>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {recruiterData
+                  ? `${recruiterData.likelyTitle} (${recruiterData.explanation})`
+                  : 'Yapay zekâ şirketteki aktif yetkiliyi analiz edip mesaj ekranına yönlendirir.'}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleFindRecruiter}
+              disabled={isFindingRecruiter}
+              className="h-7 text-xs px-2.5 shrink-0 gap-1 font-medium cursor-pointer"
+            >
+              <Sparkles className="h-3 w-3 text-amber-400" />
+              <span>{isFindingRecruiter ? 'Analiz Ediliyor...' : 'Yetkiliyi Bul & Git'}</span>
+            </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
           <a
             href={linkedinHRSearchUrl}
@@ -240,7 +303,7 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
             className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-background border border-border text-xs font-medium text-foreground hover:bg-muted hover:border-border/80 transition-colors"
           >
             <Search className="h-3 w-3 text-primary" />
-            <span>İK & Recruiter Ara</span>
+            <span>Tüm İK & Recruiter Listesi</span>
             <ExternalLink className="h-3 w-3 opacity-60 ml-auto" />
           </a>
           <a
@@ -250,7 +313,7 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
             className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md bg-background border border-border text-xs font-medium text-foreground hover:bg-muted hover:border-border/80 transition-colors"
           >
             <Users className="h-3 w-3 text-primary" />
-            <span>Yönetici / Lead Ara</span>
+            <span>Yönetici / Lead Arama</span>
             <ExternalLink className="h-3 w-3 opacity-60 ml-auto" />
           </a>
         </div>

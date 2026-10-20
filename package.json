@@ -21,6 +21,7 @@
     "cn": "^0.4.0",
     "convex": "^1.46.0",
     "date-fns": "^4.4.0",
+    "googleapis": "^186.0.0",
     "lucide-react": "^1.48.0",
     "motion": "^14.4.0",
     "next": "16.3.6",
