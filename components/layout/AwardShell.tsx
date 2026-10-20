@@ -35,6 +35,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 
 const VIEW_META: Record<
@@ -394,14 +395,21 @@ export function AwardShell({ children }: { children: React.ReactNode }) {
                         onClick={() => setView(item.id)}
                         title={`${item.label} (Kısayol: ${item.shortcut})`}
                         className={cn(
-                          'w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer group active:scale-[0.98]',
+                          'relative w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer group active:scale-[0.98]',
                           item.active
-                            ? 'bg-card text-foreground font-semibold border border-border/90 craft-surface'
+                            ? 'text-foreground font-semibold'
                             : 'text-muted-foreground hover:text-foreground hover:bg-card/50 border border-transparent',
                           collapsed && 'justify-center px-0'
                         )}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        {item.active && (
+                          <motion.div
+                            layoutId="award-nav-active-pill"
+                            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                            className="absolute inset-0 rounded-xl bg-card border border-border/90 craft-surface -z-0"
+                          />
+                        )}
+                        <div className="relative z-10 flex items-center gap-2.5 min-w-0">
                           <div
                             className={cn(
                               'w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-colors',
@@ -416,7 +424,7 @@ export function AwardShell({ children }: { children: React.ReactNode }) {
                         </div>
 
                         {!collapsed && (
-                          <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="relative z-10 flex items-center gap-1.5 shrink-0">
                             {item.alertCount ? (
                               <span
                                 title={`${item.alertCount} sessiz başvuru`}

@@ -32,6 +32,7 @@ import { useMutation } from 'convex/react'
 import { api } from '@/convex/_generated/api'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
+import { motion, AnimatePresence } from 'motion/react'
 import { cn } from '@/lib/utils'
 import type { Id } from '@/convex/_generated/dataModel'
 
@@ -200,27 +201,41 @@ export function ApplicationList({ applications, overdueDays = 14 }: ApplicationL
             type="button"
             onClick={() => setLayoutStyle('linear')}
             className={cn(
-              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer',
+              'relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer',
               layoutStyle === 'linear'
-                ? 'bg-card text-foreground shadow-2xs font-semibold'
+                ? 'text-foreground font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <List className="h-3.5 w-3.5" />
-            <span>Linear Satır</span>
+            {layoutStyle === 'linear' && (
+              <motion.span
+                layoutId="award-density-pill"
+                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                className="absolute inset-0 rounded-lg bg-card shadow-2xs"
+              />
+            )}
+            <List className="relative z-10 h-3.5 w-3.5" />
+            <span className="relative z-10">Linear Satır</span>
           </button>
           <button
             type="button"
             onClick={() => setLayoutStyle('bento')}
             className={cn(
-              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all cursor-pointer',
+              'relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer',
               layoutStyle === 'bento'
-                ? 'bg-card text-foreground shadow-2xs font-semibold'
+                ? 'text-foreground font-semibold'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            <span>Bento Kart</span>
+            {layoutStyle === 'bento' && (
+              <motion.span
+                layoutId="award-density-pill"
+                transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                className="absolute inset-0 rounded-lg bg-card shadow-2xs"
+              />
+            )}
+            <LayoutGrid className="relative z-10 h-3.5 w-3.5" />
+            <span className="relative z-10">Bento Kart</span>
           </button>
         </div>
       </div>
@@ -400,9 +415,17 @@ export function ApplicationList({ applications, overdueDays = 14 }: ApplicationL
         {/* =====================================================================
             SLIDE-OVER QUICK INSPECTOR PANEL (Progressive Disclosure Detail View)
             ===================================================================== */}
-        {inspectedApp && (
-          <div className="xl:col-span-5 bg-card border border-border/90 rounded-2xl p-5 space-y-4 craft-surface sticky top-20 animate-in fade-in slide-in-from-right-4 duration-200">
-            <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-3.5">
+        <AnimatePresence mode="popLayout">
+          {inspectedApp && (
+            <motion.div
+              key={inspectedApp._id}
+              initial={{ opacity: 0, x: 24, scale: 0.98 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 24, scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+              className="xl:col-span-5 bg-card border border-border/90 rounded-2xl p-5 space-y-4 craft-surface sticky top-20"
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-border/60 pb-3.5">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-primary/12 border border-primary/25 text-primary flex items-center justify-center font-mono font-bold text-sm shrink-0">
                   {getInitials(inspectedApp.company)}
@@ -548,8 +571,9 @@ export function ApplicationList({ applications, overdueDays = 14 }: ApplicationL
                 {generateFollowUpTemplate(inspectedApp)}
               </p>
             </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

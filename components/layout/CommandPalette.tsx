@@ -28,6 +28,7 @@ import {
   Command,
   Clock,
 } from 'lucide-react'
+import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 
 interface CommandItem {
@@ -303,12 +304,18 @@ export function CommandPalette() {
   const groups = Array.from(new Set(filteredItems.map((i) => i.group)))
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4 bg-black/55 backdrop-blur-xs animate-in fade-in duration-150"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.14 }}
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-[12vh] px-4 bg-black/55 backdrop-blur-xs"
       onClick={() => setCommandOpen(false)}
     >
-      <div
-        className="w-full max-w-xl bg-popover text-popover-foreground border border-border/90 rounded-2xl shadow-2xl overflow-hidden craft-surface animate-in zoom-in-95 duration-150"
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: -12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 460, damping: 32 }}
+        className="w-full max-w-xl bg-popover text-popover-foreground border border-border/90 rounded-2xl shadow-2xl overflow-hidden craft-surface"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyNavigation}
       >
@@ -434,7 +441,7 @@ export function CommandPalette() {
             <span>↵ Seç</span>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }

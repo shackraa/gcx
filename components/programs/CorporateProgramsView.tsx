@@ -212,7 +212,8 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   const [savingId, setSavingId] = useState<string | null>(null)
 
   const createApplication = useMutation(api.applications.create)
-  const { openStudioWithJob } = useUIStore()
+  const { openStudioWithJob, uiMode } = useUIStore()
+  const isAward = uiMode === 'award'
   const { toast } = useToast()
 
   async function fetchPrograms(showToast = false) {
@@ -347,25 +348,58 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
   return (
     <div data-tour="programs-view-section" className="space-y-5 pb-16">
       {/* Top Hero Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-indigo-950/90 via-slate-900 to-fuchsia-950/90 text-white p-5 sm:p-6 shadow-lg">
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-2xl border p-5 sm:p-6 shadow-lg',
+          isAward
+            ? 'bg-card border-border/85 text-foreground craft-surface'
+            : 'border-border/80 bg-gradient-to-br from-indigo-950/90 via-slate-900 to-fuchsia-950/90 text-white'
+        )}
+      >
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-2 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[11px] font-semibold tracking-wide text-indigo-200">
-              <GraduationCap className="h-3.5 w-3.5 text-indigo-300" />
+            <div
+              className={cn(
+                'inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-[11px] font-mono font-semibold tracking-wide',
+                isAward
+                  ? 'bg-primary/10 border-primary/25 text-primary'
+                  : 'bg-white/10 backdrop-blur-md border-white/15 text-indigo-200'
+              )}
+            >
+              <GraduationCap className="h-3.5 w-3.5" />
               <span>STAJ, FELLOWSHIP, BURS, EĞİTİM & KURUMSAL İLAN MERKEZİ</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Stajyer, Yeni Mezun, Fellowship, Burs & Kurumsal Programlar
+            <h1
+              className={cn(
+                'text-xl sm:text-2xl font-bold tracking-tight',
+                isAward ? 'text-foreground' : 'text-white'
+              )}
+            >
+              Stajyer, Yeni Mezun,{' '}
+              {isAward ? (
+                <span className="font-serif italic font-normal text-primary">
+                  Fellowship, Burs & Kurumsal Programlar
+                </span>
+              ) : (
+                'Fellowship, Burs & Kurumsal Programlar'
+              )}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              <strong className="text-white">Youthall</strong>,{' '}
-              <strong className="text-white">Microfon.co</strong>,{' '}
-              <strong className="text-white">anbean Kampüs</strong>,{' '}
-              <strong className="text-white">Techcareer.net</strong>,{' '}
-              <strong className="text-white">Toptalent.co</strong> ve{' '}
-              <strong className="text-white">Üniversite Kariyer Merkezleri</strong> üzerinde
-              yayınlanan tüm staj, part-time, Management Trainee (MT), Fellowship, eğitim bursları
-              ve öğrenci fırsatları afişleriyle birlikte tek ekranda.
+            <p
+              className={cn(
+                'text-xs sm:text-sm leading-relaxed',
+                isAward ? 'text-muted-foreground' : 'text-slate-300'
+              )}
+            >
+              <strong className={isAward ? 'text-foreground' : 'text-white'}>Youthall</strong>,{' '}
+              <strong className={isAward ? 'text-foreground' : 'text-white'}>Microfon.co</strong>,{' '}
+              <strong className={isAward ? 'text-foreground' : 'text-white'}>anbean Kampüs</strong>,{' '}
+              <strong className={isAward ? 'text-foreground' : 'text-white'}>Techcareer.net</strong>,{' '}
+              <strong className={isAward ? 'text-foreground' : 'text-white'}>Toptalent.co</strong> ve{' '}
+              <strong className={isAward ? 'text-foreground' : 'text-white'}>
+                Üniversite Kariyer Merkezleri
+              </strong>{' '}
+              üzerinde yayınlanan tüm staj, part-time, Management Trainee (MT), Fellowship, eğitim
+              bursları ve öğrenci fırsatları tek ekranda.
             </p>
           </div>
 
@@ -373,9 +407,13 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
             <Button
               onClick={() => fetchPrograms(true)}
               disabled={loading}
-              variant="secondary"
+              variant={isAward ? 'outline' : 'secondary'}
               size="sm"
-              className="h-9 gap-1.5 bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm text-xs font-semibold cursor-pointer"
+              className={cn(
+                'h-9 gap-1.5 text-xs font-semibold cursor-pointer rounded-xl',
+                !isAward &&
+                  'bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm'
+              )}
             >
               <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
               <span>Canlı İlanları Yenile</span>
@@ -384,8 +422,18 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
         </div>
 
         {/* Direct Platform Badges */}
-        <div className="relative z-10 mt-4 pt-4 border-t border-white/10 flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-medium text-slate-300 mr-1">
+        <div
+          className={cn(
+            'relative z-10 mt-4 pt-4 border-t flex flex-wrap items-center gap-2',
+            isAward ? 'border-border/60' : 'border-white/10'
+          )}
+        >
+          <span
+            className={cn(
+              'text-[11px] font-medium mr-1',
+              isAward ? 'text-muted-foreground' : 'text-slate-300'
+            )}
+          >
             Entegre Kaynaklar:
           </span>
           {(Object.keys(SOURCE_META) as ProgramSource[]).map((srcKey) => {
@@ -396,10 +444,20 @@ export function CorporateProgramsView({ applications }: CorporateProgramsViewPro
                 href={meta.portalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-[11px] font-medium text-white transition-colors"
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors',
+                  isAward
+                    ? 'bg-muted/70 hover:bg-muted text-foreground border border-border/70'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                )}
               >
                 <span>{meta.label}</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-black/30 text-[10px] font-bold">
+                <span
+                  className={cn(
+                    'px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold',
+                    isAward ? 'bg-primary/15 text-primary' : 'bg-black/30'
+                  )}
+                >
                   {sourceCounts[srcKey] || 0}
                 </span>
                 <ExternalLink className="h-2.5 w-2.5 opacity-70" />
