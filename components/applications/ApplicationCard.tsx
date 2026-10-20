@@ -30,6 +30,34 @@ function humanizeCvName(raw?: string): string {
     .trim()
 }
 
+function getCompanyInitials(company: string): string {
+  const words = company
+    .replace(/\([^)]*\)/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+  if (words.length === 0) return 'GC'
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[1][0]).toUpperCase()
+}
+
+const AVATAR_TINTS = [
+  'bg-indigo-500/12 text-indigo-600 dark:text-indigo-300 border-indigo-500/25',
+  'bg-violet-500/12 text-violet-600 dark:text-violet-300 border-violet-500/25',
+  'bg-sky-500/12 text-sky-600 dark:text-sky-300 border-sky-500/25',
+  'bg-emerald-500/12 text-emerald-600 dark:text-emerald-300 border-emerald-500/25',
+  'bg-amber-500/12 text-amber-600 dark:text-amber-300 border-amber-500/25',
+  'bg-rose-500/12 text-rose-600 dark:text-rose-300 border-rose-500/25',
+]
+
+function getCompanyTint(company: string): string {
+  let hash = 0
+  for (let i = 0; i < company.length; i++) {
+    hash = company.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return AVATAR_TINTS[Math.abs(hash) % AVATAR_TINTS.length]
+}
+
 interface ApplicationCardProps {
   app: Application
   overdueDays?: number
@@ -53,8 +81,18 @@ const STATUS_TEXT: Record<ApplicationStatus, string> = {
   rejected: 'text-rose-600 dark:text-rose-400',
 }
 
+const STATUS_PILL_BG: Record<ApplicationStatus, string> = {
+  preparing: 'bg-zinc-500/10 border-zinc-500/20',
+  waiting: 'bg-blue-500/10 border-blue-500/20',
+  responded: 'bg-purple-500/10 border-purple-500/20',
+  interview: 'bg-amber-500/10 border-amber-500/25',
+  offer: 'bg-emerald-500/10 border-emerald-500/25',
+  rejected: 'bg-rose-500/10 border-rose-500/20',
+}
+
 export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps) {
-  const { openModal } = useUIStore()
+  const { openModal, uiMode } = useUIStore()
+  const isAward = uiMode === 'award'
   const markAppliedMutation = useMutation(api.applications.markApplied)
   const updateMutation = useMutation(api.applications.update)
   const { toast } = useToast()
@@ -118,61 +156,93 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
   return (
     <div
       className={cn(
-        'group relative bg-card border rounded-xl p-3.5 sm:p-4 transition-all duration-150 hover:border-border hover:shadow-xs space-y-2.5',
-        overdue
-          ? 'border-red-200 bg-red-50/20 dark:border-red-900/40 dark:bg-red-950/10'
-          : 'border-border/70 hover:bg-card/90'
+        'group relative bg-card border p-3.5 sm:p-4 space-y-3',
+        isAward
+          ? cn(
+              'rounded-2xl craft-surface craft-surface-hover hover:-translate-y-[1px]',
+              overdue
+                ? 'border-red-500/35 bg-gradient-to-br from-red-500/[0.06] to-card hover:border-red-500/55'
+                : 'border-border/80 hover:border-primary/40'
+            )
+          : cn(
+              'rounded-xl transition-all duration-150 hover:border-border hover:shadow-xs space-y-2.5',
+              overdue
+                ? 'border-red-200 bg-red-50/20 dark:border-red-900/40 dark:bg-red-950/10'
+                : 'border-border/70 hover:bg-card/90'
+            )
       )}
     >
-      {/* Top row: Company, Position, Job Link & Time */}
+      {/* Top row: Company Avatar (in Award mode), Company, Position, Job Link & Time */}
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-sm text-foreground tracking-tight group-hover:text-primary transition-colors">
-            {app.company}
-          </span>
-
-          {app.position && (
-            <>
-              <span className="text-muted-foreground/30 text-xs hidden sm:inline">•</span>
-              <span className="text-xs text-muted-foreground font-normal truncate max-w-[280px]">
-                {app.position}
-              </span>
-            </>
-          )}
-
-          {jobUrl && (
-            <a
-              href={jobUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="İlanı Aç"
-              className="inline-flex items-center text-muted-foreground/60 hover:text-foreground transition-colors p-0.5 rounded hover:bg-muted"
-              onClick={(e) => e.stopPropagation()}
+        <div className="min-w-0 flex-1 flex items-center gap-2.5">
+          {isAward && (
+            <div
+              className={cn(
+                'w-9 h-9 rounded-xl border flex items-center justify-center font-mono font-bold text-xs shrink-0 transition-transform group-hover:scale-105',
+                getCompanyTint(app.company)
+              )}
             >
-              <ExternalLink className="h-3 w-3" />
-            </a>
+              {getCompanyInitials(app.company)}
+            </div>
           )}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-sm text-foreground tracking-tight group-hover:text-primary transition-colors truncate">
+                {app.company}
+              </span>
+
+              {!isAward && app.position && (
+                <>
+                  <span className="text-muted-foreground/30 text-xs hidden sm:inline">•</span>
+                  <span className="text-xs text-muted-foreground font-normal truncate max-w-[280px]">
+                    {app.position}
+                  </span>
+                </>
+              )}
+
+              {jobUrl && (
+                <a
+                  href={jobUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="İlanı Aç"
+                  className="inline-flex items-center text-muted-foreground/60 hover:text-primary transition-colors p-0.5 rounded hover:bg-muted"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+
+            {isAward && app.position && (
+              <div className="text-xs text-muted-foreground font-medium truncate mt-0.5">
+                {app.position}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right side: Overdue badge + relative time */}
-        <div className="shrink-0 flex items-center gap-2">
+        <div className="shrink-0 flex items-center gap-1.5">
           {overdue && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-red-600 dark:text-red-400 bg-red-500/10 px-2 py-0.5 rounded-md">
+            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-red-600 dark:text-red-400 bg-red-500/12 border border-red-500/25 px-2 py-0.5 rounded-lg">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-              Sessiz
+              SESSİZ
             </span>
           )}
           {days !== null ? (
             <span
               className={cn(
-                'text-xs tabular-nums',
+                'text-[11px] font-mono tabular-nums px-2 py-0.5 rounded-lg',
+                isAward && 'bg-muted/60 border border-border/60',
                 overdue ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-muted-foreground'
               )}
             >
               {daysText}
             </span>
           ) : (
-            <span className="text-xs text-muted-foreground/50">Tarih yok</span>
+            <span className="text-[11px] font-mono text-muted-foreground/50">Tarih yok</span>
           )}
         </div>
       </div>
@@ -180,16 +250,22 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
       {/* Middle row: Metadata & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-0.5">
         {/* Left: Metadata list */}
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-xs">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs">
           {/* Status Selector */}
-          <div className="relative inline-flex items-center">
-            <span className={cn('w-2 h-2 rounded-full mr-1.5 shrink-0', STATUS_DOT[app.status])} />
+          <div
+            className={cn(
+              'relative inline-flex items-center',
+              isAward && cn('px-2 py-0.5 rounded-lg border', STATUS_PILL_BG[app.status])
+            )}
+          >
+            <span className={cn('w-1.5 h-1.5 rounded-full mr-1.5 shrink-0', STATUS_DOT[app.status])} />
             <select
               value={app.status}
               onChange={(e) => handleStatusChange(e.target.value as ApplicationStatus)}
               title="Durumu değiştir"
               className={cn(
-                'appearance-none pl-0.5 pr-4 py-0.5 text-xs font-semibold cursor-pointer bg-transparent hover:bg-muted/60 focus:outline-none rounded transition-colors',
+                'appearance-none pl-0.5 pr-4 py-0.5 text-xs font-semibold cursor-pointer bg-transparent focus:outline-none rounded transition-colors',
+                !isAward && 'hover:bg-muted/60',
                 STATUS_TEXT[app.status]
               )}
             >
@@ -199,17 +275,17 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
                 </option>
               ))}
             </select>
-            <ChevronDown className="w-3 h-3 absolute right-0 pointer-events-none opacity-40" />
+            <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none opacity-50" />
           </div>
 
           {/* Channel & Applied Date */}
           {(app.channel || app.appliedAt) && (
             <>
               <span className="text-muted-foreground/30">•</span>
-              <span className="text-muted-foreground">
+              <span className="text-muted-foreground text-[11px]">
                 {app.channel && (CHANNEL_LABELS[app.channel] ?? app.channel)}
-                {app.channel && app.appliedAt && ' • '}
-                {app.appliedAt && formatDate(app.appliedAt)}
+                {app.channel && app.appliedAt && ' · '}
+                {app.appliedAt && <span className="font-mono">{formatDate(app.appliedAt)}</span>}
               </span>
             </>
           )}
@@ -218,9 +294,9 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           {matchScore && (
             <>
               <span className="text-muted-foreground/30">•</span>
-              <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1 font-mono font-semibold text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">
                 <Sparkles className="h-3 w-3 opacity-80" />
-                %{matchScore} Uyum
+                %{matchScore}
               </span>
             </>
           )}
@@ -236,7 +312,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
                   rel="noopener noreferrer"
                   title="CV'yi İndir / Aç"
                   onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline transition-colors max-w-[190px]"
+                  className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground hover:underline transition-colors max-w-[180px] text-[11px]"
                 >
                   <FileText className="h-3 w-3 shrink-0 text-primary" />
                   <span className="truncate">{humanizeCvName(app.cvVersion)}</span>
@@ -244,7 +320,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
               ) : (
                 <span
                   title={app.cvVersion}
-                  className="inline-flex items-center gap-1 text-muted-foreground/80 max-w-[180px]"
+                  className="inline-flex items-center gap-1 text-muted-foreground/80 max-w-[170px] text-[11px]"
                 >
                   <FileText className="h-3 w-3 shrink-0 opacity-50" />
                   <span className="truncate">{humanizeCvName(app.cvVersion)}</span>
@@ -257,8 +333,8 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           {app.hrContacted && (
             <>
               <span className="text-muted-foreground/30">•</span>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                ✓ İK ile Görüşüldü
+              <span className="font-medium text-[11px] text-emerald-600 dark:text-emerald-400">
+                ✓ İK
               </span>
             </>
           )}
@@ -269,7 +345,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
           {app.status === 'preparing' && (
             <button
               onClick={handleMarkApplied}
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Başvurdum</span>
@@ -279,7 +355,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <button
               onClick={() => handleStatusChange('responded')}
               title="Doğrudan dönüş aldı olarak güncelle"
-              className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-500/15 border border-purple-500/30 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
             >
               <span>Dönüş Aldı</span>
               <ArrowRight className="h-3 w-3" />
@@ -289,7 +365,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <button
               onClick={() => handleStatusChange('interview')}
               title="Mülakat aşamasına taşı"
-              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
             >
               <span>Mülakat</span>
               <ArrowRight className="h-3 w-3" />
@@ -299,7 +375,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <button
               onClick={() => handleStatusChange('offer')}
               title="Teklif aşamasına taşı"
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 px-2.5 py-1 rounded-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-all active:scale-95 cursor-pointer"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Teklif Aldı</span>
@@ -308,7 +384,7 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
 
           <button
             onClick={() => openModal(app._id)}
-            className="text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1 rounded-md hover:bg-muted transition-all active:scale-95 cursor-pointer"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground px-2.5 py-1 rounded-lg hover:bg-muted transition-all active:scale-95 cursor-pointer"
           >
             Düzenle
           </button>
@@ -322,7 +398,9 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
             <p className="text-muted-foreground leading-relaxed line-clamp-1 italic font-normal">
               &ldquo;{cleanNote}&rdquo;
             </p>
-          ) : <div />}
+          ) : (
+            <div />
+          )}
 
           {overdue && (
             <button
@@ -338,3 +416,4 @@ export function ApplicationCard({ app, overdueDays = 14 }: ApplicationCardProps)
     </div>
   )
 }
+

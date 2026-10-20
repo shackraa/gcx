@@ -129,6 +129,81 @@
   }
 }
 
+/* ============================================================================
+   HIGH-CRAFT AWARD UI TOKENS (Linear / Raycast / Apple Design Award Standard)
+   Active when html[data-ui="award"] is set; seamlessly reverts on "classic"
+   ============================================================================ */
+html[data-ui="award"] {
+  --background: oklch(0.985 0.004 265);
+  --foreground: oklch(0.14 0.018 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0.018 265);
+  --popover: oklch(0.995 0.002 265);
+  --popover-foreground: oklch(0.14 0.018 265);
+  --primary: oklch(0.49 0.22 268);
+  --primary-foreground: oklch(0.99 0.005 268);
+  --secondary: oklch(0.955 0.008 265);
+  --secondary-foreground: oklch(0.22 0.02 265);
+  --muted: oklch(0.958 0.006 265);
+  --muted-foreground: oklch(0.51 0.02 265);
+  --accent: oklch(0.945 0.015 268);
+  --accent-foreground: oklch(0.28 0.08 268);
+  --destructive: oklch(0.58 0.22 25);
+  --border: oklch(0.905 0.01 265);
+  --input: oklch(0.905 0.01 265);
+  --ring: oklch(0.55 0.2 268);
+  --radius: 0.75rem;
+}
+
+html[data-ui="award"].dark {
+  --background: oklch(0.115 0.012 265);
+  --foreground: oklch(0.965 0.006 265);
+  --card: oklch(0.155 0.015 265);
+  --card-foreground: oklch(0.965 0.006 265);
+  --popover: oklch(0.165 0.018 265);
+  --popover-foreground: oklch(0.965 0.006 265);
+  --primary: oklch(0.66 0.19 268);
+  --primary-foreground: oklch(0.11 0.015 265);
+  --secondary: oklch(0.205 0.018 265);
+  --secondary-foreground: oklch(0.95 0.008 265);
+  --muted: oklch(0.195 0.016 265);
+  --muted-foreground: oklch(0.66 0.018 265);
+  --accent: oklch(0.22 0.025 268);
+  --accent-foreground: oklch(0.965 0.006 265);
+  --destructive: oklch(0.68 0.19 23);
+  --border: oklch(1 0 0 / 8.5%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.66 0.19 268);
+}
+
+html[data-ui="award"] body {
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% -15%, oklch(0.58 0.22 268 / 0.08), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 5%, oklch(0.65 0.18 190 / 0.05), transparent 65%);
+  background-attachment: fixed;
+}
+
+html[data-ui="award"].dark body {
+  background-image:
+    radial-gradient(ellipse 80% 45% at 50% -15%, oklch(0.58 0.22 268 / 0.16), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 85% 0%, oklch(0.65 0.18 165 / 0.07), transparent 65%);
+  background-attachment: fixed;
+}
+
+@utility craft-surface {
+  box-shadow:
+    0 1px 0 0 oklch(1 0 0 / 7%) inset,
+    0 1px 2px -1px oklch(0 0 0 / 12%),
+    0 4px 12px -2px oklch(0 0 0 / 6%);
+}
+
+@utility craft-surface-hover {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 180ms ease,
+              box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 180ms ease;
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

@@ -20,6 +20,12 @@ interface UIState {
   resumeModalOpen: boolean
   editingResumeId: string | null
 
+  // UI Style Mode ('award' = new high-craft UI, 'classic' = original UI)
+  uiMode: 'award' | 'classic'
+
+  // Command Palette (Cmd+K)
+  commandOpen: boolean
+
   // Studio Prefill (when jumping from Job Radar to CV Studio)
   studioPrefill: {
     jobUrl?: string
@@ -34,6 +40,9 @@ interface UIState {
   setChannelFilter: (channel: string) => void
   setResumeFilter: (resumeFilter: string) => void
   setView: (view: ViewMode) => void
+  setUIMode: (uiMode: 'award' | 'classic') => void
+  toggleUIMode: () => void
+  setCommandOpen: (open: boolean) => void
   openModal: (id?: string) => void
   closeModal: () => void
   openResumeModal: (id?: string) => void
@@ -50,6 +59,8 @@ export const useUIStore = create<UIState>()(
       channelFilter: 'all',
       resumeFilter: 'all',
       view: 'list',
+      uiMode: 'award',
+      commandOpen: false,
       modalOpen: false,
       editingId: null,
       resumeModalOpen: false,
@@ -61,6 +72,10 @@ export const useUIStore = create<UIState>()(
       setChannelFilter: (channelFilter) => set({ channelFilter }),
       setResumeFilter: (resumeFilter) => set({ resumeFilter }),
       setView: (view) => set({ view }),
+      setUIMode: (uiMode) => set({ uiMode }),
+      toggleUIMode: () =>
+        set((state) => ({ uiMode: state.uiMode === 'award' ? 'classic' : 'award' })),
+      setCommandOpen: (commandOpen) => set({ commandOpen }),
       openModal: (id) => set({ modalOpen: true, editingId: id ?? null }),
       closeModal: () => set({ modalOpen: false, editingId: null }),
       openResumeModal: (id) => set({ resumeModalOpen: true, editingResumeId: id ?? null }),
@@ -75,6 +90,7 @@ export const useUIStore = create<UIState>()(
         filter: state.filter,
         channelFilter: state.channelFilter,
         resumeFilter: state.resumeFilter,
+        uiMode: state.uiMode,
       }),
     }
   )

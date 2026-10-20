@@ -22,7 +22,8 @@ const TABS: { key: FilterKey; label: string; dot?: string }[] = [
 ]
 
 export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
-  const { filter, setFilter, setView } = useUIStore()
+  const { filter, setFilter, setView, uiMode } = useUIStore()
+  const isAward = uiMode === 'award'
 
   function getCount(key: FilterKey): number {
     if (key === 'all') return applications.length
@@ -48,14 +49,16 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
               setView('list')
             }}
             className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border shrink-0',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer border shrink-0 active:scale-[0.97]',
               isActive
                 ? isOverdueTab && count > 0
-                  ? 'bg-red-600 dark:bg-red-700 text-white border-transparent shadow-xs font-semibold'
-                  : 'bg-foreground text-background border-transparent shadow-xs font-semibold'
+                  ? 'bg-red-600 dark:bg-red-600 text-white border-transparent shadow-xs font-semibold'
+                  : isAward
+                    ? 'bg-primary text-primary-foreground border-primary/40 shadow-xs font-semibold'
+                    : 'bg-foreground text-background border-transparent shadow-xs font-semibold'
                 : isOverdueTab && count > 0
-                ? 'text-red-700 bg-red-50 hover:bg-red-100/80 border-red-200 dark:border-red-900/50 dark:text-red-400 dark:bg-red-950/40 dark:hover:bg-red-950/70'
-                : 'text-muted-foreground bg-background hover:bg-muted/70 hover:text-foreground border-border/60 hover:border-border'
+                  ? 'text-red-700 bg-red-50 hover:bg-red-100/80 border-red-200 dark:border-red-900/50 dark:text-red-400 dark:bg-red-950/40 dark:hover:bg-red-950/70'
+                  : 'text-muted-foreground bg-card/80 hover:bg-muted/70 hover:text-foreground border-border/70 hover:border-border'
             )}
           >
             {dot && (
@@ -63,16 +66,16 @@ export function FilterTabs({ applications, overdueDays }: FilterTabsProps) {
                 className={cn(
                   'w-1.5 h-1.5 rounded-full shrink-0 transition-opacity',
                   dot,
-                  isActive && !isOverdueTab ? 'bg-background' : ''
+                  isActive && !isOverdueTab ? 'bg-current opacity-90' : ''
                 )}
               />
             )}
             <span>{label}</span>
             <span
               className={cn(
-                'px-1.5 py-0.5 rounded-full text-[10px] font-bold min-w-[18px] text-center transition-colors',
+                'px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold min-w-[18px] text-center transition-colors tabular-nums',
                 isActive
-                  ? 'bg-background/20 text-inherit'
+                  ? 'bg-black/15 dark:bg-white/20 text-inherit'
                   : 'bg-muted text-muted-foreground'
               )}
             >

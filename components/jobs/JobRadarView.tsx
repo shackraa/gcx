@@ -193,7 +193,8 @@ const EXCLUDED_GENERIC_SKILLS = new Set(['sql', 'python', 'excel', 'ms office', 
 
 export function JobRadarView({ resumes }: JobRadarViewProps) {
   const { toast } = useToast()
-  const { setView, setFilter, setSearch, openStudioWithJob } = useUIStore()
+  const { setView, setFilter, setSearch, openStudioWithJob, uiMode } = useUIStore()
+  const isAward = uiMode === 'award'
   const createApplicationMutation = useMutation(api.applications.create)
   const scoutedJobs = useQuery(api.scoutedJobs.list)
   const aiUsage = useQuery(api.aiUsage.getStatus)
@@ -577,7 +578,15 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
   return (
     <div className="space-y-6">
       {/* Hero Banner & Search Controls */}
-      <div data-tour="job-radar-controls" className="bg-gradient-to-br from-primary/15 via-primary/5 to-card border border-primary/25 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
+      <div
+        data-tour="job-radar-controls"
+        className={cn(
+          'p-5 sm:p-6 space-y-4 transition-all',
+          isAward
+            ? 'bg-gradient-to-br from-primary/14 via-card to-card border border-primary/30 rounded-2xl craft-surface'
+            : 'bg-gradient-to-br from-primary/15 via-primary/5 to-card border border-primary/25 rounded-2xl shadow-sm'
+        )}
+      >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
@@ -999,18 +1008,38 @@ export function JobRadarView({ resumes }: JobRadarViewProps) {
             {filteredScoutedJobs.map((job) => (
               <div
                 key={job._id}
-                className="bg-muted/30 border border-border/70 hover:border-border rounded-xl p-4 space-y-3 flex flex-col justify-between transition-all"
+                className={cn(
+                  'p-4 space-y-3 flex flex-col justify-between transition-all group',
+                  isAward
+                    ? 'bg-card border border-border/80 hover:border-primary/40 rounded-2xl craft-surface craft-surface-hover hover:-translate-y-[1px]'
+                    : 'bg-muted/30 border border-border/70 hover:border-border rounded-xl'
+                )}
               >
-                <div className="space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground">{job.title}</h4>
-                      <p className="text-xs text-muted-foreground font-medium mt-0.5">{job.company}</p>
+                <div className="space-y-2.5">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      {isAward && (
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-mono font-bold text-xs shrink-0 mt-0.5 transition-transform group-hover:scale-105">
+                          {(job.company || 'GC').slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
+                          {job.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground font-medium mt-0.5 truncate">
+                          {job.company}
+                        </p>
+                      </div>
                     </div>
-                    <div className={cn(
-                      'text-sm font-black px-2 py-0.5 rounded-md border text-center shrink-0',
-                      job.matchScore >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-950/40 dark:text-green-400 dark:border-green-800' : 'bg-primary/10 text-primary border-primary/20'
-                    )}>
+                    <div
+                      className={cn(
+                        'text-xs font-mono font-bold px-2.5 py-1 rounded-lg border text-center shrink-0 tabular-nums',
+                        job.matchScore >= 80
+                          ? 'bg-emerald-500/12 text-emerald-700 border-emerald-500/25 dark:text-emerald-400'
+                          : 'bg-primary/10 text-primary border-primary/20'
+                      )}
+                    >
                       %{job.matchScore} Uyum
                     </div>
                   </div>
