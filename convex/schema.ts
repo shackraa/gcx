@@ -70,6 +70,8 @@ export default defineSchema({
     overdueDays: v.number(),
     emailReminders: v.boolean(),
     lastEmailScanAt: v.optional(v.number()), // Son e-posta tarama zamanı (timestamp)
+    isGmailConnected: v.optional(v.boolean()),
+    gmailRefreshToken: v.optional(v.string()),
   }).index('by_user', ['userId']),
 
   // jev-ultrafast & İlan Radarı tarafından otomatik bulunan ilanlar

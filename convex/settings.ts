@@ -28,6 +28,8 @@ export const upsert = mutation({
     overdueDays: v.optional(v.number()),
     emailReminders: v.optional(v.boolean()),
     lastEmailScanAt: v.optional(v.number()),
+    isGmailConnected: v.optional(v.boolean()),
+    gmailRefreshToken: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)

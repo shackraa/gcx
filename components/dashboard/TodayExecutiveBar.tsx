@@ -46,6 +46,7 @@ export function TodayExecutiveBar({
 
   const [isScanning, setIsScanning] = useState(false)
   const [isGmailConnected, setIsGmailConnected] = useState(false)
+  const isGmailActive = Boolean(isGmailConnected || (settings as any)?.isGmailConnected)
 
   // Gmail bağlantı durumunu sorgula
   useEffect(() => {
@@ -54,6 +55,7 @@ export function TodayExecutiveBar({
       .then((data) => {
         if (data?.connected) {
           setIsGmailConnected(true)
+          void upsertSettings({ isGmailConnected: true })
         }
       })
       .catch(() => {})
@@ -65,6 +67,7 @@ export function TodayExecutiveBar({
     const params = new URLSearchParams(window.location.search)
     if (params.get('gmail_connected') === 'true') {
       setIsGmailConnected(true)
+      void upsertSettings({ isGmailConnected: true, lastEmailScanAt: Date.now() })
       toast({
         title: 'Gmail Başarıyla Bağlandı! ✓',
         description: 'Google hesabınız bağlandı. Gelen iş mailleriniz Gemini ile taranıyor...',
@@ -103,7 +106,7 @@ export function TodayExecutiveBar({
       }
 
       setIsGmailConnected(true)
-      await upsertSettings({ lastEmailScanAt: Date.now() })
+      await upsertSettings({ lastEmailScanAt: Date.now(), isGmailConnected: true })
 
       if (data.results && data.results.length > 0) {
         toast({
@@ -191,7 +194,7 @@ export function TodayExecutiveBar({
 
         {/* Gmail Senkronizasyonu & Eşitleme (Aktif ve Canlı Buton) */}
         <div className="flex items-center gap-1.5 pl-1 md:border-l md:border-border/60">
-          {isGmailConnected ? (
+          {isGmailActive ? (
             <div className="inline-flex items-center gap-2 bg-background/80 border border-border/80 px-2.5 py-1 rounded-lg shadow-2xs">
               <GmailIcon className="h-4 w-4 shrink-0" />
               <div className="flex items-center gap-1">
