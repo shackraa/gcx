@@ -1,37 +1,35 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { Application } from '@/types'
+import { motion } from 'framer-motion'
+import { useUIStore } from '@/lib/store/ui'
+import { useApplicationActions } from '@/lib/hooks/useApplicationActions'
+import { useToast } from '@/hooks/use-toast'
+import { Button } from '@/components/ui/button'
+import {
+  X,
+  ExternalLink,
+  Edit3,
+  Trash2,
+  Users,
+  Copy,
+  CheckCircle2,
+  FileText,
+  Send,
+  Sparkles,
+  MessageSquare,
+} from 'lucide-react'
+import { LinkedinIcon } from '@/components/ui/icons'
 import {
   STATUS_LABELS,
   CHANNEL_LABELS,
   daysSinceApplied,
   formatDate,
-  safeUrl,
-  getDirectDownloadUrl,
   isOverdue,
+  getDirectDownloadUrl,
+  safeUrl,
 } from '@/lib/utils/applications'
-import { useApplicationActions } from '@/lib/hooks/useApplicationActions'
-import { useUIStore } from '@/lib/store/ui'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/hooks/use-toast'
-import {
-  X,
-  ExternalLink,
-  FileText,
-  Copy,
-  Edit3,
-  Trash2,
-  Send,
-  Users,
-  Search,
-  CheckCircle2,
-  Sparkles,
-  UserCheck,
-  Briefcase,
-  ShieldAlert,
-} from 'lucide-react'
-import { motion } from 'motion/react'
+import type { Application } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface ApplicationDrawerProps {
@@ -39,9 +37,12 @@ interface ApplicationDrawerProps {
   overdueDays?: number
 }
 
-interface TargetPerson {
+export interface TargetPerson {
   id: 'recruiter' | 'manager' | 'executive'
   roleType: string
+  strategicGoal: string
+  badge: string
+  whenToUse: string
   title: string
   explanation: string
   searchQuery: string
@@ -67,29 +68,41 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
     {
       id: 'recruiter',
       roleType: 'İşe Alım Yetkilisi',
+      strategicGoal: '⚡ CV Elemesini Geç & İlk Mülakatı Al',
+      badge: 'İlk 1-5 Gün İçin İdeal',
+      whenToUse:
+        "Başvurunu yeni yaptıysan; CV'nin otomatik filtrelerde takılmaması ve ilk insan temasını kurup görüşme almak için en doğru kişidir.",
       title: 'Talent Acquisition & Technical Recruiter',
-      explanation: `${app.company} bünyesinde ilk CV elemesini ve mülakat planlamasını yapan uzman.`,
-      searchQuery: `"${app.company}" ("Technical Recruiter" OR "Talent Acquisition")`,
+      explanation: `${app.company} bünyesinde bu pozisyonun ilk CV elemesini ve ön mülakatlarını organize eden yetkili.`,
+      searchQuery: `"${app.company}" ("Technical Recruiter" OR "Talent Acquisition" OR "İşe Alım Uzmanı")`,
       linkedinUrl: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`"${app.company}" ("Technical Recruiter" OR "Talent Acquisition")`)}&origin=GLOBAL_SEARCH_HEADER`,
-      customDraft: `Merhaba,\n\n${app.company} bünyesindeki ${app.position || 'ilgili'} pozisyonuna gerçekleştirdiğim başvurumla ilgili kısa bir merhaba demek istedim. Özgeçmişimin rol gereksinimleriyle güçlü bir uyum yakaladığını düşünüyorum. Değerlendirme sürecinin güncel durumu hakkında kısa bir bilgi paylaşabilirseniz çok sevinirim.\n\nİlginiz ve vaktiniz için teşekkür ederim.`,
+      customDraft: `Merhaba,\n\n${app.company} bünyesindeki ${app.position || 'ilgili'} pozisyonuna gerçekleştirdiğim başvurumla ilgili kısa bir merhaba demek istedim. Özgeçmişimin pozisyon gereksinimleriyle güçlü bir uyum yakaladığını düşünüyorum. Değerlendirme sürecinin güncel durumu hakkında kısa bir bilgi paylaşabilirseniz çok sevinirim.\n\nİlginiz ve vaktiniz için teşekkür ederim.`,
     },
     {
       id: 'manager',
       roleType: 'Departman / Hiring Manager',
+      strategicGoal: '🎯 Doğrudan Ekibe & Teknik Lidere Ulaş',
+      badge: 'En Yüksek Etki (Teknik Uyum)',
+      whenToUse:
+        'Birlikte çalışacağın doğrudan ekip liderine ulaş. İK elemesini baypas ederek projelerini, GitHub/portfolyonu ve ekibe katacağın doğrudan değeri anlatmak için kullanılır.',
       title: `${app.position || 'Ekip'} Lideri / Engineering Manager`,
-      explanation: `Doğrudan ekibin lideri; teknik yetkinlik ve takım uyumuna karar veren yönetici.`,
-      searchQuery: `"${app.company}" ("${app.position || 'Manager'}" OR "Team Lead")`,
+      explanation: `İşi yapacak ekibin doğrudan lideri; teknik yetkinlik ve takım uyumuna karar veren yönetici.`,
+      searchQuery: `"${app.company}" ("${app.position || 'Manager'}" OR "Engineering Manager" OR "Team Lead")`,
       linkedinUrl: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`"${app.company}" ("${app.position || 'Engineering'}" OR "Team Lead")`)}&origin=GLOBAL_SEARCH_HEADER`,
-      customDraft: `Merhaba,\n\n${app.company} bünyesinde ekibinizin yürüttüğü çalışmaları yakından takip ediyorum. ${app.position || 'ilgili'} pozisyonu için başvurumu tamamladım. Ekibinizin hedeflerine ve projelerine değer katabileceğim noktaları konuşmaktan memnuniyet duyarım.\n\nİyi çalışmalar dilerim.`,
+      customDraft: `Merhaba,\n\n${app.company} bünyesinde ekibinizin yürüttüğü çalışmaları yakından takip ediyorum. ${app.position || 'ilgili'} pozisyonu için başvurumu ilettim. Ekibinizin teknik hedeflerine ve mevcut projelerine doğrudan katma değer sağlayabileceğim noktaları konuşmaktan memnuniyet duyarım.\n\nİyi çalışmalar dilerim.`,
     },
     {
       id: 'executive',
-      roleType: 'İK Direktörü / Üst Düzey',
+      roleType: 'Üst Düzey / İK Direktörü',
+      strategicGoal: '👑 Sessiz Kalan Başvuruları Canlandır',
+      badge: '10+ Gün Sessizse / Büyük Şirketler',
+      whenToUse:
+        'Başvurun uzun süredir yanıtsız kaldıysa veya şirketin üst düzey kültürüne ve vizyonuna özel bir tutku duyuyorsan nihai karar vericinin dikkatini çekmek için kullanılır.',
       title: 'Head of People / VP of HR',
       explanation: `Şirket içi insan kaynakları stratejisini ve nihai teklif süreçlerini yöneten üst düzey lider.`,
-      searchQuery: `"${app.company}" ("Head of People" OR "HR Director")`,
+      searchQuery: `"${app.company}" ("Head of People" OR "HR Director" OR "VP of HR")`,
       linkedinUrl: `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(`"${app.company}" ("Head of People" OR "HR Director")`)}&origin=GLOBAL_SEARCH_HEADER`,
-      customDraft: `Sayın Yetkili,\n\n${app.company} şirket kültürünü ve sektördeki büyümesini takdirle izliyorum. ${app.position || 'ilgili'} rolü için başvurumu ilettim. Şirketinizin vizyonuna katkı sağlamak ve ekibin bir parçası olmak beni heyecanlandırıyor. Vaktiniz için teşekkür eder, iyi günler dilerim.`,
+      customDraft: `Sayın Yetkili,\n\n${app.company} şirket kültürünü ve sektördeki büyümesini takdirle izliyorum. ${app.position || 'ilgili'} rolü için başvurumu ilettim. Şirketinizin vizyonuna katkı sağlamak ve ekibin bir parçası olmak beni heyecanlandırıyor. Vaktiniz için teşekkür eder, iyi çalışmalar dilerim.`,
     },
   ])
 
@@ -149,13 +162,23 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
     }
   }, [app.company, app.position, app.contactName])
 
+  async function handleCopyOnly() {
+    await navigator.clipboard.writeText(draftMessage)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 3000)
+    toast({
+      title: 'Taslak Mesaj Kopyalandı ✓',
+      description: 'Mesaj panoya alındı, istediğiniz yere yapıştırabilirsiniz.',
+    })
+  }
+
   async function handleCopyAndGo() {
     await navigator.clipboard.writeText(draftMessage)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
+    setTimeout(() => setCopied(false), 5000)
     toast({
-      title: 'Taslak Mesaj Kopyalandı ✓',
-      description: `${activeTarget.roleType} için LinkedIn arama sayfası açılıyor. Mesajı yapıştırıp gönderebilirsin.`,
+      title: 'Taslak Kopyalandı & LinkedIn Açılıyor ✓',
+      description: `${activeTarget.roleType} için arama sekmesi açıldı. Sağ alttaki veya profildeki mesaj alanına Ctrl+V ile yapıştırabilirsiniz.`,
     })
     await markFollowUpSent(app)
     // Doğrudan o yetkili grubunun LinkedIn arama ekranını aç
@@ -281,11 +304,11 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
       </div>
 
       {/* 3 YETKİLİ SEÇİM LİSTESİ (RECRUITER, MANAGER, EXECUTIVE) */}
-      <div className="space-y-2 pt-1 border-t border-border/60">
+      <div className="space-y-2.5 pt-2 border-t border-border/60">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5 text-primary" />
-            {app.company} Yetkili Listesi (3 Hedef)
+            <span>{app.company} Yetkili Hedefleri (3 Kategori)</span>
           </label>
           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
             <Sparkles className="h-3 w-3 text-amber-500" />
@@ -302,41 +325,40 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
                 key={t.id}
                 onClick={() => handleSelectTarget(t.id)}
                 className={cn(
-                  'p-2.5 rounded-lg border text-left transition-all cursor-pointer flex items-start justify-between gap-2',
+                  'p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5',
                   isSelected
-                    ? 'border-primary bg-primary/5 ring-1 ring-primary/40'
-                    : 'border-border/80 bg-muted/20 hover:border-border hover:bg-muted/40'
+                    ? 'border-primary bg-primary/5 ring-1 ring-primary/40 shadow-xs'
+                    : 'border-border/70 bg-muted/20 hover:border-border hover:bg-muted/40'
                 )}
               >
-                <div className="space-y-0.5 min-w-0">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={cn(
-                        'text-[10px] font-bold px-1.5 py-0.2 rounded',
-                        isSelected
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      )}
-                    >
-                      {t.roleType}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                      {t.badge || t.roleType}
                     </span>
-                    <span className="text-xs font-bold text-foreground truncate">{t.title}</span>
+                    <span className="text-xs font-bold text-foreground">
+                      {t.strategicGoal || t.roleType}
+                    </span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground leading-tight line-clamp-1">
-                    {t.explanation}
-                  </p>
-                </div>
-
-                <div className="shrink-0 mt-0.5">
                   <span
                     className={cn(
-                      'w-4 h-4 rounded-full border flex items-center justify-center text-[10px]',
-                      isSelected ? 'border-primary bg-primary text-white' : 'border-border'
+                      'w-4 h-4 rounded-full border flex items-center justify-center text-[10px] shrink-0',
+                      isSelected ? 'border-primary bg-primary text-white font-bold' : 'border-border'
                     )}
                   >
                     {isSelected ? '✓' : ''}
                   </span>
                 </div>
+
+                <div className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
+                  <span className="text-muted-foreground text-[10px]">Yetkili:</span>
+                  <span className="font-semibold">{t.title}</span>
+                </div>
+
+                <p className="text-[11px] text-muted-foreground leading-relaxed bg-background/60 p-2 rounded-md border border-border/40">
+                  <strong className="text-foreground font-semibold">💡 Ne Zaman Seçilmeli? </strong>
+                  {t.whenToUse || t.explanation}
+                </p>
               </div>
             )
           })}
@@ -344,7 +366,7 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
       </div>
 
       {/* SEÇİLİ YETKİLİYE ÖZEL HAZIR TASLAK MESAJ */}
-      <div className="space-y-2 pt-1 border-t border-border/60">
+      <div className="space-y-2 pt-2 border-t border-border/60">
         <div className="flex items-center justify-between">
           <label className="text-xs font-bold text-foreground flex items-center gap-1.5">
             <Send className="h-3.5 w-3.5 text-primary" />
@@ -357,33 +379,58 @@ export function ApplicationDrawer({ app, overdueDays = 14 }: ApplicationDrawerPr
           rows={5}
           value={draftMessage}
           onChange={(e) => setDraftMessage(e.target.value)}
+          placeholder="Taslak mesaj burada hazır bekliyor..."
           className="w-full text-xs p-3 rounded-lg bg-muted/40 border border-border focus:outline-none focus:ring-1 focus:ring-primary leading-relaxed resize-none text-foreground font-sans"
         />
 
-        {/* Tek Tıkla Kopyala & LinkedIn'e Git Butonu */}
-        <div className="flex items-center justify-between gap-2 pt-1">
-          <span className="text-[11px] text-muted-foreground truncate">
-            {app.followUpSentAt ? `Son gönderim: ${app.followUpSentAt}` : 'Mesaj panoya kopyalanıp yetkili aranır'}
-          </span>
+        {/* Bilgilendirme / Başarı Bildirimi */}
+        {copied && (
+          <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+            <span>
+              <strong>Taslak panoya kopyalandı!</strong> Açılan sekmede yetkilinin profilindeki &apos;Mesaj&apos; alanına <code>Ctrl + V</code> ile yapıştırabilirsiniz.
+            </span>
+          </div>
+        )}
 
+        {/* LinkedIn Butonları */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
           <Button
+            type="button"
+            variant="outline"
             size="sm"
-            onClick={handleCopyAndGo}
-            className="h-8 text-xs px-3 gap-1.5 font-semibold cursor-pointer shrink-0"
+            onClick={() => window.open('https://www.linkedin.com/messaging/', '_blank')}
+            className="h-8 text-xs gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+            title="LinkedIn sağ alttaki mesajlaşma panelini açar"
           >
-            {copied ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Kopyalandı!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5" />
-                <span>Mesajı Al & LinkedIn&apos;de Ara</span>
-                <ExternalLink className="h-3 w-3 opacity-75" />
-              </>
-            )}
+            <MessageSquare className="h-3.5 w-3.5 text-[#0A66C2]" />
+            <span>LinkedIn Mesajlarını Aç</span>
           </Button>
+
+          <div className="flex items-center gap-1.5 justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyOnly}
+              className="h-8 text-xs px-2.5 gap-1 cursor-pointer"
+              title="Sadece mesajı panoya kopyala"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              <span>Kopyala</span>
+            </Button>
+
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleCopyAndGo}
+              className="h-8 text-xs px-3.5 gap-2 font-bold cursor-pointer bg-[#0A66C2] hover:bg-[#004182] text-white shadow-xs shrink-0"
+            >
+              <LinkedinIcon className="h-3.5 w-3.5" />
+              <span>LinkedIn&apos;de Yetkiliyi Bul & Mesaj At</span>
+              <ExternalLink className="h-3 w-3 opacity-80" />
+            </Button>
+          </div>
         </div>
       </div>
 

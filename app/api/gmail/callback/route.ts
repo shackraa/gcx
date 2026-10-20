@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
+import { getGoogleOAuthCredentials } from '@/lib/gmail/oauth'
 
 export async function GET(req: NextRequest) {
   const code = req.nextUrl.searchParams.get('code')
@@ -9,9 +10,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard?gmail_error=access_denied', req.url))
   }
 
-  const clientId = process.env.AUTH_GOOGLE_ID
-  const clientSecret = process.env.AUTH_GOOGLE_SECRET
-  const origin = req.nextUrl.origin
+  const { clientId, clientSecret } = await getGoogleOAuthCredentials()
+
+  if (!clientId || !clientSecret) {
+    return NextResponse.redirect(new URL('/dashboard?gmail_error=config_missing', req.url))
+  }
+
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host
+  const proto = req.headers.get('x-forwarded-proto') || (process.env.NODE_ENV === 'production' ? 'https' : 'http')
+  const origin = `${proto}://${host}`
   const redirectUri = `${origin}/api/gmail/callback`
 
   try {
@@ -19,7 +26,7 @@ export async function GET(req: NextRequest) {
     const { tokens } = await oauth2Client.getToken(code)
 
     // Token başarıyla alındı
-    // Çerezde veya kullanıcı oturumunda güvenli saklamak için cookie'ye yazıyoruz
+    // Çerezde güvenli saklamak için cookie'ye yazıyoruz
     const res = NextResponse.redirect(new URL('/dashboard?gmail_connected=true', req.url))
 
     if (tokens.refresh_token) {

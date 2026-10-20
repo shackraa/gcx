@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
+import { getGoogleOAuthCredentials } from '@/lib/gmail/oauth'
 
 interface ScanJobEmailResult {
   company: string
@@ -16,8 +17,7 @@ export async function POST(req: NextRequest) {
     const refreshToken = req.cookies.get('gcx_gmail_refresh_token')?.value
     const accessToken = req.cookies.get('gcx_gmail_access_token')?.value
 
-    const clientId = process.env.AUTH_GOOGLE_ID
-    const clientSecret = process.env.AUTH_GOOGLE_SECRET
+    const { clientId, clientSecret } = await getGoogleOAuthCredentials()
 
     if (!refreshToken && !accessToken) {
       return NextResponse.json(

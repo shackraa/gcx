@@ -54,3 +54,13 @@ export const upsert = mutation({
     }
   },
 })
+
+export const getGoogleOAuthConfig = query({
+  args: {},
+  handler: async () => {
+    return {
+      clientId: process.env.AUTH_GOOGLE_ID || '',
+      clientSecret: process.env.AUTH_GOOGLE_SECRET || '',
+    }
+  },
+})
