@@ -104,6 +104,7 @@ export interface UserSettings {
   weeklyGoal: number
   overdueDays: number
   emailReminders: boolean
+  lastEmailScanAt?: number
 }
 
 // Filter tab keys

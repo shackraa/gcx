@@ -69,6 +69,7 @@ export default defineSchema({
     weeklyGoal: v.number(),
     overdueDays: v.number(),
     emailReminders: v.boolean(),
+    lastEmailScanAt: v.optional(v.number()), // Son e-posta tarama zamanı (timestamp)
   }).index('by_user', ['userId']),
 
   // jev-ultrafast & İlan Radarı tarafından otomatik bulunan ilanlar

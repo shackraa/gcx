@@ -217,13 +217,10 @@ export function AppHeader() {
             type="button"
             onClick={() => setCommandOpen(true)}
             title="Komut paleti ve arama (⌘K / Ctrl+K)"
-            className="hidden sm:inline-flex items-center gap-2 h-8 px-2.5 rounded-md border border-border/70 hover:border-border text-xs text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 transition-colors cursor-pointer"
+            className="hidden sm:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-border/70 hover:border-border text-xs text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 transition-colors cursor-pointer"
           >
             <Search className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">Ara...</span>
-            <kbd className="px-1.5 py-0.2 text-[10px] font-mono text-muted-foreground/80 bg-background rounded border border-border/80">
-              ⌘K
-            </kbd>
+            <span className="font-medium">Ara...</span>
           </button>
 
           <Button

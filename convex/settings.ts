@@ -17,6 +17,7 @@ export const get = query({
       weeklyGoal: 5,
       overdueDays: 14,
       emailReminders: false,
+      lastEmailScanAt: undefined,
     }
   },
 })
@@ -26,6 +27,7 @@ export const upsert = mutation({
     weeklyGoal: v.optional(v.number()),
     overdueDays: v.optional(v.number()),
     emailReminders: v.optional(v.boolean()),
+    lastEmailScanAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx)
@@ -47,6 +49,7 @@ export const upsert = mutation({
         weeklyGoal: args.weeklyGoal ?? 5,
         overdueDays: args.overdueDays ?? 14,
         emailReminders: args.emailReminders ?? false,
+        lastEmailScanAt: args.lastEmailScanAt,
       })
     }
   },
